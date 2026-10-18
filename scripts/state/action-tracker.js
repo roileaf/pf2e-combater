@@ -292,6 +292,9 @@ export function registerActionTrackerHooks(refresh) {
   const hooks = globalThis.Hooks;
   hooks.on("preUpdateCombat", (combat, changed, options = {}) => {
     if (!("turn" in changed || "round" in changed)) return;
+    // Players may only change turn and round: any flag we add makes the server reject their End
+    // turn. Their turn changes go through the GM instead (see turn-controls.js).
+    if (globalThis.game?.user?.isGM !== true) return;
     let snapshot = createTurnSnapshot(combat, {
       round: Object.hasOwn(changed, "round") ? changed.round : combat.round,
       turn: Object.hasOwn(changed, "turn") ? changed.turn : combat.turn,

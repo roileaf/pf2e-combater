@@ -103,6 +103,21 @@ function movementPointKey(point) {
 
 const reachableCentersCache = new Map();
 
+// Who stands where: the squares a move may end on depend on it, so it is part of every cache key.
+// Without it a creature that stepped into a square (or a target that moved) left the planner
+// routing onto an occupied square from a stale cache.
+function occupantsFingerprint(context) {
+  const occupants = [
+    ...(context?.allies ?? context?.battlefield?.allies ?? []),
+    ...(context?.enemies ?? context?.battlefield?.enemies ?? []),
+  ];
+  return occupants.map((entry) => {
+    const center = centerPoint(entry);
+    const token = entry?.token ?? entry;
+    return `${targetKey(entry) ?? ""}@${center ? movementPointKey(center) : "-"}:${token?.width ?? 1}x${token?.height ?? 1}`;
+  }).sort().join(";");
+}
+
 export function movementReachableCenters(origin, distanceFeet, metrics, token = null, context = null, options = {}) {
   const cacheKey = [
     movementPointKey(origin),
@@ -110,6 +125,7 @@ export function movementReachableCenters(origin, distanceFeet, metrics, token = 
     token?.id ?? token?.document?.id ?? "",
     targetKey(options.allowedOverlapTarget) ?? "",
     (globalThis.canvas?.scene?.regions?.size ?? globalThis.canvas?.regions?.placeables?.length ?? 0),
+    occupantsFingerprint(context),
   ].join("|");
   const cached = reachableCentersCache.get(cacheKey);
   if (cached) return cached;
@@ -146,7 +162,7 @@ export function reachableAttackCenters(context, target, distanceFeet, reachFeet)
   const targetCenter = centerPoint(target);
   if (!origin || !targetCenter) return [];
 
-  const cacheKey = `${movementPointKey(origin)}|${distanceFeet}|${reachFeet}|${targetKey(target) ?? movementPointKey(targetCenter)}`;
+  const cacheKey = `${movementPointKey(origin)}|${distanceFeet}|${reachFeet}|${targetKey(target) ?? ""}@${movementPointKey(targetCenter)}|${occupantsFingerprint(context)}`;
   const cached = reachableAttackCentersCache.get(cacheKey);
   if (cached) return cached;
 

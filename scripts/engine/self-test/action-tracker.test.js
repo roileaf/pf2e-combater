@@ -207,7 +207,11 @@ try {
   assert.equal(pendingView.quickenedPending, true, "non-GM viewers see pending quickened without GM flag writes");
   assert.equal(pendingView.canSpendQuickened, false);
   const nextTurn = { round: 3, turn: 0 };
+  // Turn changes are written by the GM (a player's are forwarded there; see turn-controls.js).
+  const viewer = globalThis.game.user;
+  globalThis.game.user = { id: "gm", isGM: true };
   callbacks.get("preUpdateCombat")[0](combat, nextTurn);
+  globalThis.game.user = viewer;
   combat.round = 3;
   combat.flags["pf2e-combater"].actionTurn = nextTurn["flags.pf2e-combater.actionTurn"];
   const nextTurnContext = trackedActionContext(context);

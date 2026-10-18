@@ -16155,6 +16155,23 @@ try {
     false,
     "zero-reach movement must not stop adjacent to the target",
   );
+
+  // Regression (live, Phanman): the reachable/attack square caches ignored where other creatures
+  // stand, so once a creature stepped into a cached attack square the planner still sent the mover
+  // there. A creature's move must invalidate them.
+  const moverContext = (occupants) => ({
+    token: { id: "stale-cache-actor-token", center: { x: 0, y: 0 }, width: 1, height: 1 },
+    battlefield: { allies: occupants, enemies: [reachTarget] },
+  });
+  const before = reachableAttackCenters(moverContext([]), reachTarget, 25, 10);
+  assert.ok(before.some((center) => center.x === 5 && center.y === 15), "the square is free at first");
+  const bystander = { id: "bystander", name: "Bystander", token: { center: { x: 5, y: 15 }, width: 1, height: 1 } };
+  const after = reachableAttackCenters(moverContext([bystander]), reachTarget, 25, 10);
+  assert.equal(
+    after.some((center) => center.x === 5 && center.y === 15),
+    false,
+    "a creature that steps into a cached attack square makes it unavailable",
+  );
 } finally {
   if (previousReachCentersCanvas === undefined) {
     delete globalThis.canvas;

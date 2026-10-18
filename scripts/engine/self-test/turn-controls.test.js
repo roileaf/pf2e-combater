@@ -265,6 +265,30 @@ try {
   assert.equal(combat.previous.combatantId, "d");
   assert.ok(combat.events.includes("end:d:1"), "the current turn ends once, then the group comes in");
 
+  // A player's own End turn (Foundry's tracker) may only change turn/round: Foundry rejects any
+  // flag we add. With a GM online it is cancelled locally and run by the GM; without one it goes
+  // through untouched.
+  combat = fixture();
+  const preHooks = handlers.get("preUpdateCombat");
+  const runPre = (changed) => preHooks.map((fn) => fn(combat, changed, { direction: 1 }));
+  globalThis.game.user = players[0];
+  const forwarded = [];
+  setSocket({ executeAsUser: async (...args) => { forwarded.push(args); return true; } });
+  const playerEnd = { turn: 1 };
+  assert.ok(runPre(playerEnd).includes(false), "a player's End turn is cancelled locally");
+  assert.deepEqual(Object.keys(playerEnd), ["turn"], "no Combater data rides on a player's turn change");
+  await Promise.resolve();
+  assert.equal(forwarded.length, 1);
+  assert.deepEqual([forwarded[0][0], forwarded[0][1], forwarded[0][2].action], ["turnControl", "gm", "end"], "the GM ends the turn instead");
+  setSocket(null);
+  const noGm = { turn: 1 };
+  assert.ok(!runPre(noGm).includes(false), "without a GM link the player's update proceeds");
+  assert.deepEqual(Object.keys(noGm), ["turn"], "and still carries nothing a player can't write");
+  globalThis.game.user = gm;
+  const gmEnd = { turn: 1 };
+  assert.ok(!runPre(gmEnd).includes(false), "the GM's own turn change is never cancelled");
+  assert.ok(gmEnd[`flags.${MODULE_ID}.actionTurn`], "the GM's turn change carries the action snapshot");
+
   // Ready: 2 actions, the turn ends, and the readied action lasts until the
   // start of the creature's next turn.
   combat = fixture();
@@ -357,6 +381,24 @@ try {
   await act(combat, "ready", ready);
   await act(combat, "ready-clear", { readiedId: "a", used: true }, "p-a");
   assert.deepEqual(sundryCalls, [["a"]], "Sundry gets no effect while its reaction tracking is off");
+  // Sundry counts an off-turn attack roll as a Reactive Strike by itself; reporting a readied
+  // Strike too raced its create and left two "Reaction Used" effects.
+  const sundryCountsStrikes = () => {
+    globalThis.game.modules = new Map([["sundry", { active: true }]]);
+    globalThis.game.settings = { get: (module, key) => (module === "sundry"
+      ? ({ "track.reaction-usage": "all", "track.reaction-usage.reactive-strike": true })[key]
+      : savedSettings?.get?.(module, key)) };
+  };
+  combat = fixture();
+  sundryCountsStrikes();
+  await act(combat, "ready", ready);
+  await act(combat, "ready-clear", { readiedId: "a", used: true }, "p-a");
+  assert.deepEqual(sundryCalls, [["a"]], "a readied Strike Sundry already counts is not reported twice");
+  combat = fixture();
+  sundryCountsStrikes();
+  await act(combat, "ready", { label: "Trip", skillAction: "trip" });
+  await act(combat, "ready-clear", { readiedId: "a", used: true }, "p-a");
+  assert.deepEqual(sundryCalls, [["a"], ["a"]], "a readied non-Strike is still reported");
   globalThis.game.settings = savedSettings;
   delete globalThis.sundry;
 

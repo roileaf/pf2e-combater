@@ -3,6 +3,7 @@ import { collectionValues } from "../foundry-data.js";
 import { t } from "../i18n.js";
 import { actionBudget } from "../engine/action/budget.js";
 import { currentActionTurn, resumesDelayedTurn, trackedActionContext } from "./action-tracker.js";
+import { isSocketReady, requestTurnControl } from "../socket.js";
 
 export const DELAY_FLAG = "delayedTurn";
 export const READY_FLAG = "readiedAction";
@@ -41,6 +42,18 @@ export function reactionUsed(combatant) {
 function sundryTracksReactions() {
   try {
     return globalThis.game?.settings?.get?.(SUNDRY_ID, "track.reaction-usage") !== "off";
+  } catch {
+    return false;
+  }
+}
+
+// Sundry counts any attack roll made off the attacker's own turn as a Reactive Strike when that
+// option is on. A readied Strike is such a roll, so Sundry has already counted it: reporting it too
+// races Sundry's unawaited create and leaves two "Reaction Used" effects.
+function sundryCountsOffTurnStrikes() {
+  try {
+    return sundryTracksReactions()
+      && globalThis.game?.settings?.get?.(SUNDRY_ID, "track.reaction-usage.reactive-strike") === true;
   } catch {
     return false;
   }
@@ -249,12 +262,13 @@ async function performTurnControl(request, senderId) {
   }
   if (request.action === "ready-clear") {
     const holder = combat.combatants.get(request.readiedId);
-    if (!readiedAction(holder)) throw Error(t("TurnControls.NotReadied", "This creature has no readied action."));
+    const ready = readiedAction(holder);
+    if (!ready) throw Error(t("TurnControls.NotReadied", "This creature has no readied action."));
     if (!ownsTurn(holder, user)) throw Error(t("TurnControls.NotOwner", "You can only control your own turn."));
     // Using a readied action is a reaction; discarding it spends nothing.
     const spent = request.used === true ? reactionSpendChanges(holder, combat.round) : {};
     await holder.update({ [`flags.${MODULE_ID}.-=${READY_FLAG}`]: null, ...spent }, { turnEvents: false });
-    if (request.used === true) await notifySundryReaction(holder.actor);
+    if (request.used === true && !(ready.strike && sundryCountsOffTurnStrikes())) await notifySundryReaction(holder.actor);
     return true;
   }
   if (request.action === "reaction") {
@@ -335,12 +349,26 @@ export function handleTurnControl(request = {}) {
   return run.finally(() => { if (queues.get(key) === run) queues.delete(key); });
 }
 
+// A player's own End turn (Foundry's tracker, PF2e's, or another module's) can't carry the
+// bookkeeping a turn change needs, and Foundry rejects any extra data from a player. With a GM
+// online, run it there instead: cancel the player's update and ask the GM to end the turn.
+function forwardPlayerTurnChange(combat, changed) {
+  const round = Object.hasOwn(changed, "round") ? Number(changed.round) : combat.round;
+  const turn = Object.hasOwn(changed, "turn") ? Number(changed.turn) : combat.turn;
+  const advancing = round > combat.round || (round === combat.round && turn > combat.turn);
+  if (!advancing || !globalThis.game?.users?.activeGM || !isSocketReady()) return undefined;
+  requestTurnControl({ ...turnIdentity(combat), action: "end" })
+    .catch((error) => globalThis.ui?.notifications?.warn?.(error?.message ?? String(error)));
+  return false;
+}
+
 export function registerTurnControlHooks(refresh) {
   // Runs after the tracker hook, replacing only a resumed turn's pool. The PF2e
   // round markers prevent a delayed turn crossing a round boundary from running
   // its start/end effects a second time.
   Hooks.on("preUpdateCombat", (combat, changed, options = {}) => {
-    if (options.turnEvents === false || !("turn" in changed || "round" in changed)) return;
+    if (options.turnEvents === false || !("turn" in changed || "round" in changed)) return undefined;
+    if (globalThis.game?.user?.isGM !== true) return forwardPlayerTurnChange(combat, changed);
     const next = combat.combatants.get(options.combaterNextCombatantId)
       ?? combat.turns[changed.turn ?? combat.turn];
     const delay = delayedTurn(next);
