@@ -51,3 +51,17 @@ export function readChatAction(message) {
     movement: ["stride", "step", "swim", "fly", "climb", "burrow", "leap"].includes(slug),
   };
 }
+
+// A free action that stands you up (Kip Up: "You stand up."). It costs nothing, but it is the
+// Stand behind the Prone removal that follows, so that removal must not cost an action either.
+export function readFreeStand(message) {
+  let item;
+  try { item = message?.item; } catch (_error) { return null; }
+  if (!item) return null;
+  const actionType = item.actionCost?.type ?? item.system?.actionType?.value;
+  if (actionType !== "free") return null;
+  const slug = item.slug ?? item.system?.slug ?? "";
+  const description = String(item.system?.description?.value ?? "");
+  if (slug !== "kip-up" && !/\byou stand(?: up)?\b/i.test(description.replace(/<[^>]*>/g, " "))) return null;
+  return { cost: 0, slug: "stand", label: item.name ?? "Stand", freeStand: true, phase: "card" };
+}

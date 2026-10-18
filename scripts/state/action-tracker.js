@@ -2,7 +2,7 @@ import { MODULE_ID } from "../constants.js";
 import { collectionValues } from "../foundry-data.js";
 import { actionBudget, quickenedEligible, turnActionPool } from "../engine/action/budget.js";
 import { slugify } from "../engine/action/text.js";
-import { readChatAction } from "./chat-action-cost.js";
+import { readChatAction, readFreeStand } from "./chat-action-cost.js";
 import { t } from "../i18n.js";
 import { movementActionsSpent } from "./token-refresh.js";
 import { canvasMovementEntries, recordedMovementIds } from "./canvas-movement.js";
@@ -80,7 +80,7 @@ function speakerMatches(message, snapshot) {
 export function chatActionEntry(message, combat = globalThis.game?.combat) {
   const snapshot = currentActionTurn(combat);
   if (!snapshot || !speakerMatches(message, snapshot)) return null;
-  const entry = readChatAction(message);
+  const entry = readChatAction(message) ?? readFreeStand(message);
   if (!entry) return null;
   const scope = executionScopes.get(snapshot.actorId);
   return { ...entry, turnKey: snapshot.key, ...(scope?.turnKey === snapshot.key ? { executionId: scope.id } : {}) };
@@ -179,7 +179,7 @@ export function trackedActionContext(context, { combat = globalThis.game?.combat
   const quickenedAllowed = receipts.quickenedAllowed
     ?? (snapshot.quickenedAllowed?.length ? snapshot.quickenedAllowed : quickenedAllowance(actorDocument(context)));
   const total = entries.reduce((sum, entry) => sum + entry.cost, 0);
-  const eligible = entries.filter((entry) => quickenedEligible(entry, entry.cost, { quickenedAllowed }));
+  const eligible = entries.filter((entry) => entry.cost > 0 && quickenedEligible(entry, entry.cost, { quickenedAllowed }));
   const quickenedAdjustment = receipts.quickenedAdjustment ?? 0;
   const quickened = Math.min(Math.max(0, snapshot.pool.quickenedActions - quickenedAdjustment), eligible.length);
   const quickenedExecutionIds = eligible.slice(0, quickened).map((entry) => entry.executionId).filter(Boolean);

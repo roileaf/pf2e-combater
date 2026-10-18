@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **Kip Up stands you up for free.** Standing up with a free action such as Kip Up (or any free action that says "You stand up") no longer charges an action when Prone is removed afterwards. Other free actions still aren't tracked.
+
 ## [2.5.2]
 
 ### Added

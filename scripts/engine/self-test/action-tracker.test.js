@@ -18,6 +18,11 @@ const card = message("card", "D");
 assert.equal(chatActionEntry(card, combat).cost, 2);
 assert.equal(chatActionEntry(message("reaction", "R"), combat), null);
 assert.equal(chatActionEntry(message("free", "F"), combat), null);
+// Kip Up (a free action: "You stand up.") is the Stand behind the Prone removal that follows.
+const kipUpItem = { name: "Kip Up", slug: "kip-up", actionCost: { type: "free", value: null }, system: { description: { value: "<p>You stand up.</p>" } } };
+assert.deepEqual(chatActionEntry(message("kip-up", "F", { item: kipUpItem }), combat)?.slug, "stand", "Kip Up's card counts as a free Stand");
+assert.equal(chatActionEntry(message("kip-up", "F", { item: kipUpItem }), combat)?.cost, 0);
+assert.equal(chatActionEntry(message("other-free", "F", { item: { name: "Fist Stance", actionCost: { type: "free" }, system: { description: { value: "<p>You enter a stance.</p>" } } } }), combat), null, "other free actions still aren't tracked");
 assert.equal(chatActionEntry(message("description", "", { content: '<p>Description <span class="action-glyph">T</span></p>' }), combat), null);
 assert.equal(chatActionEntry(message("wrong-token", "A", { speaker: { actor: "actor", token: "another", scene: "scene" } }), combat), null);
 assert.equal(chatActionEntry(message("damage", "D", { flags: { pf2e: { context: { type: "damage-roll" } } } }), combat), null);
@@ -214,6 +219,12 @@ try {
   for (const fn of callbacks.get("deleteItem")) fn(offTurnProne, {}, "gm");
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(trackedActionContext(context).actionsSpent.total, spentBeforeStand + 1, "another creature standing up costs this creature nothing");
+  const kipUp = { ...message("kip-up-card", "F", { item: kipUpItem }), flags: { pf2e: {}, "pf2e-combater": { actionSpend: { ...chatActionEntry(message("kip-up-card", "F", { item: kipUpItem }), combat) } } } };
+  const proneAgain = { ...condition("prone"), type: "condition", id: "prone-3", actor };
+  for (const fn of callbacks.get("deleteItem")) fn(proneAgain, {}, "gm");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(trackedActionContext(context, { combat, messages: [kipUp] }).actionsSpent.total, spentBeforeStand + 1, "standing up with Kip Up costs no action");
+  assert.equal(trackedActionContext(context, { combat, messages: [] }).actionsSpent.total, spentBeforeStand + 2, "without Kip Up the same removal is a Stand");
   actor.itemTypes.condition = [condition("quickened")];
   globalThis.game.user = { id: "player", isGM: false };
   const pendingView = actionTrackerView(trackedActionContext(context));
