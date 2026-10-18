@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **Clear the plan from the minimal bar.** A red trash button next to the plan tools clears every step that hasn't run yet, and turns into Undo clear right after. It hides with "Plan steps" in Customize minimal bar.
+
 ## [2.5.1]
 
 ### Fixed

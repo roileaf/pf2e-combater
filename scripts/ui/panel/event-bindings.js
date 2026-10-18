@@ -61,7 +61,8 @@ export function activatePanelRenderBindings(panel, element) {
     button.addEventListener("click", () => panel._removeDraftStep(button.dataset.removeDraftStep));
   }
 
-  element.querySelector("[data-clear-plan]")?.addEventListener("click", () => panel._clearDraft());
+  // Clear and Undo clear exist twice: the full window's footer and the minimal bar.
+  for (const button of element.querySelectorAll("[data-clear-plan]")) button.addEventListener("click", () => panel._clearDraft());
   element.querySelector("[data-remove-stale-steps]")?.addEventListener("click", (event) =>
     panel._removeDraftSteps(String(event.currentTarget.dataset.removeStaleSteps ?? "").split(",")));
   element.querySelector("[data-stale-refill]")?.addEventListener("click", async () => {
@@ -69,7 +70,7 @@ export function activatePanelRenderBindings(panel, element) {
     await panel._removeDraftSteps(ids.split(","));
     await panel._autoFillDraft();
   });
-  element.querySelector("[data-undo-clear-plan]")?.addEventListener("click", () => panel._undoDraftClear());
+  for (const button of element.querySelectorAll("[data-undo-clear-plan]")) button.addEventListener("click", () => panel._undoDraftClear());
 
   for (const button of element.querySelectorAll("[data-duplicate-draft-step]")) {
     button.addEventListener("click", () => panel._duplicateDraftStep(button.dataset.duplicateDraftStep));

@@ -597,6 +597,11 @@
         </span>
         {{/if}}
         {{/if}}
+        {{#if planLayout.footer.canClear}}
+        <button type="button" class="combater-minimal-tool is-clear" data-clear-plan data-tooltip="{{planLayout.footer.clearTooltip}}" aria-label="{{planLayout.footer.clearLabel}}"><i class="fa-solid fa-trash-can"></i></button>
+        {{else if planLayout.undoClear}}
+        <button type="button" class="combater-minimal-tool is-undo-clear" data-undo-clear-plan data-tooltip="{{planLayout.undoClear.tooltip}}" aria-label="{{planLayout.undoClear.label}}"><i class="fa-solid fa-rotate-left"></i></button>
+        {{/if}}
       </span>
     {{/if}}
     {{#if (or actionTracker.visible effectClock.visible)}}

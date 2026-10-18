@@ -972,6 +972,8 @@
 /* Customize minimal bar: parts the user switched off. */
 .pf2e-combater .combater-shell.is-minimal.hide-autofill .combater-minimal-tool.is-autofill,
 .pf2e-combater .combater-shell.is-minimal.hide-browse .combater-minimal-tool.is-browse,
+.pf2e-combater .combater-shell.is-minimal.hide-plan .combater-minimal-tool.is-clear,
+.pf2e-combater .combater-shell.is-minimal.hide-plan .combater-minimal-tool.is-undo-clear,
 .pf2e-combater .combater-shell.is-minimal.hide-setup .combater-minimal-setup,
 .pf2e-combater .combater-shell.is-minimal.hide-cycle .combater-minimal-cycle,
 .pf2e-combater .combater-shell.is-minimal.hide-plan .combater-minimal-plan,
@@ -6376,4 +6378,15 @@
   font-size: 9px;
   font-weight: 700;
   line-height: 13px;
+}
+
+/* Clear the plan from the minimal bar; red like the full window's Clear. */
+.pf2e-combater .combater-shell.is-minimal .combater-minimal-tool.is-clear {
+  color: #f0a3a3;
+}
+
+.pf2e-combater .combater-shell.is-minimal .combater-minimal-tool.is-clear:hover,
+.pf2e-combater .combater-shell.is-minimal .combater-minimal-tool.is-clear:focus-visible {
+  border-color: #c76b6b;
+  color: #ffd0d0;
 }
