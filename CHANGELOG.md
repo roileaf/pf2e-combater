@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.1]
+
+### Fixed
+
+- **Players can end their turn from Foundry's combat tracker again.** Ending a turn from the tracker or carousel no longer fails with "User lacks permission to update Combat". Combater was adding its own bookkeeping to the player's turn change, which only the GM may write. With a GM online, the player's End turn is now handed to the GM, who ends the turn with Combater's tracking intact.
+- **NPCs no longer plan moves into occupied squares.** Combater remembered which squares a creature could move to, and which squares it could strike from, without noticing when other creatures moved. After someone stepped into one of those squares (or the target moved), Auto-fill could still send the NPC there. These lists now refresh whenever a creature moves.
+- **No more duplicate "Reaction Used" effects.** With PF2e Sundry counting off-turn attacks as Reactive Strikes, using a readied Strike also reported the reaction to Sundry a second time, which could leave two effects. Combater now leaves those to Sundry.
+
 ## [2.5.0]
 
 ### Added
