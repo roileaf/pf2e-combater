@@ -198,9 +198,22 @@ try {
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(actionBudget(trackedActionContext(context)).normalActions, 1, "mid-turn stunned spends remaining actions");
   actor.itemTypes.condition = [];
-  callbacks.get("deleteItem")[0](stunned, {}, "gm");
+  for (const fn of callbacks.get("deleteItem")) fn(stunned, {}, "gm");
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(actionBudget(trackedActionContext(context)).normalActions, 1, "removing stunned does not regain spent actions");
+  // Standing up takes an action, however Prone is removed (token HUD, sheet).
+  const spentBeforeStand = trackedActionContext(context).actionsSpent.total;
+  const prone = { ...condition("prone"), type: "condition", id: "prone-1", actor };
+  for (const fn of callbacks.get("deleteItem")) fn(prone, {}, "gm");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(trackedActionContext(context).actionsSpent.total, spentBeforeStand + 1, "removing Prone on your turn spends a Stand");
+  assert.ok(trackedActionContext(context).actionTracker.entries.some((entry) => entry.slug === "stand"));
+  await recordTrackedExecution(trackedActionContext(context), { instanceId: "stand-step", actionCost: 1, action: { slug: "stand", name: "Stand" } }, { status: "done" });
+  assert.equal(trackedActionContext(context).actionsSpent.total, spentBeforeStand + 1, "Combater's own Stand and the Prone it removes count once");
+  const offTurnProne = { ...condition("prone"), type: "condition", id: "prone-2", actor: { id: "someone-else" } };
+  for (const fn of callbacks.get("deleteItem")) fn(offTurnProne, {}, "gm");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(trackedActionContext(context).actionsSpent.total, spentBeforeStand + 1, "another creature standing up costs this creature nothing");
   actor.itemTypes.condition = [condition("quickened")];
   globalThis.game.user = { id: "player", isGM: false };
   const pendingView = actionTrackerView(trackedActionContext(context));

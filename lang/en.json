@@ -82,6 +82,7 @@
       "ReadySkillSearch": "Search skill actions"
     },
     "ActionTracker": {
+      "Stand": "Stand",
       "NextTurn": "Next turn",
       "ExpectedAction": "{count} action",
       "ExpectedActions": "{count} actions",

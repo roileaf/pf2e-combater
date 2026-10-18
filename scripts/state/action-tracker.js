@@ -169,6 +169,13 @@ export function trackedActionContext(context, { combat = globalThis.game?.combat
     if (covered > 0) reportedMovement.set(entry.slug, covered - 1);
     else entries.push(entry);
   }
+  // Removing Prone is a Stand. When a Stand was already counted (Combater's own, or PF2e's card),
+  // that removal is the same Stand, not a second one.
+  let stands = entries.filter((entry) => entry.slug === "stand" && !entry.proneRemoval).length;
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    if (!entries[index].proneRemoval) continue;
+    if (stands > 0) { stands -= 1; entries.splice(index, 1); }
+  }
   const quickenedAllowed = receipts.quickenedAllowed
     ?? (snapshot.quickenedAllowed?.length ? snapshot.quickenedAllowed : quickenedAllowance(actorDocument(context)));
   const total = entries.reduce((sum, entry) => sum + entry.cost, 0);
@@ -336,6 +343,26 @@ export function registerActionTrackerHooks(refresh) {
   });
   hooks.on("updateCombat", (_combat, changed) => {
     if (changed.flags?.[MODULE_ID]?.actionTurn || changed[`flags.${MODULE_ID}.actionTurn`]) refresh("chat-actions");
+  });
+  // Standing up takes an action: removing Prone on the creature's own turn (token HUD, sheet,
+  // condition panel) counts as a Stand.
+  hooks.on("deleteItem", (item, _options, userId) => {
+    if ((item.slug ?? item.system?.slug) !== "prone" || item.type !== "condition") return;
+    const authority = globalThis.game?.users?.activeGM?.id ?? userId;
+    if (authority !== globalThis.game?.user?.id) return;
+    const actor = item.actor ?? item.parent;
+    const snapshot = currentActionTurn();
+    const combatant = globalThis.game?.combat?.combatant;
+    if (!snapshot || !actor || combatant?.actor !== actor) return;
+    const context = { actor, combatant, combat: globalThis.game.combat };
+    const entry = { cost: 1, slug: "stand", label: t("ActionTracker.Stand", "Stand"), proneRemoval: true };
+    conditionQueue = conditionQueue.then(async () => {
+      if (currentActionTurn()?.key !== snapshot.key) return;
+      const id = `prone-${item.id ?? Date.now()}`;
+      const sameTurn = actor.flags?.[MODULE_ID]?.actionReceipts?.turnKey === snapshot.key;
+      await writeReceipts(context, snapshot, sameTurn ? { [`entries.${id}`]: entry } : { entries: { [id]: entry } });
+      refresh("chat-actions");
+    }).catch((error) => console.warn(`${MODULE_ID} | Stand tracking failed`, error));
   });
   for (const event of ["createItem", "updateItem", "deleteItem"]) {
     hooks.on(event, (item, ...args) => {

@@ -4,6 +4,7 @@
 
 ### Added
 
+- **Standing up takes an action.** Removing Prone on a creature's own turn (token HUD, character sheet, condition panel) now spends a Stand in the action tracker. A Stand already counted (Combater's own Stand, or PF2e's Stand card) isn't counted twice, and removing Prone outside the creature's turn costs nothing.
 - **Clear the plan from the minimal bar.** A red trash button next to the plan tools clears every step that hasn't run yet, and turns into Undo clear right after. It hides with "Plan steps" in Customize minimal bar.
 
 ## [2.5.1]
