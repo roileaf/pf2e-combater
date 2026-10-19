@@ -5,6 +5,7 @@ import "./self-test/flanking-settings-ui.test.js";
 import "./self-test/action-facts.test.js";
 import "./self-test/roll-preflight.test.js";
 import "./self-test/preference-learning.test.js";
+import "./self-test/refresh-token-hot-path.test.js";
 
 await import("./self-test/recall-knowledge.test.js");
 await import("./self-test/bestiary.test.js");

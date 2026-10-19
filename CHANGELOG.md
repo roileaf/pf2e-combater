@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **Moving tokens no longer slows down big scenes.** Every time any token redrew, Combater read its reaction-marker setting and built a position snapshot for that token, even when no combat was running and the Combater window was closed. On large maps a single move triggers hundreds of token redraws, so this cost frames during every move. Both checks now skip immediately when there is nothing for them to do.
+
 ## [2.5.4]
 
 ### Fixed

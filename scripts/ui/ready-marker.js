@@ -115,6 +115,7 @@ function syncMarker(token, key, show, draw) {
 export function syncReadyMarker(token) {
   if (!token || token.destroyed || token.isPreview || token._original) return;
   const combatant = combatantForToken(token);
+  if (!combatant && !token[READY_KEY] && !token[REACTION_KEY]) return;
   const visible = markerVisibleTo(token);
   syncMarker(token, READY_KEY, Boolean(combatant && readiedAction(combatant)) && visible, drawReadyMarker);
   const showReaction = settingOrDefault(SETTINGS.showReactionMarker, true) !== false;

@@ -661,6 +661,7 @@ Hooks.on("updateToken", (token, changed, options) => {
 });
 
 Hooks.on("refreshToken", (token) => {
+  if (!activePanel) return;
   // Ignore drag previews / clones: while you hold-and-drag (before committing) Foundry animates a
   // preview whose position changes every frame, which would rebuild the plan mid-drag. Only the
   // real, committed move matters — that arrives via updateToken on drop.
