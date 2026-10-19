@@ -1199,7 +1199,7 @@ try {
     executable: "open-item",
     spellcastingEntryId: "entry-1",
     castRank: 3,
-    item: { id: "fireball", type: "spell", name: "Fireball" },
+    item: { id: "fireball", type: "spell", name: "Fireball", system: { area: { type: "burst", value: 20 } } },
     activityProfile: { spell: true },
     damageProfile: { formula: "6d6", type: "fire" },
   };
@@ -1289,7 +1289,7 @@ try {
         executable: "open-item",
         spellcastingEntryId: "entry-delayed-card",
         castRank: 1,
-        item: { id: "breath-fire", uuid: "Actor.wizard-delayed.Item.breath-fire", type: "spell", name: "Breath Fire" },
+        item: { id: "breath-fire", uuid: "Actor.wizard-delayed.Item.breath-fire", type: "spell", name: "Breath Fire", system: { area: { type: "cone", value: 15 } } },
         activityProfile: { spell: true },
         damageProfile: { formula: "2d6", type: "fire" },
       },
@@ -1322,7 +1322,7 @@ try {
     source: "spell-focus",
     executable: "open-item",
     spellcastingEntryId: "entry-focus",
-    item: { id: "heal", type: "spell", name: "Heal" },
+    item: { id: "heal", type: "spell", name: "Heal", system: { target: { value: "1 willing living creature" } } },
     activityProfile: { spell: true },
   };
   const focusCast = await executeDraftStep({ context: focusContext, step: { instanceId: "focus-cast" }, action: focusAction });

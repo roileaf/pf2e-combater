@@ -155,7 +155,21 @@ export async function flushPendingChat() {
   await new Promise((resolve) => { schedule(resolve, 0); });
 }
 
+// A spell with no target and no area (Glass Shield, Fire Shield) deals its damage later, on a
+// trigger (the shield breaking, a creature touching you). Its card keeps a Roll Damage button for
+// that moment; rolling now would put damage in chat that never happened.
+export function damageWaitsForTrigger(action) {
+  const item = action?.item ?? null;
+  const type = item?.type ?? action?.type ?? null;
+  if (type !== "spell") return false;
+  const system = item?.system ?? action?.system ?? {};
+  const target = String(system.target?.value ?? "").trim();
+  const area = system.area && (system.area.value || system.area.type);
+  return !target && !area;
+}
+
 export async function rollActionDamageMessages({ actor, action, target = null, after = null }) {
+  if (damageWaitsForTrigger(action)) return [];
   const count = damageRollCount(action);
   const base = Number.isFinite(after) ? after : null;
   const messageIds = [];

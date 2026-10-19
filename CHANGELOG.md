@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **Glass Shield no longer rolls damage when cast.** Combater auto-rolled damage for every spell with a damage formula. Spells with no target and no area, like Glass Shield or Fire Shield, deal their damage later (when the shield breaks, or when a creature touches you), so their damage is now left to the card's Roll Damage button.
+
 ## [2.5.3]
 
 ### Fixed
