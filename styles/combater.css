@@ -604,6 +604,11 @@
 }
 
 .pf2e-combater.combater-panel.is-minimal .window-content {
+  /* Foundry's dark theme blurs behind every window's content. Here the content is a full-width
+     transparent strip, so it blurred the canvas beside the bar (and a filter over the live canvas
+     costs frames). */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   /* The narrow-bar queries measure the window here; a container shell couldn't shrink to fit. */
   container: combater-shell / inline-size;
   align-items: flex-start;

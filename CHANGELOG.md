@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **Minimal bar out of combat.** With a creature selected and no encounter running, the bar now says "Out of combat · Name" next to its plan tools, instead of "No active encounter".
+- **No blurred strip beside the minimal bar.** The empty space to the right of the bar blurred the map behind it (Foundry's dark theme blurs behind window contents). That blur is now off for the minimal bar.
+
 ## [2.5.5]
 
 ### Fixed

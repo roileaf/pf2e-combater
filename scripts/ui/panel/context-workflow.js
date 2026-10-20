@@ -164,6 +164,16 @@ function planWhyView(plan, cycle, position) {
   };
 }
 
+// The minimal bar's line when there is nothing to track. Out of combat Combater still plans for the
+// selected creature, so say that rather than "No active encounter" next to its plan tools.
+export function minimalIdleLabel(context, combat = globalThis.game?.combat) {
+  if (combat?.started) return t("Panel.MinimalIdleWaiting", "Waiting for a combatant");
+  const name = context?.actor?.name;
+  return name
+    ? t("Panel.MinimalIdleExploring", "Out of combat · {name}", { name })
+    : t("Panel.MinimalIdle", "No active encounter");
+}
+
 export function viewPanelContext(panel, context) {
   const showDebug = Boolean(game?.user?.isGM && settingOrDefault(SETTINGS.showDebugTab, false));
   const showAutoFill = game?.user?.isGM === true || !settingOrDefault(SETTINGS.hideAutoFillFromPlayers, false);
@@ -233,9 +243,7 @@ export function viewPanelContext(panel, context) {
     expanded: panel.expanded,
     trackerOnly: panel.trackerOnly === true,
     minimalHidden: minimalHiddenParts(),
-    minimalIdleLabel: globalThis.game?.combat?.started
-      ? t("Panel.MinimalIdleWaiting", "Waiting for a combatant")
-      : t("Panel.MinimalIdle", "No active encounter"),
+    minimalIdleLabel: minimalIdleLabel(context),
     activeTab: panel.activeTab,
     browserOpen: Boolean(panel._browser),
     tacticPersonality: tacticPersonalityView(context),
