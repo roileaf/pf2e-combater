@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.14]
+
+### Fixed
+
+- **A creature's own emanation no longer targets it.** Running an ability like Launch Metal ("all creatures adjacent to the skink") targeted the user too. It now targets only the creatures around it; areas meant for the user or its allies still include it.
+
 ## [2.5.13]
 
 ### Fixed
