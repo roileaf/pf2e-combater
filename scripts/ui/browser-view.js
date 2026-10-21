@@ -79,7 +79,7 @@ export function browserViewContext(base, { expanded = null, sort = "best", compa
       .map((row) => (compact ? {
         ...row,
         tileTooltip: tileTooltip({ ...row, readonly: base.readonly }),
-        tileImg: actionArt(row.slug, row.img),
+        tileImg: actionArt(row.slug, row.img, { item: row.item }),
       } : row));
     if (sort === "name" && !section.isFavoritesSection) actions.sort(byName);
     return { ...section, actions, hasActions: actions.length > 0 };

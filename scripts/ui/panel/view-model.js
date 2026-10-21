@@ -1292,8 +1292,9 @@ function isSetupMove(step) {
 }
 
 // Generic cost-diamond art is dropped; basic actions get recognizable art instead (Stride's boots).
-function realStepImg(img, slug) {
-  return img && !GENERIC_STEP_IMG.test(String(img)) ? img : actionArt(slug, "");
+function realStepImg(img, slug, item = null) {
+  if (img && !GENERIC_STEP_IMG.test(String(img))) return img;
+  return actionArt(slug, item ? img : "", { item });
 }
 
 function hasMoreStepTools(step) {
@@ -1402,7 +1403,7 @@ export function decoratePlanLayout(headerSteps, { openTools = null } = {}) {
     stepNumber,
     pipSlots: slots,
     hideTarget: Boolean(shared && step.targetLabel === shared),
-    img: isSetupMove(step) ? actionArt("stride", "") : realStepImg(step.img, step.slug),
+    img: isSetupMove(step) ? actionArt("stride", "") : realStepImg(step.img, step.slug, step.action?.item ?? step.item ?? null),
     toolsOpen: Boolean(openTools?.has?.(step.instanceId)),
     hasMoreTools: hasMoreStepTools(step),
     moreToolsLabel: t("Panel.MoreStepTools", "More options"),

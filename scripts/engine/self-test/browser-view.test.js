@@ -29,4 +29,15 @@ assert.equal(strike.tileTooltip, "Strike (65%) · Strike helps · Click to add, 
 assert.match(haste.tileTooltip, /Not enough actions remaining\. Shift-click to add as uncounted\.$/, "an over-budget tile says why, and how to add it anyway");
 assert.doesNotMatch(browserViewContext({ ...base, readonly: true }, { compact: true }).builder.tabsList[0].sections[0].actions[0].tileTooltip, /Click to add/, "read-only tiles don't offer to add");
 
+// NPC Strikes come from "melee" items with the generic default icon: use the weapon's art.
+const generic = "systems/pf2e/icons/default-icons/melee.svg";
+const hobgoblin = { itemTypes: { weapon: [{ name: "Longsword", img: "icons/weapons/swords/longsword.webp" }] } };
+const npcBase = { readonly: false, builder: { remainingTotalActions: 3, tabsList: [{ id: "one", active: true, sections: [{ label: "Attacks", actions: [
+  action("Longsword", { slug: "strike", img: generic, item: { type: "melee", name: "Longsword", img: generic, actor: hobgoblin } }),
+  action("Shortbow", { slug: "strike", img: generic, item: { type: "melee", name: "Shortbow", img: generic, actor: hobgoblin } }),
+] }] }] } };
+const [longsword, shortbow] = browserViewContext(npcBase, { compact: true }).builder.tabsList[0].sections[0].actions;
+assert.equal(longsword.tileImg, "icons/weapons/swords/longsword.webp", "an NPC Strike shows its weapon's art");
+assert.equal(shortbow.tileImg, generic, "with no matching weapon the Strike keeps the generic icon instead of a blank tile");
+
 console.log("Browser view tests passed.");
