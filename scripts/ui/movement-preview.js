@@ -264,10 +264,10 @@ function waypointSegmentLabels(origin, waypoints, gridSize, options = {}) {
   return labels;
 }
 
-function reachableMarkers(origin, centers, recommendation, gridSize) {
-  const recommendedCenter = recommendation?.center ?? null;
+// Every reachable square gets a box, the recommended one included: its X marker is no longer
+// drawn, so filtering it out left the best square looking unreachable.
+function reachableMarkers(origin, centers, gridSize) {
   return centers
-    .filter((center) => center.x !== recommendedCenter?.x || center.y !== recommendedCenter?.y)
     .toSorted((left, right) => {
       const leftDistance = Math.hypot(origin.x - left.x, origin.y - left.y);
       const rightDistance = Math.hypot(origin.x - right.x, origin.y - right.y);
@@ -526,7 +526,7 @@ function explicitMovementPreview(context, step, origin, distanceFeet, footprint,
       ? reachableMovementCenters(waypointOrigin, remainingDistanceFeet, gridSize, options)
       : [];
     const remainingPlacements = remainingCenters.map((center) => placementForCenter(center, footprint, gridSize));
-    const remainingMarkers = reachableMarkers(waypointOrigin, remainingCenters, null, gridSize);
+    const remainingMarkers = reachableMarkers(waypointOrigin, remainingCenters, gridSize);
     const segmentLabels = waypointSegmentLabels(origin, waypointCenters, gridSize, options);
     return {
       enabled: true,
@@ -712,7 +712,7 @@ export function movementPreviewForStep(context, step, options = {}) {
   const placements = centers.map((center) => placementForCenter(center, footprint, gridSize));
   const recommendations = recommendedPlacements(context, step, origin, centers, footprint, gridSize, movementOptions);
   const recommendation = recommendations[0] ?? null;
-  const markers = reachableMarkers(origin, centers, recommendation, gridSize);
+  const markers = reachableMarkers(origin, centers, gridSize);
   const recommendedMarker = xMarkerForPlacement(recommendation);
   const bareReachablePreview = {
     enabled: true,
@@ -782,7 +782,7 @@ export function movementPreviewForStep(context, step, options = {}) {
         ? reachableMovementCenters(waypointOrigin, remainingDistanceFeet, gridSize, movementOptions)
         : [];
       const remainingPlacements = remainingCenters.map((center) => placementForCenter(center, footprint, gridSize));
-      const remainingMarkers = reachableMarkers(waypointOrigin, remainingCenters, null, gridSize);
+      const remainingMarkers = reachableMarkers(waypointOrigin, remainingCenters, gridSize);
       const candidateRoute = movementWaypointRouteForPreview(
         context,
         step,

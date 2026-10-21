@@ -12303,6 +12303,13 @@ assert.deepEqual(hugeStridePreview.recommendedMarker.strokes, [{
 assert.equal(hugeStridePreview.reachableMarkers[0].width, 5);
 assert.equal(hugeStridePreview.reachableMarkers[0].height, 5);
 assert.ok(hugeStridePreview.reachableMarkers.length <= 500);
+// The recommended square is reachable, so it gets a green box like the rest. Its X is not drawn,
+// so leaving it out of the boxes made the best square (often the last one in range) look unreachable.
+{
+  const { x, y } = hugeStridePreview.recommendedCenter;
+  assert.ok(hugeStridePreview.reachableMarkers.some((marker) => marker.center.x === x && marker.center.y === y),
+    "the recommended Stride square must be boxed as reachable");
+}
 // This is the exact bug: the old 48-marker cap silently clipped a 20ft+ Speed's own highlighted
 // area to a visibly smaller radius than the Speed it was supposed to represent. A plain 25ft Speed
 // already reaches well past 48 cells, so it must not be truncated to exactly (or under) that count.
