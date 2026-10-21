@@ -151,6 +151,14 @@ function hasNeededHealingRecipient(context, profile, action, { ignoreRange = fal
   );
 }
 
+// Someone in reach is hurt, just not badly (above half HP). Not worth a turn on its own, but the
+// player may still want it: keep the heal listed, scored below zero (see scoring.js).
+export function healingNotUrgent(context, profile, action) {
+  return !hasExplicitPlayerHealerPreference(context)
+    && !hasNeededHealingRecipient(context, profile, action, { threshold: 0.5 })
+    && hasNeededHealingRecipient(context, profile, action, { threshold: 1 });
+}
+
 // For an explicit Healer: nobody below 75% (or dying/bleeding) in range, so this heal would be wasted.
 export function healingIsIdle(context, profile, action) {
   return hasExplicitPlayerHealerPreference(context)
@@ -300,7 +308,10 @@ export function blockedCandidateResult(context, action, {
   // healingIsIdle); a patient out of reach still blocks it, for everyone.
   const outOfReachOnly = !hasNeededHealingRecipient(context, profile, action, { threshold: healingThreshold })
     && hasNeededHealingRecipient(context, profile, action, { ignoreRange: true, threshold: healingThreshold });
-  if (role === "healing" && (outOfReachOnly || !explicitHealer) && !hasNeededHealingRecipient(context, profile, action, { threshold: healingThreshold })) {
+  // Only a heal with nobody hurt in reach at all is unusable; a lightly hurt patient keeps it listed.
+  const someoneHurtInReach = hasNeededHealingRecipient(context, profile, action, { threshold: 1 });
+  if (role === "healing" && (outOfReachOnly || !explicitHealer) && !someoneHurtInReach
+    && !hasNeededHealingRecipient(context, profile, action, { threshold: healingThreshold })) {
     const hasOutOfReachRecipient = healingRangeKnown(action)
       && hasNeededHealingRecipient(context, profile, action, { ignoreRange: true, threshold: healingThreshold });
     return blockedAction(action, hasOutOfReachRecipient

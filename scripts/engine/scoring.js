@@ -27,7 +27,7 @@ import {
 import { spellTacticalAdjustment } from "./scoring/spells.js";
 import { nativeRollContextPreflight } from "./scoring/roll-preflight.js";
 import { nativeOutcomeRanking } from "./scoring/probability.js";
-import { blockedCandidateResult, healingIsIdle } from "./scoring/gates.js";
+import { blockedCandidateResult, healingIsIdle, healingNotUrgent } from "./scoring/gates.js";
 import {
   bestTargetForAction,
   distinctTargetsFor,
@@ -419,6 +419,9 @@ export function scoreCandidate(context, action, siblingSpells = [], allSiblingAc
   if (role === "healing" && healingIsIdle(context, profile, action)) {
     score = Math.min(score, -5);
     reasons.unshift(t("ScoreReason.NobodyNeedsHealing", "Nobody needs healing yet."));
+  } else if (role === "healing" && healingNotUrgent(context, profile, action)) {
+    score = Math.min(score, -5);
+    reasons.unshift(t("ScoreReason.NobodyBadlyHurt", "Nobody is badly hurt yet."));
   }
 
   if (nativeOutcome.scoreDelta) {

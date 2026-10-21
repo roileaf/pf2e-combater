@@ -13810,6 +13810,15 @@ assert.equal(
   "empty",
   "Auto-fill planner should not build plans from hard-blocked -999 guard candidates",
 );
+// Live (Kimerus): a druid at 15/17 HP never saw Heal. Lightly hurt (above half HP) is no reason to
+// spend a turn on it, but the heal must stay listed for the player to pick.
+const lightlyHurtBattleMedicine = scoreCandidate({
+  ...healthyHealingContext,
+  profile: { ...healthyHealingContext.profile, hpPercent: 15 / 17 },
+}, battleMedicineCandidate);
+assert.notEqual(lightlyHurtBattleMedicine.score, -999, "a lightly hurt patient keeps the heal available");
+assert.ok(lightlyHurtBattleMedicine.score < 0, "but Auto-fill doesn't value it");
+assert.equal(lightlyHurtBattleMedicine.reasons[0], "Nobody is badly hurt yet.");
 const healthyPlayerHealerBattleMedicine = scoreCandidate({
   ...healthyHealingContext,
   isGM: false,
