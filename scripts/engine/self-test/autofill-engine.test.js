@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { loadRecordedTurnScenarios } from "../../dev/recorded-turns.mjs";
-import { buildTurnPlans, rangeBuffHelpsSpell } from "../planner.js";
+import { buildTurnPlans, rangeBuffHelpsSpell, reachSpellBoostedCandidates } from "../planner.js";
 import { runPlannerQualityLab } from "../planner/quality-lab.js";
 import { buildRecordedTurn } from "../planner/turn-snapshot.js";
 import { advancePlanState, createPlanState, projectContextFromPlanState } from "../plan-state.js";
@@ -370,6 +370,16 @@ assert.equal(targetAcPenalty({ conditions: { slugs: ["frightened", "sickened"], 
   assert.equal(rangeBuffHelpsSpell(at(70), spell(30)), false, "still out of range at 60 ft");
   assert.equal(rangeBuffHelpsSpell(at(20), spell(5)), true, "a touch spell becomes 30 ft");
   assert.equal(rangeBuffHelpsSpell(at(20), { id: "x", source: "spell-curated" }), true, "unknown range can't be ruled out");
+
+  // Live (Kimerus): with Reach Spell drafted first, Electric Arc (30 ft) at a target 40 ft away
+  // never came back as an option. A drafted Reach Spell must bring such spells into range.
+  const outOfRange = { ...spell(30), name: "Electric Arc", needsApproach: true, available: false };
+  const boosted = reachSpellBoostedCandidates(at(40), [outOfRange]);
+  assert.equal(boosted.length, 1, "Reach Spell brings a 30 ft spell to a target 40 ft away");
+  assert.equal(boosted[0].available, true);
+  assert.equal(boosted[0].needsApproach, false);
+  assert.equal(boosted[0].rangeBoostedFrom, 30);
+  assert.equal(reachSpellBoostedCandidates(at(70), [outOfRange]).length, 0, "not a target 70 ft away");
 }
 
 console.log("Auto-fill engine audit tests passed.");

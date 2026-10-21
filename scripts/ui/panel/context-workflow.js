@@ -4,7 +4,7 @@ import { collectionValues } from "../../foundry-data.js";
 import { buildActionBuilderModel, projectContextForDraftDestination } from "../../engine/action/builder/index.js";
 import { refreshDraftAreaPlacements } from "../../engine/action/builder/projection.js";
 import { buildCandidates } from "../../engine/candidates.js";
-import { buildTurnPlans } from "../../engine/planner.js";
+import { buildTurnPlans, reachSpellBoostedCandidates } from "../../engine/planner.js";
 import { buildLoadoutAdvice } from "../../engine/loadout-advisor.js";
 import { buildEffectClock } from "../../engine/effect-clock.js";
 import {
@@ -339,6 +339,14 @@ export function clearPanelPreparedContext(panel) {
   panel._sharedDraftSeed = null;
 }
 
+function draftEndsWithReachSpell(draft, actions) {
+  const last = (draft?.steps ?? []).at(-1);
+  const key = last?.actionKey ?? last?.key;
+  if (!key) return false;
+  return actions.some((action) => (action?.id === key || action?.key === key)
+    && action?.activityProfile?.rangeBuff === true);
+}
+
 export function preparePanelContext(panel) {
   const context = trackedActionContext(withResourceHorizon(
     readCombatContext(panel.refreshSource, { combatant: panel._selectedCombatant }),
@@ -406,7 +414,16 @@ export function preparePanelContext(panel) {
   const candidateBuild = planningContext === context
     ? baseBuild
     : needsProjectedCandidates ? buildCandidates(planningContext) : baseBuild;
-  const { candidates, rejected, detected } = candidateBuild;
+  const { detected } = candidateBuild;
+  let { candidates, rejected } = candidateBuild;
+  // A Reach Spell at the end of the draft gives the next spell +30 ft: offer the spells it brings in
+  // range, as the planner does inside a plan.
+  if (draftEndsWithReachSpell(activeDraft, [...baseBuild.candidates, ...(baseBuild.detected ?? [])])) {
+    const boosted = reachSpellBoostedCandidates(planningContext, candidateBuild.approachable ?? []);
+    const boostedIds = new Set(boosted.map((action) => action.id));
+    candidates = [...candidates.filter((action) => !boostedIds.has(action.id)), ...boosted];
+    rejected = rejected.filter((entry) => !boostedIds.has(entry?.action?.id ?? entry?.id));
+  }
   const baseBuilderCandidates = baseBuild.candidates.map(withBuilderActionFields);
   const builderCandidates = candidates.map(withBuilderActionFields);
   const builderRejected = rejected.map((entry) => ({

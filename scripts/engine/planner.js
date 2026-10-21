@@ -360,6 +360,22 @@ function withReachSpellRange(spell) {
   };
 }
 
+// Spells out of range now that a Reach Spell is the step before them: each one that reaches its
+// target with +30 ft, re-scored at the boosted range. The panel offers these after a drafted
+// Reach Spell, like the planner does inside a plan.
+export function reachSpellBoostedCandidates(context, approachable = []) {
+  const boosted = [];
+  for (const candidate of approachable) {
+    if (!candidate?.needsApproach || !isSpellAction(candidate)) continue;
+    const reached = withReachSpellRange(candidate);
+    if (!reached || !approachReaches(context, reached)) continue;
+    const scored = scoreCandidate({ ...context, skipNativePreflight: true }, { ...reached, reason: undefined, reasons: undefined });
+    if (!(scored.score > HARD_BLOCK_SCORE)) continue;
+    boosted.push({ ...scored, needsApproach: false, available: true, rangeBoostedFrom: reached.rangeBoostedFrom });
+  }
+  return boosted;
+}
+
 export function rangeBuffHelpsSpell(context, spell) {
   const range = Number.isFinite(Number(spell?.rangeBoostedFrom)) ? Number(spell.rangeBoostedFrom) : maxRange(spell);
   const distance = Number(targetForCandidate(context, spell)?.distance);
@@ -1315,7 +1331,8 @@ export function buildTurnPlans(context, candidates, { reservedSteps = [], includ
       // An approach candidate is only legal once an earlier move has brought its target in range;
       // check that cheaply before paying for a re-score.
       // Reach Spell right before an out-of-range spell can bring it in range without moving.
-      const lastStep = steps.at(-1);
+      // A Reach Spell already in the draft (filling the rest of the turn) boosts the next spell too.
+      const lastStep = steps.at(-1) ?? planState.lastStep;
       const boosted = candidate.needsApproach && isSpellAction(candidate) && lastStep?.activityProfile?.rangeBuff === true
         ? withReachSpellRange(candidate) : null;
       const boostReaches = Boolean(boosted && approachReaches(projectedContext, boosted));
