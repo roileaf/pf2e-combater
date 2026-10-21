@@ -184,8 +184,15 @@ export async function prepareAreaExecution({ context, action, step, choices = {}
   }
 
   // Target what the placed area visibly covers; the marker geometry is only a fallback.
-  const insideTokens = tokensInAreaRegion({ context, action, region: regionDocument })
-    ?? tokensInAreaMarker({ context, action, marker: areaMarker });
+  // A creature's own emanation surrounds it but doesn't hit it ("all creatures adjacent to the
+  // skink"), unless the area is meant for it or its allies.
+  const ownToken = isSelfCenteredAreaAction(action)
+    && action?.targetingProfile?.self !== true && action?.targetingProfile?.ally !== true
+    ? tokenId(context)
+    : null;
+  const insideTokens = (tokensInAreaRegion({ context, action, region: regionDocument })
+    ?? tokensInAreaMarker({ context, action, marker: areaMarker }))
+    .filter((token) => !ownToken || (token?.id ?? token?.document?.id) !== ownToken);
   if (insideTokens.length) {
     setTokenTargets(insideTokens);
     nextPatch.targetTokenIds = insideTokens.map((token) => targetTokenId(token)).filter(Boolean);

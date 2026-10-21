@@ -56,6 +56,8 @@ try {
   assert.ok(prepared.patch.targetTokenIds.includes("near-pc") && prepared.patch.targetTokenIds.includes("far-pc"),
     "both creatures inside the drawn emanation are targeted");
   assert.ok(!prepared.patch.targetTokenIds.includes("distant-pc"));
+  assert.ok(!prepared.patch.targetTokenIds.includes("skink") && !targeted.has("skink"),
+    "the skink's own emanation doesn't target the skink");
   assert.ok(targeted.has("far-pc"), "the far creature is actually targeted on the canvas");
 
   // 2. Undoing the step deletes its card, and that takes the recharge back.
