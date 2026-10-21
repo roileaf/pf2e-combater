@@ -237,6 +237,13 @@ try {
   endStride();
   assert.equal(trackedActionContext(context, { combat, messages: [] }).actionsSpent.total, spentBeforeStride + 1,
     "a Stride Combater ran costs one action, whatever id Foundry gave the move");
+  // The panel records the same result again after the step ends (scope gone). That second write
+  // must keep the move ids the first one captured, or the Stride counts twice again (2.5.10 live).
+  await recordTrackedExecution(trackedActionContext(context, { combat, messages: [] }),
+    { instanceId: "skink-stride", actionCost: 1, action: { slug: "stride", requiresDestination: true } },
+    { status: "done", patch: { execution: { revert: { ops: [{ kind: "movement", movementId: "requested-id" }] } } } });
+  assert.equal(trackedActionContext(context, { combat, messages: [] }).actionsSpent.total, spentBeforeStride + 1,
+    "recording the Stride again after it ends still costs one action");
   combatant.token.movementHistory.push({ movementId: "dragged-later", cost: 10, action: "walk" });
   assert.equal(trackedActionContext(context, { combat, messages: [] }).actionsSpent.total, spentBeforeStride + 2,
     "a later move by hand still counts");

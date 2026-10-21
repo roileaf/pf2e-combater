@@ -252,16 +252,19 @@ async function persistTrackedExecution(context, step, result) {
   const movedDuringStep = scope?.id === step.instanceId && scope.movementBefore
     ? recordedMovementIds(globalThis.game?.combat?.combatant).filter((id) => !scope.movementBefore.has(id))
     : [];
+  const actor = actorDocument(context);
+  const previous = receiptData(context, snapshot).entries?.[step.instanceId];
+  // The panel records a step again after it finishes, when its scope is gone. Keep the moves the
+  // first record saw, or that Stride is counted a second time.
+  const recordedMovementIdsForStep = previous && !previous.reverted ? previous.movementIds ?? [] : [];
   const entry = {
     cost, slug: action.source === "strike" ? "strike" : action.slug, label: action.name ?? "",
     movement: Boolean(action.requiresDestination && !action.teleport),
     canvasExcluded: Boolean(context.actionTracker),
     messageIds: (result.patch?.execution?.revert?.ops ?? []).filter((op) => op.kind === "chat").map((op) => op.messageId),
     // A Stride run by Combater is this receipt; its canvas movement must not count as another.
-    movementIds: [...new Set([...revertMovementIds, ...movedDuringStep])],
+    movementIds: [...new Set([...recordedMovementIdsForStep, ...revertMovementIds, ...movedDuringStep])],
   };
-  const actor = actorDocument(context);
-  const previous = receiptData(context, snapshot).entries?.[step.instanceId];
   if (previous && JSON.stringify(previous) === JSON.stringify(entry)) return;
   if (actor?.flags?.[MODULE_ID]?.actionReceipts?.turnKey === snapshot.key) {
     await writeReceipts(context, snapshot, { [`entries.${step.instanceId}`]: entry });
