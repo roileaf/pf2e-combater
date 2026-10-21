@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.16]
+
+### Fixed
+
+- **NPC ability damage really comes from its card now.** 2.5.15 missed the card an NPC action posts (PF2e returns it on its own, not wrapped), so it still rolled its own damage and PF2e Toolbelt's saves stayed on the ability card. Combater now finds that card and clicks its damage link, so the saves and damage/half/double/triple land on one card.
+
 ## [2.5.15]
 
 ### Fixed
