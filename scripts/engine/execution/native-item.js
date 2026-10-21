@@ -467,6 +467,7 @@ export async function executeNativeAction({ actor, action, event, target = null,
     action,
     target,
     after: Number.isFinite(cardTimestamp) ? cardTimestamp : null,
+    cardMessage: nativeResult?.message ?? null,
   });
   let result = {
     status: "done",
