@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.9]
+
+### Fixed
+
+- **A Stride run by Combater costs one action.** A 30-foot Stride (the creature's full Speed) could be charged 2 actions: Combater's own receipt, plus the same move counted again from the token's movement history when Foundry committed it under a different id. Any movement made while Combater runs a step now belongs to that step.
+
 ## [2.5.8]
 
 ### Fixed
