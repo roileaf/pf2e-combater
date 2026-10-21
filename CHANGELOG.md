@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.13]
+
+### Fixed
+
+- **"All creatures adjacent to" abilities hit everyone around the creature.** An ability with no area template, like the Magnetic Skink's Launch Metal ("all creatures adjacent to the skink"), was read as a single target, so Run targeted one creature. It is now a 5-foot emanation around the user and targets every creature in it.
+
 ## [2.5.12]
 
 ### Fixed
