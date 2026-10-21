@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.10]
+
+### Fixed
+
+- **The best Stride square is shown as reachable.** The square Combater recommends (usually the one closest to your target, often the last one in range) was left out of the green boxes, so a square exactly at your Speed could look unreachable. Every reachable square now gets its box.
+
 ## [2.5.9]
 
 ### Fixed
