@@ -33,6 +33,7 @@ await import("./self-test/grouped-draft-refresh.test.js");
 await import("./self-test/grouped-sudden-charge.test.js");
 await import("./self-test/damage-trigger.test.js");
 await import("./self-test/minimal-idle.test.js");
+await import("./self-test/reach-spell-draft.test.js");
 await import("./self-test/repeated-strike-draft.test.js");
 await import("./self-test/mid-turn-stunned.test.js");
 await import("./self-test/pending-quickened.test.js");

@@ -2,7 +2,7 @@ import { SETTINGS, minimalHiddenParts, settingOrDefault } from "../../settings.j
 import { canUndoPanelDraftClear } from "./draft-workflow.js";
 import { collectionValues } from "../../foundry-data.js";
 import { buildActionBuilderModel, projectContextForDraftDestination } from "../../engine/action/builder/index.js";
-import { refreshDraftAreaPlacements } from "../../engine/action/builder/projection.js";
+import { projectContextForDraftStepOrigin, refreshDraftAreaPlacements } from "../../engine/action/builder/projection.js";
 import { buildCandidates } from "../../engine/candidates.js";
 import { buildTurnPlans, reachSpellBoostedCandidates } from "../../engine/planner.js";
 import { buildLoadoutAdvice } from "../../engine/loadout-advisor.js";
@@ -339,12 +339,36 @@ export function clearPanelPreparedContext(panel) {
   panel._sharedDraftSeed = null;
 }
 
+function stepKey(step) {
+  return step?.actionKey ?? step?.key ?? null;
+}
+
+function actionForKey(actions, key) {
+  return key ? actions.find((action) => action?.id === key || action?.key === key) ?? null : null;
+}
+
+function isReachSpellStep(step, actions) {
+  return actionForKey(actions, stepKey(step))?.activityProfile?.rangeBuff === true;
+}
+
 function draftEndsWithReachSpell(draft, actions) {
-  const last = (draft?.steps ?? []).at(-1);
-  const key = last?.actionKey ?? last?.key;
-  if (!key) return false;
-  return actions.some((action) => (action?.id === key || action?.key === key)
-    && action?.activityProfile?.rangeBuff === true);
+  return isReachSpellStep((draft?.steps ?? []).at(-1), actions);
+}
+
+// A spell step right after a drafted Reach Spell is cast at +30 ft. Without this it was re-checked
+// at its normal range and read "No target within 30 feet" / "can't be done any more".
+export function reachSpellDraftStepActions(context, draft, actions, approachable) {
+  const overrides = {};
+  const steps = draft?.steps ?? [];
+  steps.forEach((step, index) => {
+    if (index === 0 || !step?.instanceId || !isReachSpellStep(steps[index - 1], actions)) return;
+    const spell = actionForKey(approachable, stepKey(step));
+    if (!spell) return;
+    const origin = projectContextForDraftStepOrigin(context, draft, step.instanceId);
+    const [boosted] = reachSpellBoostedCandidates(origin, [spell]);
+    if (boosted) overrides[step.instanceId] = withBuilderActionFields(boosted);
+  });
+  return overrides;
 }
 
 export function preparePanelContext(panel) {
@@ -433,7 +457,11 @@ export function preparePanelContext(panel) {
   // Grouped steps (Flurry, Sudden Charge, etc.) use synthetic child keys that
   // are absent from the raw candidate list. Resolve them even with Browse shut;
   // keep the broader per-step projection work scoped to Browse/debug views.
-  const draftStepActions = projectedDraftStepActions(context, activeDraft, { groupedOnly: !needsProjectedCandidates });
+  const draftStepActions = {
+    ...projectedDraftStepActions(context, activeDraft, { groupedOnly: !needsProjectedCandidates }),
+    ...reachSpellDraftStepActions(context, activeDraft, [...baseBuild.candidates, ...(baseBuild.detected ?? [])],
+      candidateBuild.approachable ?? baseBuild.approachable ?? []),
+  };
   const autoFillPlans = preparationCache?.autoFillPlans
     // The panel cycle is for strong tactical alternatives. Exhaustive action coverage belongs in
     // Browse; forcing every low-ranked legal action into a plan made every real context refresh
