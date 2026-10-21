@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.7]
+
+### Fixed
+
+- **Reach Spell brings spells back into range.** With Reach Spell as a planned step, the spells it puts in range (Electric Arc against a target just past 30 feet, for example) now show up for the next step in Browse and the plan bar, and Auto-fill uses it when filling the rest of the turn.
+- **Heals stay available when someone is only lightly hurt.** Heal, Battle Medicine and other heals vanished whenever nobody in reach was below half HP. They now stay listed whenever someone in reach is hurt at all. Auto-fill still saves them for real injuries ("Nobody is badly hurt yet").
+- **NPC Strikes have icons in the compact browser and plan.** An NPC's attacks (Longsword, Shortbow) use PF2e's generic attack icon, which the compact views hid, leaving name-only tiles. They now show the art of the weapon they're linked to, or the creature's weapon of the same name, and otherwise the generic attack icon.
+
 ## [2.5.6]
 
 ### Fixed
