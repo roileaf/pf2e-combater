@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { npcAdjustmentModifier, rollActionDamageMessages } from "../execution/damage.js";
+import { executeNativeAction } from "../execution/native-item.js";
 
 // Live (Kimerus): a weak Magnetic Skink's Launch Metal rolled 2d6, not PF2e's 2d6-2, and its damage
 // landed apart from PF2e Toolbelt's saves. Combater rolled its own formula instead of the card's link.
@@ -65,6 +66,23 @@ try {
     globalThis.setTimeout = realTimeout;
   }
   assert.deepEqual(rolled, [], "a cancelled dialog is not replaced by Combater's roll");
+
+  // The whole NPC-action path (Roi, live, 2.5.15): PF2e's rollItemMacro returns the posted card bare,
+  // not as { message }, so Combater missed the card and rolled its own damage without the saves.
+  createsMessage = true;
+  clicks = 0;
+  const previousPf2e = globalThis.game.pf2e;
+  globalThis.game.pf2e = { ...previousPf2e, rollItemMacro: async () => ({ documentName: "ChatMessage", id: "launch-metal-card", timestamp: 1000 }) };
+  try {
+    const actionItem = { ...launchMetal.item, id: "launch-metal", uuid: "Actor.skink.Item.launch-metal", actor: weakSkink, isOfType: (...types) => types.includes("action") };
+    const executed = await executeNativeAction({ actor: weakSkink, action: { ...launchMetal, item: actionItem } });
+    assert.equal(clicks, 1, "the NPC action's card is found and its damage link clicked");
+    assert.deepEqual(rolled, [], "no separate Combater damage roll");
+    const chatOps = (executed.patch?.execution?.revert?.ops ?? []).filter((op) => op.kind === "chat").map((op) => op.messageId);
+    assert.ok(chatOps.includes("launch-metal-card") && chatOps.includes("pf2e-damage"), "undo removes both the card and its damage");
+  } finally {
+    globalThis.game.pf2e = previousPf2e;
+  }
 
   // Spells keep their own damage path (Toolbelt reads the spell's save from the origin).
   clicks = 0;

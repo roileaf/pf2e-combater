@@ -1,7 +1,7 @@
 import { systemValue } from "../../foundry-data.js";
 import { t } from "../../i18n.js";
 import { buildSustainedSpellEffectData, parseSpellDuration } from "../area/duration.js";
-import { chatActionRevert } from "./chat-revert.js";
+import { chatActionRevert, chatMessageFromResult } from "./chat-revert.js";
 import { flushPendingChat, rollActionDamageMessages } from "./damage.js";
 import { createGuidance } from "./guidance.js";
 import { attachRevertOp, executionPatch } from "./results.js";
@@ -461,13 +461,14 @@ export async function executeNativeAction({ actor, action, event, target = null,
     : null;
 
   await flushPendingChat();
-  const cardTimestamp = Number(nativeResult?.message?.timestamp);
+  const cardMessage = chatMessageFromResult(nativeResult);
+  const cardTimestamp = Number(cardMessage?.timestamp);
   const damageMessageIds = await rollActionDamageMessages({
     actor,
     action,
     target,
     after: Number.isFinite(cardTimestamp) ? cardTimestamp : null,
-    cardMessage: nativeResult?.message ?? null,
+    cardMessage,
   });
   let result = {
     status: "done",

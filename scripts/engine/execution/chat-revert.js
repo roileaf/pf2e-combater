@@ -1,6 +1,22 @@
 import { t } from "../../i18n.js";
 import { revertEnvelope } from "./results.js";
 
+// The chat card an action posted: PF2e returns it bare (an NPC action's use message), as
+// `{ message }` (a cast), or in an array.
+export function chatMessageFromResult(nativeResult) {
+  if (!nativeResult || typeof nativeResult !== "object") return null;
+  const candidates = [
+    nativeResult,
+    nativeResult.message,
+    Array.isArray(nativeResult) ? nativeResult[0] : null,
+    Array.isArray(nativeResult.messages) ? nativeResult.messages[0] : null,
+  ];
+  return candidates.find((candidate) => candidate && typeof candidate === "object"
+    && (candidate.documentName === "ChatMessage" || candidate.constructor?.name === "ChatMessage"
+      || candidate === nativeResult.message)
+    && (candidate.id ?? candidate._id)) ?? null;
+}
+
 export function chatMessageIdFromResult(nativeResult) {
   if (!nativeResult || typeof nativeResult !== "object") return null;
   const candidates = [
