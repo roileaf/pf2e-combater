@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.8]
+
+### Fixed
+
+- **A spell after Reach Spell no longer reads "can't be done any more".** Picking Reach Spell and then Electric Arc from Browse worked, but the Electric Arc step was re-checked at its normal range and flagged "No target within 30 feet". A spell step right after a planned Reach Spell is now checked at its extended range.
+
 ## [2.5.7]
 
 ### Fixed
