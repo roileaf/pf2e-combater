@@ -61,7 +61,7 @@ export function rechargeEntries(actor, combat = globalThis.game?.combat) {
 // After an NPC uses a recharge ability: roll the delay (privately, like the GM's own
 // [[/gmr 1d4]]) and remember when it's back. Counted from the combat's current round, so an
 // encounter that hasn't started yet (round 0) still blocks it until round N.
-export async function recordRechargeUse(actor, item, combat = globalThis.game?.combat) {
+export async function recordRechargeUse(actor, item, combat = globalThis.game?.combat, { messageId = null } = {}) {
   const formula = rechargeFormula(item);
   if (!isNpc(actor) || !formula || !combat || typeof actor?.setFlag !== "function") return null;
   const RollClass = globalThis.Roll;
@@ -70,16 +70,21 @@ export async function recordRechargeUse(actor, item, combat = globalThis.game?.c
   const rounds = Math.max(1, Number(roll.total) || 1);
   const readyRound = (Number(combat.round) || 0) + rounds;
   const id = item.id ?? item._id;
-  await actor.setFlag(MODULE_ID, `${NPC_RECHARGE_FLAG}.${id}`, { combatId: combat.id, readyRound, rounds });
+  let noteId = null;
   try {
-    await globalThis.ChatMessage?.create?.({
+    const note = await globalThis.ChatMessage?.create?.({
       content: t("Chat.Recharge", "{item} recharges in {rounds} rounds (usable again on round {round}).", { item: item.name, rounds, round: readyRound }),
       whisper: globalThis.ChatMessage?.getWhisperRecipients?.("GM")?.map((user) => user.id) ?? [],
       speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }),
     });
+    noteId = note?.id ?? null;
   } catch (_error) {
     // The flag is what matters; the note is a courtesy.
   }
+  // The card that started it, so deleting that card (undoing the step) can take the use back.
+  await actor.setFlag(MODULE_ID, `${NPC_RECHARGE_FLAG}.${id}`, {
+    combatId: combat.id, readyRound, rounds, ...(messageId ? { messageId } : {}), ...(noteId ? { noteId } : {}),
+  });
   return { readyRound, rounds };
 }
 
@@ -91,6 +96,27 @@ export function registerRechargeTracking() {
     const item = message?.item;
     const actor = message?.actor ?? item?.actor;
     if (!item || !isNpc(actor) || !rechargeFormula(item)) return;
-    recordRechargeUse(actor, item).catch((error) => console.warn(`${MODULE_ID} | Recharge tracking failed`, error));
+    recordRechargeUse(actor, item, globalThis.game?.combat, { messageId: message.id }).catch((error) => console.warn(`${MODULE_ID} | Recharge tracking failed`, error));
   });
+  // Undoing the step (or deleting the card by hand) takes the use back, so the ability is ready again.
+  globalThis.Hooks?.on?.("deleteChatMessage", (message, _options, userId) => {
+    if (userId !== globalThis.game?.user?.id) return;
+    clearRechargeForMessage(message?.actor ?? message?.item?.actor, message?.id)
+      .catch((error) => console.warn(`${MODULE_ID} | Recharge reset failed`, error));
+  });
+}
+
+// Forget the recharge a deleted ability card started, and its GM note.
+export async function clearRechargeForMessage(actor, messageId) {
+  if (!messageId || typeof actor?.update !== "function") return false;
+  const stored = actor.flags?.[MODULE_ID]?.[NPC_RECHARGE_FLAG] ?? {};
+  const ids = Object.keys(stored).filter((id) => stored[id]?.messageId === messageId);
+  if (!ids.length) return false;
+  const noteIds = ids.map((id) => stored[id]?.noteId).filter(Boolean);
+  await actor.update(Object.fromEntries(ids.map((id) => [`flags.${MODULE_ID}.${NPC_RECHARGE_FLAG}.-=${id}`, null])));
+  for (const noteId of noteIds) {
+    const note = globalThis.game?.messages?.get?.(noteId);
+    if (note?.isOwner !== false) await note?.delete?.();
+  }
+  return true;
 }

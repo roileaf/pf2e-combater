@@ -53,5 +53,6 @@ await import("./self-test/transaction-revert.test.js");
 await import("./self-test/spell-variant-execution.test.js");
 await import("./self-test/spell-rank-selection.test.js");
 await import("./self-test/electric-arc-targets.test.js");
+await import("./self-test/launch-metal.test.js");
 await import("./self-test/runtime.test.js");
 await import("./self-test/browser-summons.test.js");

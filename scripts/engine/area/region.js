@@ -169,18 +169,35 @@ function pointInAreaShape(value, shape) {
   }
 }
 
+function areaTargetAllowed(token, context, action) {
+  if (action?.targetingProfile?.enemiesOnly !== true) return true;
+  const identities = [token.id, token.uuid, token.document?.id, token.document?.uuid].filter(Boolean);
+  return contextEnemies(context).some((enemy) => [
+    enemy.id, enemy.uuid, enemy.token?.id, enemy.token?.uuid, enemy.document?.id, enemy.document?.uuid,
+  ].some((id) => id && identities.includes(id)));
+}
+
 export function tokensInAreaMarker({ context, action, marker }) {
   const shape = createAreaRegionData({ context, action, marker })?.shapes?.[0];
   if (!shape) return [];
   return (globalThis.canvas?.tokens?.placeables ?? []).filter((token) => {
-    if (action?.targetingProfile?.enemiesOnly === true) {
-      const identities = [token.id, token.uuid, token.document?.id, token.document?.uuid].filter(Boolean);
-      const isEnemy = contextEnemies(context).some((enemy) => [
-        enemy.id, enemy.uuid, enemy.token?.id, enemy.token?.uuid, enemy.document?.id, enemy.document?.uuid,
-      ].some((id) => id && identities.includes(id)));
-      if (!isEnemy) return false;
-    }
+    if (!areaTargetAllowed(token, context, action)) return false;
     const center = point(token?.center);
     return center && pointInAreaShape(center, shape);
   });
+}
+
+// The tokens Foundry itself counts inside a placed region: its grid and diagonal rules, every part of
+// a large creature, elevation. Null when that cannot be tested, so the caller falls back to the marker.
+export function tokensInAreaRegion({ context, action, region }) {
+  if (!region) return null;
+  const tokens = globalThis.canvas?.tokens?.placeables ?? [];
+  try {
+    const inside = tokens.filter((token) => typeof token?.document?.testInsideRegion === "function"
+      && token.document.testInsideRegion(region));
+    if (!tokens.some((token) => typeof token?.document?.testInsideRegion === "function")) return null;
+    return inside.filter((token) => areaTargetAllowed(token, context, action));
+  } catch (_error) {
+    return null;
+  }
 }

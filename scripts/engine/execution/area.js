@@ -1,5 +1,5 @@
 import { isSelfCenteredAreaAction, isTargetCenteredAreaAction, requiresAreaMarkerForAction } from "../action/requirements.js";
-import { areaRegionDistance, areaRegionType, createAreaRegionData, tokensInAreaMarker } from "../area/region.js";
+import { areaRegionDistance, areaRegionType, createAreaRegionData, tokensInAreaMarker, tokensInAreaRegion } from "../area/region.js";
 import { buildAreaTimerEffectData, buildAreaTimerFlag, parseSpellDuration } from "../area/duration.js";
 import { contextActorDocument } from "../actor-context.js";
 import { canvasTokenById, setTokenTargets, targetTokenId, tokenId } from "./targets.js";
@@ -167,9 +167,12 @@ export async function prepareAreaExecution({ context, action, step, choices = {}
 
   const nextPatch = { ...patch, areaMarker };
   let regionOp = null;
+  let regionDocument = null;
   if (areaTemplatePersists(action)) {
     const region = await createAreaRegion({ context, action, marker: areaMarker, target });
     if (region?.regionId) {
+      const scene = (region.sceneId && globalThis.game?.scenes?.get?.(region.sceneId)) ?? globalThis.canvas?.scene ?? null;
+      regionDocument = scene?.regions?.get?.(region.regionId) ?? null;
       const timer = await createAreaTimer({ context, action, region });
       regionOp = {
         kind: "region",
@@ -180,7 +183,9 @@ export async function prepareAreaExecution({ context, action, step, choices = {}
     }
   }
 
-  const insideTokens = tokensInAreaMarker({ context, action, marker: areaMarker });
+  // Target what the placed area visibly covers; the marker geometry is only a fallback.
+  const insideTokens = tokensInAreaRegion({ context, action, region: regionDocument })
+    ?? tokensInAreaMarker({ context, action, marker: areaMarker });
   if (insideTokens.length) {
     setTokenTargets(insideTokens);
     nextPatch.targetTokenIds = insideTokens.map((token) => targetTokenId(token)).filter(Boolean);
