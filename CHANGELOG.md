@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.11]
+
+### Fixed
+
+- **A Stride run by Combater really costs one action now.** The 2.5.9 fix was undone right after the step finished: the panel saved the Stride a second time and dropped the move it had matched, so the token's movement was counted again and a 30-foot Stride still cost 2 actions.
+
 ## [2.5.10]
 
 ### Fixed
