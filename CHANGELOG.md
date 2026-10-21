@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.12]
+
+### Fixed
+
+- **Undoing a recharge ability makes it ready again.** Resetting a step like Launch Metal or a Breath Weapon deletes its card, and now also clears the "Recharging" countdown and the GM's recharge note. Deleting the card by hand does the same.
+- **An area ability targets everyone its placed area covers.** Running an emanation such as Launch Metal now targets the creatures inside the region Foundry drew, using the scene's grid and diagonal rules and every square of a large creature. Before, a creature two squares away on a diagonal could be left out.
+
 ## [2.5.11]
 
 ### Fixed
