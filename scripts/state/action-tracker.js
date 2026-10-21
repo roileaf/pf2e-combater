@@ -202,7 +202,10 @@ export function beginTrackedExecution(context, step) {
   if (!snapshot || context?.combat?.id !== globalThis.game?.combat?.id || context?.combatant?.id !== snapshot.combatantId) return () => {};
   let finish;
   const done = new Promise((resolve) => { finish = resolve; });
-  const scope = { id: step.instanceId, turnKey: snapshot.key, done };
+  // The token's movements before this step runs: any new one afterwards was made by this step,
+  // even when Foundry commits it under an id other than the one we asked for.
+  const movementBefore = new Set(recordedMovementIds(globalThis.game?.combat?.combatant));
+  const scope = { id: step.instanceId, turnKey: snapshot.key, done, movementBefore };
   executionScopes.set(snapshot.actorId, scope);
   return () => {
     if (executionScopes.get(snapshot.actorId) === scope) executionScopes.delete(snapshot.actorId);
@@ -244,12 +247,18 @@ async function persistTrackedExecution(context, step, result) {
   const action = step.action ?? step;
   const cost = Number(step.actionCost ?? step.cost ?? action.actionCost ?? action.cost);
   if (!(cost > 0 && cost <= 3)) return;
+  const revertMovementIds = (result.patch?.execution?.revert?.ops ?? []).filter((op) => op.kind === "movement" && op.movementId).map((op) => op.movementId);
+  const scope = executionScopes.get(snapshot.actorId);
+  const movedDuringStep = scope?.id === step.instanceId && scope.movementBefore
+    ? recordedMovementIds(globalThis.game?.combat?.combatant).filter((id) => !scope.movementBefore.has(id))
+    : [];
   const entry = {
     cost, slug: action.source === "strike" ? "strike" : action.slug, label: action.name ?? "",
     movement: Boolean(action.requiresDestination && !action.teleport),
     canvasExcluded: Boolean(context.actionTracker),
     messageIds: (result.patch?.execution?.revert?.ops ?? []).filter((op) => op.kind === "chat").map((op) => op.messageId),
-    movementIds: (result.patch?.execution?.revert?.ops ?? []).filter((op) => op.kind === "movement" && op.movementId).map((op) => op.movementId),
+    // A Stride run by Combater is this receipt; its canvas movement must not count as another.
+    movementIds: [...new Set([...revertMovementIds, ...movedDuringStep])],
   };
   const actor = actorDocument(context);
   const previous = receiptData(context, snapshot).entries?.[step.instanceId];

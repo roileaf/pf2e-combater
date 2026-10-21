@@ -225,6 +225,22 @@ try {
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(trackedActionContext(context, { combat, messages: [kipUp] }).actionsSpent.total, spentBeforeStand + 1, "standing up with Kip Up costs no action");
   assert.equal(trackedActionContext(context, { combat, messages: [] }).actionsSpent.total, spentBeforeStand + 2, "without Kip Up the same removal is a Stand");
+  // Live (Kimerus): a 30 ft Stride run by Combater cost 2 actions when Foundry committed the move
+  // under another id than the one Combater asked for: the receipt, plus the move counted again.
+  combatant.token = { movementHistory: [] };
+  const spentBeforeStride = trackedActionContext(context, { combat, messages: [] }).actionsSpent.total;
+  const endStride = beginTrackedExecution(context, { instanceId: "skink-stride" });
+  combatant.token.movementHistory.push({ movementId: "committed-by-foundry", cost: 30, action: "walk" });
+  await recordTrackedExecution(trackedActionContext(context, { combat, messages: [] }),
+    { instanceId: "skink-stride", actionCost: 1, action: { slug: "stride", requiresDestination: true } },
+    { status: "done", patch: { execution: { revert: { ops: [{ kind: "movement", movementId: "requested-id" }] } } } });
+  endStride();
+  assert.equal(trackedActionContext(context, { combat, messages: [] }).actionsSpent.total, spentBeforeStride + 1,
+    "a Stride Combater ran costs one action, whatever id Foundry gave the move");
+  combatant.token.movementHistory.push({ movementId: "dragged-later", cost: 10, action: "walk" });
+  assert.equal(trackedActionContext(context, { combat, messages: [] }).actionsSpent.total, spentBeforeStride + 2,
+    "a later move by hand still counts");
+  delete combatant.token;
   actor.itemTypes.condition = [condition("quickened")];
   globalThis.game.user = { id: "player", isGM: false };
   const pendingView = actionTrackerView(trackedActionContext(context));
