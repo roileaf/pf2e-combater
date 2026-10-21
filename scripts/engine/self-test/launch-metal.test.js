@@ -11,6 +11,22 @@ const launchMetal = classifySystemAction({
   system: { actionType: { value: "action" }, actions: { value: 2 }, description: { value: description } },
 }, { actionCost: 2 });
 
+// The Magnetic Skink's own text (video): no @Template, "all creatures adjacent to the skink". It was
+// read as one enemy within 5 feet, so Run targeted a single creature. It is a 5-foot self emanation.
+const skinkText = (tail) => `<p>The skink repulses the metal attached to its body in all directions, dealing @Damage[2d6[bludgeoning]|options:area-damage] damage (@Check[reflex|dc:13|basic|options:area-effect] save) to ${tail}. The skink can't use Launch Metal again for [[/gmr 1d4 #Recharge Launch Metal]]{1d4 rounds}.</p>`;
+const classifySkink = (tail) => classifySystemAction({
+  name: "Launch Metal",
+  system: { actionType: { value: "action" }, actions: { value: 2 }, description: { value: skinkText(tail) } },
+}, { actionCost: 2 });
+assert.deepEqual(
+  (({ area, type, distance, selfCentered }) => ({ area, type, distance, selfCentered }))(classifySkink("all creatures adjacent to the skink").targetingProfile),
+  { area: true, type: "emanation", distance: 5, selfCentered: true },
+  "\"all creatures adjacent to the skink\" hits everyone around it",
+);
+assert.equal(classifySkink("each creature adjacent to it").targetingProfile.selfCentered, true);
+assert.notEqual(classifySkink("all creatures adjacent to the target").targetingProfile?.selfCentered, true,
+  "adjacent to the target is centered on someone else");
+
 const previous = { canvas: globalThis.canvas, game: globalThis.game, Roll: globalThis.Roll, ChatMessage: globalThis.ChatMessage };
 try {
   // 1. Run, it targets every creature the placed emanation covers, by Foundry's own region test.

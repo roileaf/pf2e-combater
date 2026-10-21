@@ -164,6 +164,17 @@ function templateLabel(template) {
   return template?.distance ? `${type} ${template.distance} ft` : type;
 }
 
+// "All creatures adjacent to the skink" has no @Template: everyone around the user is a 5-foot
+// emanation. "Adjacent to the target" (or an ally, a square) is centered elsewhere, so not this.
+const ADJACENT_AREA = /\b(?:all|each|every)\s+(?:other\s+)?(?:creatures?|enemies|foes)\s+(?:that\s+(?:are|is)\s+)?adjacent\s+to\s+(it|itself|you|yourself|him|her|them|the\s+([a-z][a-z'’-]*))\b/i;
+const ADJACENT_ELSEWHERE = /^(?:target|creature|ally|allies|enemy|enemies|square|space|wall|door|object|area|point|corner)s?$/i;
+
+function adjacentAreaProfile(text) {
+  const match = text.match(ADJACENT_AREA);
+  if (!match || (match[2] && ADJACENT_ELSEWHERE.test(match[2]))) return null;
+  return { area: true, type: "emanation", distance: 5, selfCentered: true };
+}
+
 // All @Template[...] embeds in the description, so a multi-template action/spell can offer the
 // player a choice of which to place. Falls back to a single text-parsed shape (e.g. "30-foot
 // cone") when there are no @Template embeds.
@@ -198,7 +209,7 @@ function readTemplateProfile(action) {
   const text = normalizeText(raw);
   const textMatch = text.match(/\b(\d+)[ -]foot (cone|line|burst|emanation)\b/)
     ?? text.match(/\b(cone|line|burst|emanation)\b.{0,24}\b(\d+)\s+feet\b/);
-  if (!textMatch) return null;
+  if (!textMatch) return adjacentAreaProfile(text);
 
   const firstIsNumber = Number.isFinite(Number(textMatch[1]));
   const type = firstIsNumber ? textMatch[2] : textMatch[1];
