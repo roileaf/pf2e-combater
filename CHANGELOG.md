@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.15]
+
+### Fixed
+
+- **An NPC ability's damage is rolled from its own card.** For abilities like Launch Metal, Combater now clicks the card's damage link the way a GM would. PF2e applies the weak or elite adjustment (2d6-2 for a weak creature) and the creature's damage bonuses, and PF2e Toolbelt's Target Helper puts the saves on that damage card, so damage, half, double and triple apply in one place. When the card isn't on screen, Combater rolls the damage itself, now with the weak/elite adjustment.
+
 ## [2.5.14]
 
 ### Fixed
