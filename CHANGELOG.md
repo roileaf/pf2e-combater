@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.17]
+
+### Fixed
+
+- **Shield Block works with Glass Shield and any raised shield.** Combater only recognized the Shield spell's effect, so Glass Shield never offered Shield Block. It now reads PF2e's own shield state: any raised shield allows Shield Block, and a shield from a spell (Shield, Glass Shield) adds Shield Block to the Reactions tab.
+- **Using a reaction spends it, even off your turn.** Posting a reaction (Shield Block from the character sheet, or one Combater runs) now marks that creature's reaction used in the tracker, as the reaction glyph does. When PF2e Reaction Checker or Sundry already tracks reactions, Combater leaves their cards to them.
+
 ## [2.5.16]
 
 ### Fixed
