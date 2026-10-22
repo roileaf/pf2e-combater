@@ -696,6 +696,14 @@ function stepItem(step, action, context = null) {
   return strikeFinisherTarget({ ...source, item: raw }, { actor: contextActor });
 }
 
+// An attack spell's bonus (its spellcasting's attack), so its row shows "+12 MAP -5" like a Strike.
+function spellAttackModifier(action) {
+  const raw = action?.item ?? null;
+  if (raw?.type !== "spell") return NaN;
+  const spell = resolveUuid(raw.uuid) ?? raw;
+  return Number(spell?.spellcasting?.statistic?.check?.mod);
+}
+
 // "Finisher animation: Launch" pill and its menu (named apart from PF2e's finisher trait);
 // a pick that is no longer offered shows as None.
 function finisherPicker(item, canEdit) {
@@ -795,8 +803,9 @@ function decorateDraftStep(step, index, { readonly = false, gmExecute = false, r
     ? t("Panel.MapValue", "MAP -{penalty}", { penalty: mapPenaltyValue })
     : t("Panel.MapFull", "MAP 0");
   const strikeTotal = Number(action?.strike?.totalModifier ?? action?.attackModifier);
-  const attackBonusLabel = isAttackStep && action?.source === "strike" && Number.isFinite(strikeTotal)
-    ? signedNumber(strikeTotal - mapPenaltyValue) : "";
+  const attackTotal = action?.source === "strike" ? strikeTotal : spellAttackModifier(action);
+  const attackBonusLabel = isAttackStep && Number.isFinite(attackTotal)
+    ? signedNumber(attackTotal - mapPenaltyValue) : "";
   const mapPinned = step?.mapPinned === true;
   const mapToolTip = mapPinned
     ? t("Panel.MapPinned", "MAP pinned to {label}. Click to cycle.", { label: mapToolLabel })
@@ -1351,11 +1360,34 @@ function quickPlanSteps(steps, nextId) {
   });
 }
 
+function doneQuickChip(step) {
+  if (!step.canRevertStep) return [];
+  const name = step.activity ? `${step.activity}: ${step.name}` : step.name;
+  const what = [`${step.stepNumber ? `${step.stepNumber}. ` : ""}${name}`, step.targetName ? `→ ${step.targetName}` : step.targetLabel].filter(Boolean).join(" ");
+  const undo = t("Panel.QuickUndo", "Done. Click to undo.");
+  return [{
+    instanceId: step.instanceId,
+    stepNumber: step.stepNumber,
+    img: step.img,
+    name: step.name,
+    pipSlots: step.pipSlots ?? "",
+    mapBadge: "",
+    attr: "revert-step",
+    icon: "fa-rotate-left",
+    isDone: true,
+    tooltip: `${what}. ${undo} ${t("Panel.QuickMore", "Right-click for options.")}`,
+    title: what,
+    tools: [{ attr: "revert-step", icon: "fa-rotate-left", tooltip: t("Panel.RevertStep", "Revert this step"), run: true }],
+  }];
+}
+
 function quickChips(steps, nextId) {
   const plainExecute = t("Panel.ExecuteStep", "Execute this step");
   return steps
-    .filter((step) => step?.instanceId && !step.isExecutionDone && !step.quickenedNextTurn && !step.awaitingGm)
+    .filter((step) => step?.instanceId && !step.quickenedNextTurn && !step.awaitingGm)
     .flatMap((step) => {
+      // A step already run stays in the bar, dimmed: clicking it undoes it.
+      if (step.isExecutionDone) return doneQuickChip(step);
       const choice = QUICK_CHOICES.find((entry) => entry.when(step));
       if (!choice && !step.canShowExecuteStep) return [];
       const blocked = !choice && step.executionBlocked;

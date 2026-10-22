@@ -372,6 +372,7 @@
       "SharedTargetPrefix": "All steps target",
       "QuickPlan": "Plan",
       "QuickRun": "Click to run.",
+      "QuickUndo": "Done. Click to undo.",
       "QuickGroup": "{number}. {name} · {count} steps",
       "QuickMore": "Right-click for options.",
       "RunNext": "Run next: {name}",

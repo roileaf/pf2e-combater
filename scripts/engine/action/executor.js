@@ -18,7 +18,7 @@ import {
 import { executeDropProne, executeRetch, executeStand } from "../execution/conditions.js";
 import { executeNativeAction } from "../execution/native-item.js";
 import { executeSystemAction } from "../execution/system-action.js";
-import { executeStrike } from "../execution/strike.js";
+import { executeStrike, strikeVariantIndex } from "../execution/strike.js";
 import { setSpellstrikeExpended } from "../../rules/spellstrike-state.js";
 import { executeSustainSpell } from "../execution/sustain.js";
 import { executeTeleport } from "../execution/teleport.js";
@@ -155,6 +155,8 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
         target,
         patch,
         trackSustainedSpell: !regionOp?.effectUuid,
+        // An attack spell takes the step's multiple attack penalty, like a Strike.
+        attackNumber: strikeVariantIndex(step, resolvedAction, choices) + 1,
       });
     } catch (error) {
       plannedSummon?.dispose();

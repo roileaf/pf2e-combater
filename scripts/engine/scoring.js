@@ -42,7 +42,8 @@ import {
   suggestedTargetFor,
 } from "./scoring/tactics.js";
 import { sanitizeScoredRecommendation } from "./recommendation-safety.js";
-import { detectionState } from "./target-pool.js";
+import { canAttackTarget, contextEnemies, detectionState, targetReference } from "./target-pool.js";
+import { inActionReach } from "./scoring/tactic-helpers.js";
 import { t } from "../i18n.js";
 import { GENERIC_ACTIONS } from "../catalog/generic-actions.js";
 import { deterministicPreferenceAdjustment } from "../state/preference-profile.js";
@@ -54,6 +55,61 @@ import { HARD_BLOCK_SCORE, MAP_PENALTY_BY_ATTACK_INDEX, mapScoreCost } from "./s
 // 11 succeeds on a roll of 11 or higher — exactly half of a d20's outcomes.
 const HIDDEN_TARGET_FLAT_CHECK_DISCOUNT = 0.5;
 const PLAYER_INTEL_CATEGORIES = ["traits", "saves", "perception", "weaknesses", "resistances", "immunities"];
+
+// Electric Arc and others aimed at "1 or 2 creatures": the nearest other enemies in range take
+// the remaining targets, so Run hits as many as the spell allows.
+function extraTargetsFor(context, action, suggestedTarget) {
+  const maxTargets = Number(action?.targetingProfile?.maxTargets);
+  if (!(maxTargets > 1) || suggestedTarget?.type !== "enemy") return [];
+  const profile = context?.profile ?? context?.actor?.profile ?? {};
+  const primary = String(suggestedTarget.id ?? "");
+  return contextEnemies(context)
+    .filter((enemy) => String(enemy?.id ?? "") !== primary && canAttackTarget(enemy) && inActionReach(profile, action, enemy))
+    .toSorted((left, right) => (Number(left?.distance) || Infinity) - (Number(right?.distance) || Infinity))
+    .slice(0, maxTargets - 1)
+    .map((enemy) => targetReference(enemy, "enemy"));
+}
+
+function formulaAverage(formula) {
+  let total = 0;
+  for (const [, count, faces] of String(formula ?? "").matchAll(/(\d+)d(\d+)/g)) total += Number(count) * ((Number(faces) + 1) / 2);
+  return total;
+}
+
+function spellRangeFeet(range, profile) {
+  const text = String(range?.value ?? range ?? "").trim().toLowerCase();
+  if (!text) return Infinity;
+  if (text === "touch") return Number(profile?.reach) || 5;
+  const feet = Number(text.match(/(\d+)\s*(?:feet|ft)/)?.[1]);
+  return Number.isFinite(feet) ? feet : Infinity;
+}
+
+// Ignition and others offer variants at the same cost (a ranged attack, or a touch one with
+// bigger dice). Cast the one that reaches the planned target and hits hardest, and say which.
+function spellVariantFor(context, action, target) {
+  const item = action?.item;
+  if (item?.type !== "spell" || !target) return null;
+  const actionCost = Number(action?.actionCost);
+  const overlays = Array.from(item.overlays?.entries?.() ?? Object.entries(item.system?.overlays ?? {}))
+    .filter(([, overlay]) => overlay?.overlayType === "override")
+    .filter(([, overlay]) => {
+      const time = parseInt(String(overlay?.system?.time?.value ?? ""), 10);
+      return !Number.isFinite(time) || time === actionCost;
+    });
+  if (overlays.length < 2) return null;
+  const profile = context?.profile ?? context?.actor?.profile ?? {};
+  const distance = Number(target.distance);
+  const baseDamage = Object.values(item.system?.damage ?? {}).map((damage) => damage?.formula).join(" ");
+  const options = overlays.map(([id, overlay]) => ({
+    id,
+    name: overlay?.name ?? null,
+    sort: Number(overlay?.sort) || 0,
+    reaches: !Number.isFinite(distance) || spellRangeFeet(overlay?.system?.range ?? item.system?.range, profile) >= distance,
+    damage: formulaAverage(Object.values(overlay?.system?.damage ?? {}).map((damage) => damage?.formula).join(" ") || baseDamage),
+  })).filter((option) => option.reaches);
+  const best = options.toSorted((left, right) => right.damage - left.damage || left.sort - right.sort)[0];
+  return best ? { id: best.id, name: best.name } : null;
+}
 
 function npcStrikeAttackBonus(action) {
   if (action?.source !== "strike" || action?.item?.type !== "melee") return null;
@@ -176,6 +232,8 @@ export function scoreCandidate(context, action, siblingSpells = [], allSiblingAc
     ? GENERIC_ACTIONS.find((generic) => generic.slug === "grapple") ?? null
     : null;
   const suggestedTarget = suggestedTargetFor(context, action, role, target);
+  const extraTargets = extraTargetsFor(context, action, suggestedTarget);
+  const spellVariant = spellVariantFor(context, action, target);
   const bestTargetReasons = targetRankingReasons(context, action, role, target);
   const skillDcSlug = actionSkillDcSlug(action);
   const skillCheck = canUseTargetSave(context, target, skillDcSlug) ? skillCheckScore(profile, target, action) : null;
@@ -455,6 +513,9 @@ export function scoreCandidate(context, action, siblingSpells = [], allSiblingAc
     preference,
     nativePreflight,
     suggestedTarget,
+    ...(extraTargets.length ? { extraTargets } : {}),
+    // The step names its variant: "Ignition (Melee)".
+    ...(spellVariant ? { spellVariant, ...(spellVariant.name ? { name: spellVariant.name } : {}) } : {}),
     bestTargetReasons,
     reason: reasons[0] ?? defaultReason(action),
     reasons,

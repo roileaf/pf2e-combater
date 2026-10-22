@@ -404,11 +404,11 @@ assert.equal(
 assert.equal(
   actionExecutorSource.includes("const planned = plannedTargetSelection(action)"),
   false,
-  "execution readiness should not treat recommendation targets as selected targets",
+  "execution readiness reads planned targets through the execution targets module",
 );
 assert.ok(
   executionTargetsSource.includes("matchesRecommendation ? null : source"),
-  "execution targets should ignore old auto-stored recommendation targets unless marked manual",
+  "an old auto-stored target that matches the recommendation defers to the live planned target",
 );
 assert.deepEqual(
   executionReadinessForStep({ instanceId: "needs-target" }, executionTargetAction).choices,
@@ -417,13 +417,13 @@ assert.deepEqual(
 );
 assert.deepEqual(
   executionReadinessForStep({
-    instanceId: "suggested-target-is-not-selected",
+    instanceId: "suggested-target-not-on-canvas",
   }, {
     ...executionTargetAction,
     suggestedTarget: { id: "target-token", name: "Goblin", token: { id: "target-token" } },
   }).choices,
   ["target"],
-  "recommended targets should not satisfy execution readiness until the user selects a target",
+  "a planned target that is no longer on the canvas still asks for a target",
 );
 const legacyAutoTargetStep = {
   instanceId: "legacy-auto-target",
@@ -433,13 +433,30 @@ const legacyAutoTargetStep = {
 const previousAutoTargetCanvas = globalThis.canvas;
 try {
   globalThis.canvas = { tokens: { placeables: [{ id: "target-token", name: "Goblin", document: { id: "target-token" } }] } };
+  // A step runs at the target the planner aimed it at, when the user chose none (Roi, live).
+  assert.deepEqual(
+    executionReadinessForStep({ instanceId: "planned-target" }, {
+      ...executionTargetAction,
+      suggestedTarget: { id: "target-token", name: "Goblin", token: { id: "target-token" } },
+    }).choices,
+    [],
+    "a planned target on the canvas satisfies execution readiness",
+  );
   assert.deepEqual(
     executionReadinessForStep(legacyAutoTargetStep, {
       ...executionTargetAction,
       suggestedTarget: { id: "target-token", name: "Goblin", token: { id: "target-token" } },
     }).choices,
-    ["target"],
-    "old draft rows with auto-stored recommendation targets should not count as selected targets",
+    [],
+    "old draft rows whose stored target is the recommendation run at it",
+  );
+  assert.deepEqual(
+    executionReadinessForStep({ ...legacyAutoTargetStep, targetSelection: "recommended" }, {
+      ...executionTargetAction,
+      suggestedTarget: { id: "target-token", name: "Goblin", token: { id: "target-token" } },
+    }).choices,
+    [],
+    "Shift-click Use best target sticks",
   );
   assert.deepEqual(
     executionReadinessForStep({ ...legacyAutoTargetStep, targetSelection: "manual" }, {
@@ -964,8 +981,8 @@ try {
   };
   assert.deepEqual(
     executionReadinessForStep({ instanceId: "planned-target-step" }, plannedTargetAction).choices,
-    ["target"],
-    "plan-phase recommendation target should not satisfy execution readiness when no current target is selected",
+    [],
+    "with no target chosen, a step is ready at its planned target",
   );
   const plannedTargetResult = await executeDraftStep({
     context: executionContext,
@@ -973,8 +990,11 @@ try {
     action: plannedTargetAction,
     event: { type: "click" },
   });
-  assert.equal(plannedTargetResult.status, "needs-choice");
-  assert.deepEqual(plannedTargetResult.choices, ["target"]);
+  assert.equal(plannedTargetResult.status, "done", "a step runs at its planned target without asking");
+  assert.deepEqual(plannedTargetResult.patch.targetTokenIds, ["target-token"]);
+  assert.equal(pf2eActionCalls.at(-1).target.name, "Goblin");
+  pf2eActionCalls.length = 0;
+  targetCalls.length = 0;
 
   const targetResult = await executeDraftStep({
     context: executionContext,
@@ -6514,8 +6534,8 @@ const prefillTarget = plannedTargetSelection({ suggestedTarget: { id: "t1", name
 assert.deepEqual(prefillTarget.targetTokenIds, ["t1"], "planned target selection exposes the suggested target token id");
 assert.ok(!panelSource.includes("canUseFullAggro"), "auto-fill's target/destination pre-fill must no longer be gated on GM+NPC-only aggro eligibility -- it should pre-fill for any actor, GM or player, since a GM who doesn't want players pre-filled already has hideAutoFillFromPlayers");
 assert.ok(panelDraftWorkflowSource.includes("plannedTargetSelection"), "auto-fill should consult planned target selection");
-assert.ok(/autoFillPanelDraft\([\s\S]*targetSelection: "manual"/.test(panelDraftWorkflowSource),
-  "auto-fill should store the planned target as a manual selection, for any actor using auto-fill");
+assert.ok(/autoFillPanelDraft\([\s\S]*targetSelection: "recommended"/.test(panelDraftWorkflowSource),
+  "auto-fill should store the planned target as a planned pick (resolved leniently), for any actor using auto-fill");
 assert.ok(panelDraftWorkflowSource.includes("recommendedMovementOptionsForStep"), "auto-fill should recommend ranked stride destinations");
 assert.ok(/autoFillPanelDraft\([\s\S]*recommendedMovementOptionsForStep[\s\S]*movementPlan/.test(panelDraftWorkflowSource),
   "auto-fill should store the recommended destinations and waypoints for any actor");
@@ -23961,6 +23981,23 @@ try {
     readActionSources(farAllyContext).find((action) => action.slug === "flank-strike-claw"),
     undefined,
     "no flank composite when the ally is not adjacent to the target",
+  );
+
+  // Reported live: "already flanking no need to stride" -- a 0 ft Stride to Flank was planned while
+  // the creature already stood opposite its ally, in reach.
+  const alreadyFlankingContext = {
+    ...flankContext,
+    token: { id: "brute-token", center: { x: -5, y: 0 } },
+    battlefield: {
+      ...flankContext.battlefield,
+      enemies: [{ id: "goblin", name: "Goblin", distance: 5, token: { center: { x: 0, y: 0 } } }],
+      targets: [{ id: "goblin", name: "Goblin", distance: 5, token: { center: { x: 0, y: 0 } } }],
+    },
+  };
+  assert.equal(
+    readActionSources(alreadyFlankingContext).find((action) => action.slug === "flank-strike-claw"),
+    undefined,
+    "no Stride to Flank when the creature already flanks the target in reach",
   );
 
   // A single creature cannot flank alone -- the composite is only ever offered with a real ally

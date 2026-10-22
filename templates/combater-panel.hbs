@@ -1,6 +1,6 @@
 <div class="combater-shell{{#unless expanded}} is-minimal{{/unless}}{{#each minimalHidden}} hide-{{this}}{{/each}}">
   {{#*inline "quickStepChip"}}
-            <button type="button" class="combater-quick-step{{#if isNext}} is-next{{/if}}{{#if needsChoice}} needs-choice{{/if}}{{#if blocked}} is-blocked{{/if}}" data-quick-step{{#unless blocked}} data-{{attr}}="{{instanceId}}"{{/unless}} data-preview-draft-step="{{instanceId}}"{{#if pipSlots}} data-step-pips="{{pipSlots}}"{{/if}} data-tooltip="{{tooltip}}" data-tooltip-direction="UP" aria-label="{{tooltip}}" aria-haspopup="true">
+            <button type="button" class="combater-quick-step{{#if isNext}} is-next{{/if}}{{#if needsChoice}} needs-choice{{/if}}{{#if blocked}} is-blocked{{/if}}{{#if isDone}} is-done{{/if}}" data-quick-step{{#unless blocked}} data-{{attr}}="{{instanceId}}"{{/unless}} data-preview-draft-step="{{instanceId}}"{{#if pipSlots}} data-step-pips="{{pipSlots}}"{{/if}} data-tooltip="{{tooltip}}" data-tooltip-direction="UP" aria-label="{{tooltip}}" aria-haspopup="true">
               {{#if img}}<img src="{{img}}" alt="">{{else}}<span class="combater-quick-step-number">{{stepNumber}}</span>{{/if}}
               <i class="fa-solid {{icon}}" aria-hidden="true"></i>
               {{#if mapBadge}}<span class="combater-quick-step-map">{{mapBadge}}</span>{{/if}}

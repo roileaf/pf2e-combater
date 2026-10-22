@@ -11,6 +11,8 @@ export function executionAction(step, action) {
       merged[key] = step[key];
     }
   }
+  // The spell variant the step was planned with (Ignition (Melee)) outlives a re-resolved action.
+  if (step?.spellVariant?.id) merged.spellVariant = step.spellVariant;
   if (step?.requiresDestination === true) merged.requiresDestination = true;
   if (step?.requiresTarget === true) merged.requiresTarget = true;
   return merged;

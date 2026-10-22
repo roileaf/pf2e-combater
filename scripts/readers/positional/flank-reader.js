@@ -86,6 +86,12 @@ function flankStrikePlan(context, profile, strike) {
       .map((ally) => ({ ally, rectangle: tokenPlacementForCenter(centerPoint(ally), ally, metrics) }));
     if (!flankAllies.length) continue;
 
+    // Already flanking it from here, within reach: there is nothing to Stride for.
+    const hereCenter = centerPoint(context?.token);
+    const hereRectangle = hereCenter ? tokenPlacementForCenter(hereCenter, attackerFootprint, metrics) : null;
+    if (hereRectangle && Number(target?.distance) <= reach
+      && flankAllies.some(({ rectangle }) => flanksTarget(hereRectangle, rectangle, targetRectangle))) continue;
+
     const attackCenter = reachableAttackCenters(context, target, speed, reach)
       .filter((center) => {
         const attackerRectangle = tokenPlacementForCenter(center, attackerFootprint, metrics);

@@ -191,6 +191,12 @@ function spellVariantFit(overlay, action) {
 
 function spellForPlannedActions(item, action) {
   if (item?.type !== "spell" || typeof item.loadVariant !== "function") return item;
+  // The variant chosen when planning (Ignition (Melee) on an adjacent target).
+  const plannedVariant = action?.spellVariant?.id;
+  if (plannedVariant && (item.overlays?.has?.(plannedVariant) || item.system?.overlays?.[plannedVariant])) {
+    const variant = item.loadVariant({ castRank: action?.castRank ?? action?.rank, overlayIds: [plannedVariant] });
+    if (variant) return variant;
+  }
   const actionCost = Number(action?.actionCost);
   if (!Number.isInteger(actionCost) || actionCost < 1 || actionCost > 3) return item;
   const variants = spellOverrideVariants(item, actionCost);
@@ -438,7 +444,43 @@ export async function executeOpenItem({ actor, action, event }) {
   return { guidance: true };
 }
 
-export async function executeNativeAction({ actor, action, event, target = null, patch = {}, trackSustainedSpell = true }) {
+// A spell that targets AC (Hand of the Apprentice, Ignition): its card only offers Attack buttons.
+function isAttackSpell(spell) {
+  if (spell?.type !== "spell") return false;
+  const traits = spell.system?.traits?.value ?? [];
+  return spell.system?.defense?.passive?.statistic === "ac" || (Array.isArray(traits) && traits.includes("attack"));
+}
+
+// Roll the attack the cast card offers, as its Attack / MAP buttons do. The card's own spell keeps
+// the cast rank and variant. Returns the attack message's id, or null when there is nothing to roll.
+async function rollSpellAttack({ action, nativeResult, event, attackNumber = 1 }) {
+  const card = chatMessageFromResult(nativeResult);
+  let spell = null;
+  try { spell = card?.item ?? null; } catch (_error) { /* A deleted origin falls back to the planned spell. */ }
+  if (typeof spell?.rollAttack !== "function") spell = action?.item ?? null;
+  if (!isAttackSpell(spell) || typeof spell?.rollAttack !== "function") return null;
+  const number = Math.max(1, Math.min(3, Number(attackNumber) || 1));
+  // PF2e returns the roll, not its message: catch the attack card as it is posted, for undo.
+  let attackMessageId = null;
+  const hooks = globalThis.Hooks;
+  const hookId = hooks?.on?.("createChatMessage", (message) => {
+    const type = message?.flags?.pf2e?.context?.type;
+    if (!attackMessageId && message?.id !== card?.id && ["spell-attack-roll", "attack-roll"].includes(type)) {
+      attackMessageId = message.id;
+    }
+  }) ?? null;
+  try {
+    await spell.rollAttack(event, number);
+    return attackMessageId;
+  } catch (error) {
+    globalThis.console?.warn?.("pf2e-combater | Spell attack roll failed", error);
+    return attackMessageId;
+  } finally {
+    if (hookId != null) hooks?.off?.("createChatMessage", hookId);
+  }
+}
+
+export async function executeNativeAction({ actor, action, event, target = null, patch = {}, trackSustainedSpell = true, attackNumber = 1 }) {
   if (target?.tokens) setTokenTargets(target.tokens);
   else if (target?.token) setTarget(target.token);
   const slotBefore = spellSlotRevertOp(actor, action);
@@ -463,7 +505,11 @@ export async function executeNativeAction({ actor, action, event, target = null,
   await flushPendingChat();
   const cardMessage = chatMessageFromResult(nativeResult);
   const cardTimestamp = Number(cardMessage?.timestamp);
-  const damageMessageIds = await rollActionDamageMessages({
+  const attackMessageId = nativeResult?.spellCast === true || cardMessage
+    ? await rollSpellAttack({ action, nativeResult, event, attackNumber })
+    : null;
+  // An attack spell's damage depends on the hit: like a Strike, it is rolled from the card after.
+  const damageMessageIds = attackMessageId ? [] : await rollActionDamageMessages({
     actor,
     action,
     target,
@@ -481,5 +527,6 @@ export async function executeNativeAction({ actor, action, event, target = null,
   for (const damageMessageId of [...damageMessageIds].reverse()) {
     result = attachRevertOp(result, { kind: "chat", messageId: damageMessageId });
   }
+  if (attackMessageId) result = attachRevertOp(result, { kind: "chat", messageId: attackMessageId });
   return attachRevertOp(result, sustainedEffectUuid ? { kind: "effect", effectUuid: sustainedEffectUuid } : null);
 }

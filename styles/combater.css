@@ -974,6 +974,35 @@
   cursor: context-menu;
 }
 
+/* A step already run: dimmed, with an undo badge. */
+.pf2e-combater .combater-shell.is-minimal .combater-quick-step.is-done {
+  border-color: #4a4f57;
+}
+
+.pf2e-combater .combater-shell.is-minimal .combater-quick-step.is-done > img,
+.pf2e-combater .combater-shell.is-minimal .combater-quick-step.is-done > .combater-quick-step-number {
+  opacity: 0.45;
+}
+
+.pf2e-combater .combater-shell.is-minimal .combater-quick-step.is-done > i {
+  background: #5a5f68;
+}
+
+.pf2e-combater .combater-shell.is-minimal .combater-quick-step.is-done:hover:not(:disabled),
+.pf2e-combater .combater-shell.is-minimal .combater-quick-step.is-done:focus-visible {
+  border-color: #d9a95a;
+  box-shadow: 0 0 0 1px #8a6a2a;
+}
+
+.pf2e-combater .combater-shell.is-minimal .combater-quick-step.is-done:hover > img,
+.pf2e-combater .combater-shell.is-minimal .combater-quick-step.is-done:hover > .combater-quick-step-number {
+  opacity: 0.8;
+}
+
+.pf2e-combater .combater-shell.is-minimal .combater-quick-step.is-done:hover > i {
+  background: #8a6a2a;
+}
+
 /* Customize minimal bar: parts the user switched off. */
 .pf2e-combater .combater-shell.is-minimal.hide-autofill .combater-minimal-tool.is-autofill,
 .pf2e-combater .combater-shell.is-minimal.hide-browse .combater-minimal-tool.is-browse,

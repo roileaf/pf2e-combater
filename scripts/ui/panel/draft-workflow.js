@@ -1556,6 +1556,7 @@ export function atomizePanelAutoFillSteps(panel, autoFill, movementContext, pref
       name: step?.name ?? step?.action?.name,
       actionCost: step?.actionCost ?? step?.cost,
       ...(step?.movementAction ? { movementAction: step.movementAction } : {}),
+      ...(step?.spellVariant?.id ? { spellVariant: step.spellVariant } : {}),
       requiresDestination: requiresDestinationForAction(step),
       requiresTarget: requiresTargetForAction(step),
       // A distinct-target ability's atoms all share the same id (compositeStrikeActionKey is
@@ -1578,13 +1579,15 @@ export function atomizePanelAutoFillSteps(panel, autoFill, movementContext, pref
       ...autoFillExplanationFields(step),
     };
 
+    // The plan's own target (ids and their aliases), kept as a planned pick: it resolves leniently,
+    // so an alias that no longer matches a token doesn't stop the step from running.
     const target = plannedTargetSelection(step);
     if (target.targetTokenIds.length) {
       draftStep = {
         ...draftStep,
         targetTokenIds: target.targetTokenIds,
         targetLabel: target.targetLabel,
-        targetSelection: "manual",
+        targetSelection: "recommended",
       };
     }
 

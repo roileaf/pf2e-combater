@@ -45,6 +45,18 @@ assert.equal(flank.img, "icons/skills/movement/feet-winged-boots-brown.webp", "a
 const quickChips = layout.quickSteps.flatMap((entry) => (entry.isGroup ? entry.chips : [entry]));
 assert.deepEqual(quickChips.map((entry) => entry.instanceId), ["f1", "f2", "s1", "s3", "q1"], "the minimal plan lists every step still to run");
 assert.equal(layout.quickSteps[0].isGroup, true, "an activity's steps stay together");
+// A step already run stays in the minimal bar so it can be undone from there.
+const ranChips = decoratePlanLayout([
+  step("r1", { isExecutionDone: true, canShowExecuteStep: false, canRevertStep: true }),
+  step("r2"),
+]).quickSteps;
+assert.deepEqual(ranChips.map((entry) => entry.instanceId), ["r1", "r2"], "a run step keeps its chip");
+assert.equal(ranChips[0].isDone, true);
+assert.equal(ranChips[0].attr, "revert-step", "clicking a run step's chip undoes it");
+assert.equal(ranChips[0].icon, "fa-rotate-left");
+assert.match(ranChips[0].tooltip, /^1\. r1 Riding Horse\. Done\. Click to undo\./);
+assert.deepEqual(ranChips[0].tools.map((tool) => tool.attr), ["revert-step"], "its right-click menu offers undo");
+assert.equal(ranChips[1].isNext, true, "the next step to run is still the next pending one");
 assert.deepEqual(layout.quickSteps[0].chips.map((chip) => chip.instanceId), ["f1", "f2"]);
 const flurryChips = decoratePlanLayout([{ ...flurry, groupLabel: "Flurry of Blows", children: [
   step("f1", { mapPenaltyValue: 0 }), step("f2", { mapPenaltyValue: 5 }),
