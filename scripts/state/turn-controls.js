@@ -69,6 +69,33 @@ async function notifySundryReaction(actor) {
   }
 }
 
+// PF2e Reaction Checker and Sundry count reaction cards themselves, and reactionUsed() reads both.
+function externalReactionTracking() {
+  const modules = globalThis.game?.modules;
+  return Boolean(modules?.get?.(REACTION_CHECKER_ID)?.active)
+    || Boolean(modules?.get?.(SUNDRY_ID)?.active && sundryTracksReactions());
+}
+
+// A reaction posted to chat (Shield Block from the sheet, or one Combater ran) spends that
+// creature's reaction, on or off its turn. Item cards are left to Reaction Checker or Sundry when
+// either tracks reactions; Combater's own reaction notes are invisible to them, so always count.
+export function reactionCardSpend(message, combat = globalThis.game?.combat) {
+  if (!combat?.started || !message) return null;
+  const ownNote = message.flags?.[MODULE_ID]?.reactionUse === true;
+  if (!ownNote) {
+    if (message.isRoll || externalReactionTracking()) return null;
+    let item;
+    try { item = message.item; } catch (_error) { /* A deleted origin is not a reaction. */ }
+    if ((item?.actionCost?.type ?? item?.system?.actionType?.value) !== "reaction") return null;
+  }
+  const tokenId = message.speaker?.token ?? null;
+  const actorId = message.speaker?.actor ?? message.actor?.id ?? null;
+  const combatant = collectionValues(combat.combatants).find((entry) =>
+    (tokenId && entry.tokenId === tokenId) || (!tokenId && actorId && entry.actorId === actorId));
+  if (!combatant || reactionUsed(combatant)) return null;
+  return { combat, combatant };
+}
+
 // Spends the creature's reaction: our own marker, plus PF2e Reaction Checker's
 // availability flag when that module is active so both agree.
 function reactionSpendChanges(combatant, round) {
@@ -399,4 +426,17 @@ export function registerTurnControlHooks(refresh) {
       .catch((error) => console.warn(`${MODULE_ID} | Turn flag cleanup failed`, error));
   });
   Hooks.on("updateCombatant", () => refresh("turn-controls"));
+  // Only the client that posted the reaction asks; the GM applies it like the tracker's glyph.
+  Hooks.on("createChatMessage", (message, _options, userId) => {
+    const user = globalThis.game?.user;
+    if (userId !== user?.id) return;
+    const spend = reactionCardSpend(message);
+    if (!spend) return;
+    const request = { ...turnIdentity(spend.combat), action: "reaction", reactionId: spend.combatant.id, used: true };
+    const activeGM = globalThis.game?.users?.activeGM;
+    const sent = user.isGM && (!activeGM || activeGM.id === user.id)
+      ? handleTurnControl.call({ socketdata: { userId: user.id } }, request)
+      : requestTurnControl(request);
+    Promise.resolve(sent).catch((error) => console.warn(`${MODULE_ID} | Reaction tracking failed`, error));
+  });
 }

@@ -114,9 +114,25 @@ function isRaisedShieldEffectKey(key) {
     || key === "raised-shield";
 }
 
+// PF2e's own shield state: Raise a Shield, Shield and Glass Shield all set it raised. A shield an
+// effect grants (Shield, Glass Shield) has the effect as its item, not a physical shield.
+function raisedActorShield(context) {
+  const actor = contextActorDocument(context);
+  const shield = actor?.system?.attributes?.shield;
+  return shield?.raised === true && shield.destroyed !== true ? { actor, shield } : null;
+}
+
+function spellGrantedShieldRaised(context) {
+  const raised = raisedActorShield(context);
+  if (!raised?.shield?.itemId) return false;
+  const item = raised.actor?.items?.get?.(raised.shield.itemId);
+  return item?.type === "effect";
+}
+
 function shieldSpellDefenseActive(context) {
   const profile = contextProfile(context);
   if (profile?.combatState?.shieldSpellActive === true) return true;
+  if (spellGrantedShieldRaised(context)) return true;
 
   return shieldEffectEntries(context).some((effect) =>
     effectSlugKeys(effect).some(isShieldSpellEffectKey),
@@ -128,6 +144,7 @@ function shieldBlockDefenseActive(context) {
   if (profile?.combatState?.raisedShieldActive === true || profile?.combatState?.shieldSpellActive === true) {
     return true;
   }
+  if (raisedActorShield(context)) return true;
 
   return shieldEffectEntries(context).some((effect) =>
     effectSlugKeys(effect).some((key) => isRaisedShieldEffectKey(key) || isShieldSpellEffectKey(key)),
