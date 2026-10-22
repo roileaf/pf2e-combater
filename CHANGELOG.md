@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.5.18]
+
+### Changed
+
+- **Run steps stay in the minimal bar.** A step you've run no longer disappears from the minimized plan: it stays as a dimmed chip with an undo badge, and clicking it (or Undo in its right-click menu) reverts it.
+
+### Fixed
+
+- **Attack spells roll their attack.** Casting a spell that targets AC (Hand of the Apprentice, Ignition, and the like) only posted its card, so you still had to click Attack. Combater now rolls the spell attack from that card, at the step's multiple attack penalty like a Strike, and undoing the step removes the attack too. Damage is rolled from the card after a hit, as with a Strike.
+- **Attack spells show their attack bonus with MAP.** A planned attack spell's row shows its spell attack bonus next to the MAP, like a Strike's ("+12 MAP 0", then "+7 MAP -5"), and the MAP you pin is the one it rolls at.
+- **A planned step runs at its planned target.** An auto-filled step like Electric Arc on the adjacent creature asked "Choose target at execution" even though it already showed its target. When you haven't chosen one, it now runs at the target it was planned against; a target you pick or have targeted still wins, and it only asks when there's neither.
+- **Use best target sticks.** Shift-clicking a step's target button to use its best target was ignored, so the step kept asking for a target.
+- **Electric Arc and other multi-target spells plan every target they can.** A spell for "1 or 2 creatures" was planned against one. Combater now also plans the nearest other enemies in the spell's range, and Run casts at all of them. An applied plan stores each target's token id and uuid; those count as one creature, so the step no longer asks for a target.
+- **No Stride to Flank when you already flank.** A creature already standing opposite its ally, within reach of the target, was offered a 0-foot Stride to Flank. It now goes straight to the Strike.
+- **Spells with a ranged and a melee variant cast the right one, and say so.** Ignition was planned and cast as plain "Ignition". Combater now picks the variant that reaches the target and hits hardest: "Ignition (Melee)" with its d6s when the target is adjacent, the ranged one otherwise. The step shows the variant's name, and that variant is the one cast and attack-rolled.
+
 ## [2.5.17]
 
 ### Fixed
