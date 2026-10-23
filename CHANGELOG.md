@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.1]
+
+### Fixed
+
+- **Players see only their own creatures in the combat tracker.** With "Show actions in the combat tracker" on, players saw every creature's actions and reaction, enemies included. Now a player sees the glyphs only on creatures they own; the GM still sees everyone's.
+
 ## [2.6.0]
 
 ### Added
