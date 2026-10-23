@@ -33,6 +33,9 @@ function combatantContext(combat, combatant) {
 // this user may click them (the GM, as on the panel).
 export function combatTrackerActionsView(combat, combatant) {
   if (!combat?.started || !combatant?.actor) return null;
+  // Players see only their own creatures' actions and reactions; the GM sees everyone's.
+  const user = globalThis.game?.user;
+  if (!user?.isGM && combatant.actor.testUserPermission?.(user, "OWNER") !== true) return null;
   const context = combatantContext(combat, combatant);
   const reaction = trackerReactionView(context);
   // On its turn: what's left. Otherwise: the forecast for its next turn (Slowed, Stunned, a resumed

@@ -8,8 +8,9 @@ import { reactionCardSpend, reactionUsed } from "../../state/turn-controls.js";
 // shows the creature's actions on its turn and its reaction, read from Combater's own tracker.
 const saved = Object.fromEntries(["game"].map((key) => [key, globalThis[key]]));
 try {
-  const actor = (id) => ({ id, type: "character", flags: {}, itemTypes: { condition: [], effect: [] }, items: [] });
-  const kim = { id: "kim", tokenId: "kim-token", actorId: "kim", actor: actor("kim"), flags: {} };
+  const actor = (id, owners = []) => ({ id, type: "character", flags: {}, itemTypes: { condition: [], effect: [] }, items: [],
+    testUserPermission: (user, level) => level === "OWNER" && owners.includes(user?.id) });
+  const kim = { id: "kim", tokenId: "kim-token", actorId: "kim", actor: actor("kim", ["player"]), flags: {} };
   const skink = { id: "skink", tokenId: "skink-token", actorId: "skink", actor: actor("skink"),
     flags: { "pf2e-combater": { reactionUsed: { round: 1 } } } };
   const combat = { id: "combat", started: true, round: 1, turn: 0, turns: [kim, skink], combatants: [kim, skink], combatant: kim, flags: {} };
@@ -56,6 +57,8 @@ try {
   const playerView = combatTrackerActionsView(combat, kim);
   assert.equal(playerView.pipControls, false, "players see them read-only");
   assert.equal(playerView.reactionControls, false);
+  // Roi, live: players saw every creature's glyphs. Only their own show; the GM sees all.
+  assert.equal(combatTrackerActionsView(combat, skink), null, "a player doesn't see a creature they don't own");
 
   // PF2e Guarder tracks a guardian's reactions: Combater shows its pool and spends through it.
   globalThis.game = { ...globalThis.game, user: { id: "gm", isGM: true } };
