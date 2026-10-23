@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.5.21]
+
+### Fixed
+
+- **No more freeze after a token move on maps with many walls.** Rebuilding the plan checked every line against every wall from scratch, so on a big map (a thousand walls) each rebuild froze the screen for one to three seconds, right after a token landed. Combater now reads the walls once and skips the ones nowhere near a line: the same rebuild takes a few dozen milliseconds, with the same results (doors still count as open or closed the moment they change).
+
 ## [2.5.20]
 
 ### Fixed
