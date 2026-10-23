@@ -114,6 +114,8 @@ import {
   consumeTokenRefreshChange,
   markMovementActionSpent,
   movementActionsSpent,
+  panelRefreshTiming,
+  tokensAnimating,
   tokenUpdateAffectsCombatGeometry,
   tokenUpdateAffectsMovement,
 } from "../../state/token-refresh.js";
@@ -3032,6 +3034,21 @@ assert.equal(consumeTokenRefreshChange(movingToken, tokenRefreshSnapshots), fals
 // A real DOCUMENT move still schedules a refresh.
 movingToken.document.x = 50;
 assert.equal(consumeTokenRefreshChange(movingToken, tokenRefreshSnapshots), true, "an actual document move still schedules a refresh");
+// A move and the writes other modules make in answer to it (cover effects, flanking) rebuild the
+// panel once: those echoes wait for the movement debounce while the move settles.
+{
+  const timingOptions = { movementSources: new Set(["token-movement"]), movementDelay: 350, delay: 150, settleMs: 1000 };
+  const moved = panelRefreshTiming("token-movement", { ...timingOptions, now: 10_000 });
+  assert.deepEqual(moved, { delay: 350, settleUntil: 11_000 }, "a move waits for the movement debounce and opens a settle window");
+  assert.equal(panelRefreshTiming("item-delete", { ...timingOptions, now: 10_500, settleUntil: moved.settleUntil }).delay, 350,
+    "an item change just after a move folds into the move's refresh");
+  assert.equal(panelRefreshTiming("item-delete", { ...timingOptions, now: 11_500, settleUntil: moved.settleUntil }).delay, 150,
+    "an item change after the move settled refreshes on the usual debounce");
+  assert.equal(panelRefreshTiming("actor-update", { ...timingOptions, now: 20_000, animating: true }).delay, 350,
+    "a change while a token is still sliding waits for the movement debounce");
+  assert.equal(tokensAnimating([{ animationContexts: new Map() }, { animationContexts: new Map([["move", {}]]) }]), true);
+  assert.equal(tokensAnimating([{ animationContexts: new Map() }, {}]), false);
+}
 const movementSpendMap = new Map();
 const movementDistanceMap = new Map();
 const movementOriginMap = new Map();

@@ -292,6 +292,38 @@ export function consumeTokenRefreshChange(token, snapshots = tokenSnapshots) {
   return previous === undefined || previous !== snapshot;
 }
 
+// How long after a move the writes other modules make in answer to it keep arriving (cover
+// effects, flanking marks, aura effects): each is an item or actor change that would rebuild the
+// panel again, a full planner search that takes a second at a big table.
+export const MOVEMENT_SETTLE_MS = 1000;
+// The longest a refresh waits for tokens to finish animating, so one that never stops cannot
+// hold the panel stale.
+export const MOVEMENT_MAX_WAIT_MS = 3000;
+
+// When to rebuild the panel for this refresh source. A move, and anything that changes while a
+// token is still sliding or within MOVEMENT_SETTLE_MS of a move, waits for the longer movement
+// debounce, so the move and its echoes rebuild the panel once instead of once each.
+export function panelRefreshTiming(source, {
+  now = Date.now(),
+  settleUntil = 0,
+  animating = false,
+  movementSources = new Set(),
+  movementDelay = 350,
+  delay = 150,
+  settleMs = MOVEMENT_SETTLE_MS,
+} = {}) {
+  const movement = movementSources.has(source);
+  return {
+    delay: movement || animating || now < settleUntil ? movementDelay : delay,
+    settleUntil: movement ? Math.max(settleUntil, now + settleMs) : settleUntil,
+  };
+}
+
+// Whether any token is still animating a document change (a move sliding along its path).
+export function tokensAnimating(tokens) {
+  return Array.from(tokens ?? []).some((token) => (token?.animationContexts?.size ?? 0) > 0);
+}
+
 export function clearTokenRefreshSnapshots(snapshots = tokenSnapshots) {
   snapshots.clear();
 }

@@ -22,6 +22,9 @@ import {
   clearMovementActionSpends,
   consumeTokenRefreshChange,
   markMovementActionSpent,
+  MOVEMENT_MAX_WAIT_MS,
+  panelRefreshTiming,
+  tokensAnimating,
   tokenUpdateAffectsCombatGeometry,
 } from "./state/token-refresh.js";
 import {
@@ -300,18 +303,36 @@ const REFRESH_DELAY_MS = 150;
 const MOVEMENT_REFRESH_SOURCES = new Set(["token-movement", "token-update", "token-refresh"]);
 const MOVEMENT_REFRESH_DELAY_MS = 350;
 
+let movementSettleUntil = 0;
+let refreshPendingSince = null;
+const animatingTokens = () => tokensAnimating(globalThis.canvas?.tokens?.placeables);
+
 function scheduleRefresh(source) {
   if (!activePanel) return;
   clearTimeout(refreshTimer);
-  const delay = MOVEMENT_REFRESH_SOURCES.has(source) ? MOVEMENT_REFRESH_DELAY_MS : REFRESH_DELAY_MS;
+  refreshPendingSince ??= Date.now();
+  const timing = panelRefreshTiming(source, {
+    settleUntil: movementSettleUntil,
+    animating: animatingTokens(),
+    movementSources: MOVEMENT_REFRESH_SOURCES,
+    movementDelay: MOVEMENT_REFRESH_DELAY_MS,
+    delay: REFRESH_DELAY_MS,
+  });
+  movementSettleUntil = timing.settleUntil;
   refreshTimer = setTimeout(() => {
     refreshTimer = null;
+    // A token still sliding along its move: rebuild once it lands (not past the max wait).
+    if (animatingTokens() && Date.now() - refreshPendingSince < MOVEMENT_MAX_WAIT_MS) {
+      scheduleRefresh(source);
+      return;
+    }
+    refreshPendingSince = null;
     const panel = activePanel;
     if (!panel) return;
     panel.refresh?.(source).catch((error) => {
       console.warn(`${MODULE_ID} | Refresh failed`, error);
     });
-  }, delay);
+  }, timing.delay);
 }
 
 function scheduleDocumentRefresh(document, source) {

@@ -3537,8 +3537,12 @@ assert.ok(
   "token movement/refresh sources should be grouped for coalesced refresh",
 );
 assert.ok(
-  /MOVEMENT_REFRESH_SOURCES\.has\(source\)\s*\?\s*MOVEMENT_REFRESH_DELAY_MS\s*:\s*REFRESH_DELAY_MS/.test(mainSource),
+  /panelRefreshTiming\(source,\s*\{[\s\S]*movementSources:\s*MOVEMENT_REFRESH_SOURCES,\s*movementDelay:\s*MOVEMENT_REFRESH_DELAY_MS,\s*delay:\s*REFRESH_DELAY_MS/.test(mainSource),
   "movement refreshes should use a longer trailing debounce than other refreshes",
+);
+assert.ok(
+  /if \(animatingTokens\(\) && Date\.now\(\) - refreshPendingSince < MOVEMENT_MAX_WAIT_MS\)/.test(mainSource),
+  "a refresh due while a token is still sliding should wait for it to land",
 );
 // A hold-and-drag spawns a preview clone whose position changes every frame; refreshing on it would
 // rebuild the plan mid-drag. The refreshToken hook must ignore preview/clone tokens.

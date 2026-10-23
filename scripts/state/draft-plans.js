@@ -182,11 +182,15 @@ export function consumeSharedDraftPlanRefreshSuppression(actor) {
 }
 
 // Foundry merges flag objects, so writing the plans back without a key keeps it. Removing a plan
-// needs an explicit "-=key" deletion (works on v13 and v14).
+// needs an explicit deletion: v14's ForcedDeletion operator (v14 deprecates "-=key"), else "-=key" (v13).
 async function writeActorSharedDrafts(actor, next, removedKeys = []) {
   if (!removedKeys.length || typeof actor?.update !== "function") return actor.setFlag(MODULE_ID, SHARED_DRAFTS_FLAG, next);
   const payload = { ...next };
-  for (const key of removedKeys) payload[`-=${key}`] = null;
+  const ForcedDeletion = globalThis.foundry?.data?.operators?.ForcedDeletion;
+  for (const key of removedKeys) {
+    if (typeof ForcedDeletion === "function") payload[key] = new ForcedDeletion();
+    else payload[`-=${key}`] = null;
+  }
   return actor.update({ flags: { [MODULE_ID]: { [SHARED_DRAFTS_FLAG]: payload } } });
 }
 
