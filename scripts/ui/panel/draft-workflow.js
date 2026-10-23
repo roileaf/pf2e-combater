@@ -29,6 +29,7 @@ import {
   upsertDraftStep,
   draftListForInstance,
   writeSharedDraftPlanActorFlag,
+  sharedDraftPlanUnchanged,
 } from "../../state/draft-plans.js";
 import { actorStrikeOptions, bestReadyStrike } from "../../readers/action/reader.js";
 import { actorMovementOptions, readActorSpeed } from "../../readers/actor-profile.js";
@@ -1462,14 +1463,34 @@ export async function autoFillPanelDraft(panel, { plan = null, forceFull = false
       ?? panel._plan
       ?? fallbackAutoFill();
     if (!autoFill?.steps?.length) return;
-    if (plan) panel._pinnedPlanId = autoFill.id ?? null;
 
-    const reachableSteps = panel._atomizeAutoFillSteps(autoFill, panel._context);
+    // A plan can atomize to nothing (its only move a Step to where the actor already stands is
+    // redundant): writing that leaves an empty draft and still syncs it to the GM. Take the next
+    // ranked plan that keeps a step; a plan the player picked is not swapped for another.
+    let chosen = autoFill;
+    let reachableSteps = panel._atomizeAutoFillSteps(autoFill, panel._context);
+    if (!reachableSteps.length && !plan) {
+      for (const candidate of currentPlans ?? []) {
+        if (candidate === autoFill || !candidate?.steps?.length) continue;
+        const steps = panel._atomizeAutoFillSteps(candidate, panel._context);
+        if (steps.length) {
+          chosen = candidate;
+          reachableSteps = steps;
+          break;
+        }
+      }
+    }
+    if (!reachableSteps.length) {
+      globalThis.ui?.notifications?.info?.(t("Notify.AutoFillNothing", "Auto-fill found nothing worth doing from here."));
+      return;
+    }
+    if (plan) panel._pinnedPlanId = chosen.id ?? null;
+
     await panel._writeActiveDraftPlan({
       ...draft,
       source: "auto-fill",
-      autoFillPlanId: autoFill.id ?? null,
-      autoFillPlanSummary: autoFill.summary ?? "",
+      autoFillPlanId: chosen.id ?? null,
+      autoFillPlanSummary: chosen.summary ?? "",
       // Remembered through later edits, so removing a suggestion still teaches preferences.
       steps: reachableSteps.map((step) => ({ ...step, suggestedByAutoFill: true })),
     });
@@ -1672,6 +1693,13 @@ export async function cyclePanelAutoFillDraft(panel, direction = 1) {
 export async function syncPanelDraftToGM(panel, { notify = false } = {}) {
   if (!panel._context || globalThis.game?.user?.isGM === true) return false;
   const draft = readDraftPlan(panel._context);
+  // The GM already has this exact plan (on the actor): a silent re-sync would only re-render
+  // every other client's combat tracker. An explicit share still goes through.
+  if (!notify && sharedDraftPlanUnchanged(panel._context, {
+    ...draft,
+    userId: globalThis.game?.user?.id ?? null,
+    userName: globalThis.game?.user?.name ?? "",
+  })) return true;
 
   try {
     const sharedDraft = writeSharedDraftPlan(panel._context, {

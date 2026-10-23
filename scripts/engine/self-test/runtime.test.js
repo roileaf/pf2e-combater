@@ -3338,6 +3338,21 @@ try {
     [],
     "GM should clear stale local player plan when the actor flag mirrors an empty player draft",
   );
+  // Every actor-flag write re-renders all clients' combat trackers: a plan that only gets a new
+  // updatedAt must not be written again, a changed plan must.
+  let actorFlagWrites = 0;
+  const countedSetFlag = actorFlagDocument.setFlag;
+  actorFlagDocument.setFlag = async (...args) => { actorFlagWrites += 1; return countedSetFlag(...args); };
+  await writeSharedDraftPlanActorFlag(actorFlagContext, { steps: [], userId: "user-2", userName: "Player Two", updatedAt: 700 });
+  assert.equal(actorFlagWrites, 0, "re-sharing an unchanged plan (only updatedAt differs) should not write the actor flag");
+  await writeSharedDraftPlanActorFlag(actorFlagContext, {
+    steps: [{ instanceId: "shared-flag-2", actionKey: "stride", actionCost: 1 }],
+    userId: "user-2",
+    userName: "Player Two",
+    updatedAt: 800,
+  });
+  assert.equal(actorFlagWrites, 1, "a changed plan should still be written to the actor flag");
+  actorFlagDocument.setFlag = countedSetFlag;
 
   const offlinePlayer = { id: "offline-player", name: "Offline Player", isGM: false, active: false };
   const activePlayer = { id: "active-player", name: "Active Player", isGM: false, active: true };

@@ -503,6 +503,7 @@
       "SyncNoSocket": "計画をGMと同期できない：Foundryのソケットが利用できない。",
       "PlanShared": "計画がGMと共有された。",
       "SyncFailed": "計画をGMと同期できなかった。",
+      "AutoFillNothing": "自動入力では、ここから行う価値のある行動が見つからなかった。",
       "NoDestinationPicker": "キャンバスの目的地選択機能は利用できない。",
       "TargetFirst": "最初にFoundry内のトークンを対象すること。",
       "NoBestTarget": "このアクションに利用できる最適な対象はない。",

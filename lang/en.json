@@ -730,6 +730,7 @@
       "SyncNoSocket": "Cannot sync plan with GM: Foundry socket is not available.",
       "PlanShared": "Plan shared with GM.",
       "SyncFailed": "Could not sync plan with GM.",
+      "AutoFillNothing": "Auto-fill found nothing worth doing from here.",
       "NoDestinationPicker": "Canvas destination picker is not available.",
       "TargetFirst": "Target a token in Foundry first.",
       "NoBestTarget": "No Best target is available for this action.",

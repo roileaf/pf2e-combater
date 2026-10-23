@@ -118,6 +118,26 @@ export function writeDraftPlan(context, draft) {
   writeStoredDrafts(drafts);
 }
 
+// A draft's content without the updatedAt every write stamps on it, keys sorted so two copies of the
+// same plan compare equal however they were built.
+function sharedDraftContent(draft) {
+  const sorted = (value) => Array.isArray(value)
+    ? value.map(sorted)
+    : isPlainObject(value)
+      ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, sorted(value[key])]))
+      : value;
+  const { updatedAt: _updatedAt, ...content } = normalizeSharedDraft(draft);
+  return JSON.stringify(sorted(content));
+}
+
+// Whether the actor already carries this exact plan for its turn. Rewriting it only to bump
+// updatedAt is an actor update, and Foundry re-renders every client's combat tracker for an
+// update to a combatant's actor (a sputter on every other screen), so such a write is skipped.
+export function sharedDraftPlanUnchanged(context, draft) {
+  const stored = readActorSharedDrafts(context)[sharedDraftPlanKey(context)];
+  return isPlainObject(stored) && sharedDraftContent(stored) === sharedDraftContent(draft);
+}
+
 function normalizeSharedDraft(draft) {
   return {
     ...draft,
@@ -214,6 +234,7 @@ export async function writeSharedDraftPlanActorFlag(context, draft, { suppressRe
   }
   try {
     const stale = staleSharedDraftKeys(drafts).filter((entry) => entry !== key);
+    if (!stale.length && sharedDraftPlanUnchanged(context, draft)) return true;
     const kept = Object.fromEntries(Object.entries(drafts).filter(([entry]) => !stale.includes(entry)));
     await writeActorSharedDrafts(actor, { ...kept, [key]: normalizeSharedDraft(draft) }, stale);
     return true;
