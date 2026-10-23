@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readShieldBlockAvailability, readShieldSpellBlockActions } from "../../readers/defense-action-reader.js";
 import { reactionCardSpend } from "../../state/turn-controls.js";
 import { createGuidance } from "../execution/guidance.js";
+import { awaitingFirstTurn } from "../../rules/reaction-block.js";
 
 // Live (Kimerus): Kim has Glass Shield up when the Magnetic Skink attacks. Combater offered no
 // Shield Block (it only knew the Shield spell's effect), and Shield Block from the sheet never
@@ -54,6 +55,25 @@ try {
 
   const spent = { ...kimCombatant, flags: { "pf2e-combater": { reactionUsed: { round: 1 } } } };
   assert.equal(reactionCardSpend(shieldBlockCard, { ...combat, combatants: [spent] }), null, "a spent reaction isn't spent twice");
+
+  // Setting "Reactions before a creature's first turn" off: no reaction until its first turn starts.
+  const skinkCombatant = { id: "skink-combatant", flags: {} };
+  const ordered = { started: true, round: 1, turn: 0, turns: [skinkCombatant, kimCombatant], combatants: [skinkCombatant, kimCombatant] };
+  assert.equal(awaitingFirstTurn(kimCombatant, ordered, { reactionsBeforeFirstTurn: false }), true,
+    "Kim acts after the Skink, so in round 1 she has no reaction yet");
+  assert.equal(awaitingFirstTurn(kimCombatant, ordered, { reactionsBeforeFirstTurn: true }), false, "on by default: reactions from the start");
+  assert.equal(awaitingFirstTurn(skinkCombatant, ordered, { reactionsBeforeFirstTurn: false }), false, "the creature whose turn it is has started its turn");
+  // Roi, live: after resetting an encounter, PF2e's turn-start flag still said every creature had
+  // acted, so nobody waited. Only the turn order counts.
+  assert.equal(awaitingFirstTurn({ ...kimCombatant, flags: { pf2e: { roundOfLastTurn: 2 } } }, ordered, { reactionsBeforeFirstTurn: false }), true,
+    "a stale turn flag from an earlier run doesn't give her the reaction");
+  assert.equal(awaitingFirstTurn({ ...kimCombatant, flags: { "pf2e-combater": { delayedTurn: { round: 1 } } } }, ordered, { reactionsBeforeFirstTurn: false }), false,
+    "a creature that started its turn and Delayed has had its turn");
+  assert.equal(awaitingFirstTurn(kimCombatant, { ...ordered, round: 2 }, { reactionsBeforeFirstTurn: false }), false);
+  globalThis.game = { ...globalThis.game, settings: { get: (_module, key) => (key === "reactionsBeforeFirstTurn" ? false : undefined) } };
+  assert.equal(reactionCardSpend(shieldBlockCard, { ...ordered, combatants: [kimCombatant] }), null,
+    "a reaction card before her first turn spends nothing she has");
+  globalThis.game = { ...globalThis.game, settings: undefined };
 
   const created = [];
   globalThis.ChatMessage = { create: async (data) => created.push(data), getSpeaker: () => ({ token: "kim-token" }) };

@@ -27,6 +27,7 @@ import {
 } from "../engine/movement-route.js";
 import { compareTacticalRouteCenters, tacticalRouteModeForStep } from "../rules/tactical-routes.js";
 import { t } from "../i18n.js";
+import { centerFlanksTarget } from "../readers/positional/flank-reader.js";
 
 const MOVEMENT_SLUGS = new Set(["crawl", "stride", "step", "stand-stride"]);
 // Purely a render-count safety net -- the expensive BFS has already run by the time this applies,
@@ -297,6 +298,21 @@ function recommendedPlacements(context, step, origin, reachable, footprint, grid
     ? placementForCenter(targetCenter, tokenFootprint(target), gridSize)
     : null;
   const metricsCache = new WeakMap();
+  // Closing on a target: of the squares equally near it, one that flanks it with an ally (so the
+  // Strike is against an off-guard target, and no second Stride is spent getting there).
+  // The preview measures in scene units (feet); flanking is judged on the canvas, in pixels.
+  const flankCache = new Map();
+  const pixelContext = options.pixelContext ?? null;
+  const pixelTarget = pixelContext ? previewTarget(pixelContext, step) : null;
+  const toPixels = Number(options.pixelScale) || 1;
+  const flanks = (center) => {
+    if (!pixelTarget || routeMode !== "approach") return false;
+    const key = `${center.x},${center.y}`;
+    if (!flankCache.has(key)) {
+      flankCache.set(key, centerFlanksTarget(pixelContext, { x: center.x * toPixels, y: center.y * toPixels }, pixelTarget));
+    }
+    return flankCache.get(key);
+  };
   return routeCenters.map((center) => placementForCenter(center, footprint, gridSize)).toSorted((left, right) => {
     if (routeMode !== "approach") {
       const tactical = compareTacticalRouteCenters(context, step, left.center, right.center, {
@@ -315,6 +331,8 @@ function recommendedPlacements(context, step, origin, reachable, footprint, grid
       const rightDistance = rectangleDistance(right, targetPlacement);
       if (leftDistance !== rightDistance) return leftDistance - rightDistance;
     }
+    const flankOrder = Number(flanks(right.center)) - Number(flanks(left.center));
+    if (flankOrder !== 0) return flankOrder;
     return Math.hypot(origin.x - left.center.x, origin.y - left.center.y)
       - Math.hypot(origin.x - right.center.x, origin.y - right.center.y);
   }).slice(0, Math.max(1, limit));
@@ -1324,7 +1342,10 @@ function computeMovementPreview(context, step) {
       allies: toSceneCombatants(rawContext.battlefield?.allies ?? []),
     },
   };
-  const preview = movementPreviewForStep(sceneContext, sceneStep, { gridSize: sceneDistance, collisionScale: scale });
+  // pixelContext / pixelScale: canvas-space data for checks made on the real grid (flanking).
+  const preview = movementPreviewForStep(sceneContext, sceneStep, {
+    gridSize: sceneDistance, collisionScale: scale, pixelContext: rawContext, pixelScale: scale,
+  });
   return { preview, scale };
 }
 

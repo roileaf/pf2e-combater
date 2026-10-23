@@ -4,6 +4,9 @@ import { t } from "../i18n.js";
 import { actionBudget } from "../engine/action/budget.js";
 import { currentActionTurn, resumesDelayedTurn, trackedActionContext } from "./action-tracker.js";
 import { isSocketReady, requestTurnControl } from "../socket.js";
+import { awaitingFirstTurn } from "../rules/reaction-block.js";
+import { guarderReactionPool, guarderReactionsLeft } from "../integrations/guarder.js";
+import { reactionsBeforeFirstTurn } from "../settings.js";
 
 export const DELAY_FLAG = "delayedTurn";
 export const READY_FLAG = "readiedAction";
@@ -31,6 +34,9 @@ function hasReactionUsedEffect(actor) {
 // "Reaction Used" effect — the other two reset at the creature's turn start, so
 // reactions used outside Combater count too.
 export function reactionUsed(combatant) {
+  // A guardian's reactions are PF2e Guarder's to count (general plus guardian-only).
+  const guardian = guarderReactionPool(combatant?.actor);
+  if (guardian) return guarderReactionsLeft(guardian) === 0;
   if (combatant?.flags?.[MODULE_ID]?.[REACTION_FLAG]) return true;
   const checker = globalThis.game?.modules?.get?.(REACTION_CHECKER_ID);
   if (checker?.active && combatant?.flags?.[REACTION_CHECKER_ID]?.state === false) return true;
@@ -93,6 +99,10 @@ export function reactionCardSpend(message, combat = globalThis.game?.combat) {
   const combatant = collectionValues(combat.combatants).find((entry) =>
     (tokenId && entry.tokenId === tokenId) || (!tokenId && actorId && entry.actorId === actorId));
   if (!combatant || reactionUsed(combatant)) return null;
+  // PF2e Guarder already counts a guardian's reaction cards.
+  if (guarderReactionPool(combatant.actor)) return null;
+  // No reaction yet before its first turn (when the GM runs it that way): nothing to spend.
+  if (awaitingFirstTurn(combatant, combat, { reactionsBeforeFirstTurn: reactionsBeforeFirstTurn() })) return null;
   return { combat, combatant };
 }
 

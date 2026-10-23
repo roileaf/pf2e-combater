@@ -108,6 +108,9 @@
       "ReactionAvailable": "Reaction available",
       "ReactionHint": "Click: use the reaction · Right-click: give it back",
       "ReactionBlocked": "Can't use reactions ({source})",
+      "ReactionFirstTurn": "No reaction until its first turn",
+      "GuardianReactions": "Reactions: {general} · guardian-only: {guardian}",
+      "QuickenedCount": "Quickened {left}/{total}",
       "PendingConditions": "{conditions} · next turn",
       "PendingConditionsHint": "Gained during this turn: it reduces the actions this creature regains at the start of its next turn.",
       "AllowanceTitle": "Quickened actions",
@@ -229,6 +232,18 @@
           "Flanked": "Flanked",
           "NotFlanked": "Not flanked"
         }
+      },
+      "AutoFillOnTurnStart": {
+        "Name": "Auto-fill at turn start",
+        "Hint": "When a turn starts that is yours to plan (your character, or for the GM a creature no active player controls), run Auto-fill for it automatically. A plan already made is kept."
+      },
+      "CombatTrackerActions": {
+        "Name": "Show actions in the combat tracker",
+        "Hint": "Show the current creature's remaining actions and every creature's reaction in Foundry's combat tracker and in PF2e HUD's tracker."
+      },
+      "ReactionsBeforeFirstTurn": {
+        "Name": "Reactions before a creature's first turn",
+        "Hint": "On: every creature can use its reaction from the start of the encounter. Off: a creature gets its reaction only when its first turn starts, so before then it can't Shield Block, Reactive Strike and so on."
       },
       "RaisePcShieldsWhenDefending": {
         "Name": "Raise PC shields when Defending",
@@ -757,6 +772,7 @@
     },
     "Exec": {
       "ChooseAtExec": "Choose {choices} at execution.",
+      "TargetDown": "{name} is down. Target another creature in Foundry, then run this step.",
       "ChooseSwapItems": "Choose items to swap.",
       "DestinationUnavailable": "Destination is unavailable.",
       "MoveOnlyOnTurn": "Token can only move on its turn.",

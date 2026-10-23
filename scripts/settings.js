@@ -21,7 +21,20 @@ const SETTINGS = {
   raisePcShieldsWhenDefending: "raisePcShieldsWhenDefending",
   enrageBarbariansAtCombatStart: "enrageBarbariansAtCombatStart",
   learnObservedIntel: "learnObservedIntel",
+  reactionsBeforeFirstTurn: "reactionsBeforeFirstTurn",
+  combatTrackerActions: "combatTrackerActions",
+  autoFillOnTurnStart: "autoFillOnTurnStart",
 };
+
+// Show each creature's actions and reaction in Foundry's and PF2e HUD's combat trackers.
+export function combatTrackerActions() {
+  return settingOrDefault(SETTINGS.combatTrackerActions, false) === true;
+}
+
+// Off: a creature gets its reaction only once its first turn of the encounter starts.
+export function reactionsBeforeFirstTurn() {
+  return settingOrDefault(SETTINGS.reactionsBeforeFirstTurn, true) !== false;
+}
 
 // Parts of the minimal bar a user can switch off (Customize minimal bar).
 export const MINIMAL_PARTS = ["autofill", "browse", "setup", "cycle", "plan", "tracker", "readied", "delay", "upcoming", "turn"];
@@ -252,6 +265,34 @@ export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu }
     config: true,
     type: Boolean,
     default: true,
+  });
+  game.settings.register(MODULE_ID, SETTINGS.reactionsBeforeFirstTurn, {
+    name: "PF2E_COMBATER.Settings.ReactionsBeforeFirstTurn.Name",
+    hint: "PF2E_COMBATER.Settings.ReactionsBeforeFirstTurn.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+  game.settings.register(MODULE_ID, SETTINGS.combatTrackerActions, {
+    name: "PF2E_COMBATER.Settings.CombatTrackerActions.Name",
+    hint: "PF2E_COMBATER.Settings.CombatTrackerActions.Hint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => {
+      globalThis.ui?.combat?.render?.();
+      globalThis.foundry?.applications?.instances?.get?.("pf2e-hud-tracker")?.render?.();
+    },
+  });
+  game.settings.register(MODULE_ID, SETTINGS.autoFillOnTurnStart, {
+    name: "PF2E_COMBATER.Settings.AutoFillOnTurnStart.Name",
+    hint: "PF2E_COMBATER.Settings.AutoFillOnTurnStart.Hint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
   });
   game.settings.register(MODULE_ID, "visionerCombatSettingsMigrated", {
     scope: "world",

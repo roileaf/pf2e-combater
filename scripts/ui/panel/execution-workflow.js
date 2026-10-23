@@ -243,7 +243,8 @@ export function handlePanelExecutionChoice(panel, step, choice, event, result = 
     return true;
   }
   if (choice === "target") {
-    panel._chooseTarget(step.instanceId);
+    // Why a target is needed (its planned target is down) beats "Target a token first".
+    panel._chooseTarget(step.instanceId, result?.reason ? { reason: result.reason } : {});
     return true;
   }
   if (choice === "area") {

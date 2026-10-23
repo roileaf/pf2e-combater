@@ -64,6 +64,18 @@ export function flanksTarget(attackerRectangle, allyRectangle, targetRectangle) 
   return (crossesLeft && crossesRight) || (crossesTop && crossesBottom);
 }
 
+// Whether standing at `center` flanks `target` with an ally that threatens it.
+export function centerFlanksTarget(context, center, target) {
+  const targetCenter = centerPoint(target);
+  if (!center || !targetCenter) return false;
+  const metrics = movementGridMetrics();
+  const targetRectangle = tokenPlacementForCenter(targetCenter, target, metrics);
+  const here = tokenPlacementForCenter(center, movementFootprintForToken(context?.token), metrics);
+  return contextAllies(context)
+    .filter((ally) => centerPoint(ally) && allyThreatensTarget(ally, target, metrics))
+    .some((ally) => flanksTarget(here, tokenPlacementForCenter(centerPoint(ally), ally, metrics), targetRectangle));
+}
+
 function flankStrikePlan(context, profile, strike) {
   if (isRangedStrike(strike)) return null;
 

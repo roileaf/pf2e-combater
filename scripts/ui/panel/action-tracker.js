@@ -1,6 +1,8 @@
 import { adjustTrackedActions, setQuickenedAllowance } from "../../state/action-tracker.js";
 import { reactionUsed, turnIdentity } from "../../state/turn-controls.js";
-import { reactionBlock } from "../../rules/reaction-block.js";
+import { awaitingFirstTurn, reactionBlock } from "../../rules/reaction-block.js";
+import { reactionsBeforeFirstTurn } from "../../settings.js";
+import { adjustGuarderReaction, guarderReactionLimit, guarderReactionPool, guarderReactionsLeft } from "../../integrations/guarder.js";
 import { sendTurnControl } from "./turn-controls.js";
 import { pf2eActionName, t } from "../../i18n.js";
 import { CARD_DIALOG_CLASS, cardPickerHtml, checkedValues } from "../card-picker.js";
@@ -35,18 +37,52 @@ function quickenedOptions(panel, allowed) {
 }
 
 // The creature's reaction glyph, shown beside the action pips.
-function trackerReactionView(context) {
+export function trackerReactionView(context) {
   const id = context?.combatant?.id;
   if (!id) return null;
   const combatant = globalThis.game?.combat?.turns?.find?.((entry) => entry.id === id) ?? context.combatant;
   const used = reactionUsed(combatant);
   const block = reactionBlock(combatant?.actor ?? context.actor?.document);
+  // A guardian: PF2e Guarder's pool, its general reaction plus guardian-only ones (Reaction Time,
+  // Ever Ready, Boundless Reprisals). Guarder applies its own first-turn rules.
+  const guardian = guarderReactionPool(combatant?.actor ?? context.actor?.document);
+  if (guardian) {
+    const general = Number(guardian.general) || 0;
+    const guardianOnly = (Number(guardian.guardian) || 0) + (Number(guardian.boundless) || 0);
+    // One glyph per slot that exists right now (lit while available). Older Guarder has no limit:
+    // the general slot, plus each guardian-only reaction still held.
+    const limit = guarderReactionLimit(combatant?.actor ?? context.actor?.document);
+    const generalSlots = limit ? Number(limit.general) || 0 : 1;
+    const guardianSlots = limit ? (Number(limit.guardian) || 0) + (Number(limit.boundless) || 0) : guardianOnly;
+    // Guarder's limit is what exists right now: never draw past it, even for the moment its pool
+    // still holds a reaction from before (Ever Ready's, as the encounter starts).
+    const slots = limit ? guardianSlots : Math.max(guardianSlots, guardianOnly);
+    const left = guarderReactionsLeft(guardian);
+    return {
+      used: left === 0,
+      blocked: Boolean(block),
+      combatantId: id,
+      guarder: { general, guardianOnly, generalSlots, guardianSlots: slots },
+      // Guardian-only reactions are named only while the guardian has a slot for one.
+      label: block
+        ? t("ActionTracker.ReactionBlocked", "Can't use reactions ({source})", { source: block.name })
+        : slots > 0
+          ? t("ActionTracker.GuardianReactions", "Reactions: {general} · guardian-only: {guardian}", { general, guardian: guardianOnly })
+          : left === 0
+            ? t("TurnControls.ReactionUsed", "Reaction used")
+            : t("ActionTracker.ReactionAvailable", "Reaction available"),
+      hint: t("ActionTracker.ReactionHint", "Click: use the reaction · Right-click: give it back"),
+    };
+  }
+  const firstTurn = !block && awaitingFirstTurn(combatant, globalThis.game?.combat, { reactionsBeforeFirstTurn: reactionsBeforeFirstTurn() });
   return {
     used,
-    blocked: Boolean(block),
+    blocked: Boolean(block) || firstTurn,
     combatantId: id,
     label: block
       ? t("ActionTracker.ReactionBlocked", "Can't use reactions ({source})", { source: block.name })
+      : firstTurn
+        ? t("ActionTracker.ReactionFirstTurn", "No reaction until its first turn")
       : used
         ? t("TurnControls.ReactionUsed", "Reaction used")
         : t("ActionTracker.ReactionAvailable", "Reaction available"),
@@ -183,10 +219,14 @@ export function activateActionTrackerBindings(panel, element) {
     event.preventDefault();
     event.stopPropagation();
     const view = actionTrackerView(panel._context);
-    if (!view.glyphControls || !view.reaction || view.reaction.used === used || reaction.dataset.busy) return;
+    if (!view.glyphControls || !view.reaction || reaction.dataset.busy) return;
+    // A guardian can hold several reactions: each click spends or gives back one, in PF2e Guarder.
+    const guardian = Boolean(view.reaction.guarder);
+    if (!guardian && view.reaction.used === used) return;
     reaction.dataset.busy = "1";
     try {
-      await sendTurnControl({ ...turnIdentity(globalThis.game?.combat), action: "reaction", reactionId: view.reaction.combatantId, used });
+      if (guardian) await adjustGuarderReaction(panel._context?.combatant?.actor ?? panel._context?.actor?.document, used ? 1 : -1);
+      else await sendTurnControl({ ...turnIdentity(globalThis.game?.combat), action: "reaction", reactionId: view.reaction.combatantId, used });
       await panel.refresh("turn-controls");
     } catch (error) {
       globalThis.ui?.notifications?.warn?.(error.message);

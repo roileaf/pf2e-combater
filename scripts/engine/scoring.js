@@ -96,7 +96,18 @@ function spellVariantFor(context, action, target) {
       const time = parseInt(String(overlay?.system?.time?.value ?? ""), 10);
       return !Number.isFinite(time) || time === actionCost;
     });
-  if (overlays.length < 2) return null;
+  // Only variants doing what this action does: Heal's "vs. Living" heals and "vs. Undead" harms,
+  // so they are two actions, not a range choice.
+  const includes = action?.activityProfile?.includes ?? [];
+  const wantsHealing = action?.role === "healing" || includes.includes("healing");
+  const baseKinds = Object.values(item.system?.damage ?? {}).flatMap((damage) => damage?.kinds ?? []);
+  const sameKind = overlays.filter(([, overlay]) => {
+    const kinds = Object.values(overlay?.system?.damage ?? {}).flatMap((damage) => damage?.kinds ?? []);
+    const effective = kinds.length ? kinds : baseKinds;
+    return !effective.length || effective.includes(wantsHealing ? "healing" : "damage");
+  });
+  if (sameKind.length < 2) return null;
+  overlays.splice(0, overlays.length, ...sameKind);
   const profile = context?.profile ?? context?.actor?.profile ?? {};
   const distance = Number(target.distance);
   const baseDamage = Object.values(item.system?.damage ?? {}).map((damage) => damage?.formula).join(" ");

@@ -165,7 +165,7 @@ export function choosePanelDestination(panel, instanceId) {
   if (!picker.native) showDestinationPickerPreview(panel, instanceId);
 }
 
-export async function choosePanelTarget(panel, instanceId, { useBestTarget = false } = {}) {
+export async function choosePanelTarget(panel, instanceId, { useBestTarget = false, reason = "" } = {}) {
   if (!panel._canExecuteDraft()) return;
   const step = panel._findDraftStep(instanceId);
   if (!panel._context || !step) return;
@@ -177,7 +177,7 @@ export async function choosePanelTarget(panel, instanceId, { useBestTarget = fal
   if (!selection.targetTokenIds.length) {
     globalThis.ui?.notifications?.warn?.(useBestTarget
       ? t("Notify.NoBestTarget", "No Best target is available for this action.")
-      : t("Notify.TargetFirst", "Target a token in Foundry first."));
+      : reason || t("Notify.TargetFirst", "Target a token in Foundry first."));
     return;
   }
   await panel._persistActiveDraftStep(stepWithRetryReset(current, {

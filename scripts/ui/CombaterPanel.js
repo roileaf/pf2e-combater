@@ -3,6 +3,7 @@ import { SETTINGS, playerAccessAllowed, settingOrDefault, trackerOnlyMode } from
 import { projectContextForDraftDestination, SUSTAIN_A_SPELL_ACTION } from "../engine/action/builder/index.js";
 import { requiresDestinationForAction } from "../engine/action/requirements.js";
 import { buildCandidates } from "../engine/candidates.js";
+import { autoFillAfterRender } from "./panel/turn-start-auto-fill.js";
 import { actionBudget, quickenedEligible, stepAlreadySpent } from "../engine/action/budget.js";
 import { toggleActionExclusion } from "../state/action-exclusions.js";
 import { choosePanelSummon } from "./panel/summon-workflow.js";
@@ -461,6 +462,8 @@ class CombaterPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     this._restorePosition();
     activatePanelRenderBindings(this, this.element);
     this._restoreDestinationPickerPreview();
+    // "Auto-fill at turn start": once per turn, when this render shows that turn's creature.
+    autoFillAfterRender(this);
 
     // Keep the detached browser window in sync: every panel render (mutation, refresh, or
     // combat hook) recomputes _builder, so re-render the browser from it. No-op when closed.

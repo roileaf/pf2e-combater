@@ -593,6 +593,9 @@
   border: 0;
   background: transparent;
   box-shadow: none;
+  /* A full bar can outgrow the window (see min-width on .combater-shell.is-minimal); Foundry's
+     window clips its content, which cut the expand button off at the window edge. */
+  overflow: visible;
   /* The bar shrinks to its parts (see .combater-shell.is-minimal); the empty rest of the
      window must not swallow canvas clicks. */
   pointer-events: none;
@@ -621,6 +624,9 @@
   container-type: normal;
   width: fit-content;
   max-width: 100%;
+  /* Never narrower than its fixed parts (wins over max-width): a full plan plus a Quickened
+     tracker can outgrow the window, and the expand button then hung outside the bar. */
+  min-width: min-content;
   pointer-events: auto;
   overflow: visible;
   border-color: rgb(61 65 72 / 55%);
@@ -678,7 +684,9 @@
 .pf2e-combater .combater-shell.is-minimal .combater-action-tracker {
   grid-area: tracker;
   flex-wrap: nowrap;
-  min-width: 0;
+  /* Never narrower than its glyphs: a Quickened bolt stays inside the tracker instead of spilling
+     past its border onto End turn. The upcoming-turn column takes the squeeze instead. */
+  min-width: max-content;
   padding: 4px 8px;
 }
 
@@ -6423,4 +6431,99 @@
 .pf2e-combater .combater-shell.is-minimal .combater-minimal-tool.is-clear:focus-visible {
   border-color: #c76b6b;
   color: #ffd0d0;
+}
+
+/* Actions and reaction in Foundry's and PF2e HUD's combat trackers (setting), in the row's controls. */
+.pf2e-combater-tracker-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  margin-inline-start: 2px;
+  padding-inline-start: 4px;
+  border-inline-start: 1px solid rgb(255 255 255 / 15%);
+  line-height: 1;
+}
+.pf2e-combater-tracker-actions .combater-tracker-pips {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+.pf2e-combater-tracker-actions .combater-tracker-pip,
+.pf2e-combater-tracker-actions .combater-tracker-reaction {
+  display: inline-grid;
+  place-items: center;
+  min-width: 0;
+  height: 18px;
+}
+/* Diamonds overlap a little so a fourth (quickened) still fits beside the row's controls. */
+.pf2e-combater-tracker-actions .combater-tracker-pip + .combater-tracker-pip { margin-inline-start: -3px; }
+.pf2e-combater-tracker-actions .action-glyph {
+  font-family: "Pathfinder2eActions", sans-serif;
+  font-size: 15px;
+  font-weight: normal;
+  letter-spacing: 0;
+  line-height: 1;
+}
+.pf2e-combater-tracker-actions .combater-tracker-pip { color: #7fd1a0; }
+.pf2e-combater-tracker-actions .combater-tracker-pip.is-quickened { color: #f0c96f; }
+.pf2e-combater-tracker-actions .combater-tracker-pip.is-spent,
+.pf2e-combater-tracker-actions .combater-tracker-reaction.is-used { color: #8a949e; opacity: 0.5; }
+.pf2e-combater-tracker-actions .combater-tracker-reaction.is-ready { color: #7fd1a0; }
+.pf2e-combater-tracker-actions .combater-tracker-reaction.is-blocked { color: #d07a7a; opacity: 0.8; }
+.pf2e-combater-tracker-actions .is-editable { cursor: pointer; }
+.pf2e-combater-tracker-actions .combater-tracker-pips.is-editable:hover .combater-tracker-pip,
+.pf2e-combater-tracker-actions .combater-tracker-reaction.is-editable:hover {
+  text-shadow: 0 0 6px rgb(200 245 217 / 80%);
+  opacity: 1;
+}
+/* PF2e HUD's tracker is narrow: slightly smaller glyphs, no divider. */
+#pf2e-hud-tracker .pf2e-combater-tracker-actions { border: 0; padding: 0; margin-inline-start: 2px; }
+#pf2e-hud-tracker .pf2e-combater-tracker-actions .action-glyph { font-size: 14px; }
+/* Next-turn forecast (not this creature's turn): blue like the panel's. */
+.pf2e-combater-tracker-actions .combater-tracker-pips.is-forecast .combater-tracker-pip:not(.is-quickened):not(.is-spent) { color: #91c8ff; }
+/* The row never wraps the glyphs onto a second line; conditions live in the tooltip. */
+.pf2e-combater-tracker-actions,
+.pf2e-combater-tracker-actions .combater-tracker-pips,
+.pf2e-combater-tracker-actions .combater-tracker-reactions { flex-wrap: nowrap; white-space: nowrap; }
+/* Tooltip (rendered in Foundry's #tooltip). */
+.combater-tracker-tip { display: grid; gap: 4px; max-width: 260px; text-align: start; }
+.combater-tracker-tip-condition { display: flex; align-items: center; gap: 6px; }
+.combater-tracker-tip-condition.is-pending { opacity: 0.75; }
+.combater-tracker-tip-icon { position: relative; display: inline-grid; flex: 0 0 auto; width: 20px; height: 20px; }
+.combater-tracker-tip-icon img { width: 20px; height: 20px; border: 0; border-radius: 50%; }
+.combater-tracker-tip-value {
+  position: absolute; right: -3px; bottom: -3px; min-width: 11px; padding: 0 2px; border-radius: 6px;
+  background: #b5892e; color: #fff; font-size: 9px; font-weight: 700; line-height: 11px; text-align: center;
+}
+.combater-tracker-tip-hint { opacity: 0.75; font-size: 0.9em; }
+/* A guardian's reactions (PF2e Guarder): general, then gold guardian-only ones. */
+.pf2e-combater-tracker-actions .combater-tracker-reactions { display: inline-flex; align-items: center; gap: 1px; }
+.pf2e-combater-tracker-actions .combater-tracker-reaction.is-guardian { color: #f0c96f; }
+.pf2e-combater-tracker-actions .combater-tracker-reactions.is-editable:hover .combater-tracker-reaction {
+  text-shadow: 0 0 6px rgb(200 245 217 / 80%);
+}
+
+/* Minimal bar: the Quickened bolt is a bare glyph inside the tracker (no button box), and End turn
+   never breaks onto two lines when the bar is tight. */
+.pf2e-combater .combater-shell.is-minimal .combater-action-tracker .combater-tracker-quickened.is-icon {
+  min-width: 0;
+  height: auto;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  line-height: 1;
+}
+.pf2e-combater .combater-shell.is-minimal .combater-turn-button.is-end { white-space: nowrap; }
+/* The Quickened bolt glows on hover, like the reaction glyph (text-shadow, not a filter). */
+.pf2e-combater .combater-tracker-quickened:not(:disabled):hover,
+.pf2e-combater .combater-tracker-quickened:not(:disabled):focus-visible {
+  text-shadow: 0 0 6px currentColor;
+}
+.pf2e-combater .combater-shell.is-minimal .combater-action-tracker .combater-tracker-quickened.is-icon:hover,
+.pf2e-combater .combater-shell.is-minimal .combater-action-tracker .combater-tracker-quickened.is-icon:focus-visible {
+  border: 0;
+  background: none;
+  box-shadow: none;
 }

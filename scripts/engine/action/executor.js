@@ -23,8 +23,12 @@ import { setSpellstrikeExpended } from "../../rules/spellstrike-state.js";
 import { executeSustainSpell } from "../execution/sustain.js";
 import { executeTeleport } from "../execution/teleport.js";
 import {
+  canvasTokenById,
   resolveTarget,
+  targetTokenId,
 } from "../execution/targets.js";
+import { canAttackTarget, contextEnemies } from "../target-pool.js";
+import { inActionReach } from "../scoring/tactic-helpers.js";
 import { attachRevertOp, executionPatch } from "../execution/results.js";
 import { executionAction, executionReadinessForStep } from "../execution/state.js";
 import { t } from "../../i18n.js";
@@ -36,6 +40,21 @@ export { executionReadinessForStep, nextPendingExecutionStep, resetDraftExecutio
 
 export function actorDocument(context) {
   return contextActorDocument(context, { allowActorFallback: true });
+}
+
+// The nearest living, attackable enemy this action reaches from where the step runs.
+function livingTargetInReach(context, action, downed) {
+  const profile = context?.profile ?? context?.actor?.profile ?? {};
+  const downedId = downed?.id ?? null;
+  const enemy = contextEnemies(context)
+    .filter((entry) => canAttackTarget(entry) && !(Number(entry?.hpPercent) <= 0))
+    .filter((entry) => (entry?.token?.id ?? entry?.id) !== downedId && entry?.id !== downedId)
+    .filter((entry) => inActionReach(profile, action, entry))
+    .toSorted((left, right) => (Number(left?.distance) || Infinity) - (Number(right?.distance) || Infinity))[0];
+  const token = enemy ? canvasTokenById(enemy.token?.id ?? enemy.id) : null;
+  if (!token) return null;
+  const name = token.name ?? token.document?.name ?? enemy.name ?? "";
+  return { token, id: targetTokenId(token), label: t("Label.Target", "Target: {name}", { name }) };
 }
 
 export async function executeDraftStep(options = {}) {
@@ -73,16 +92,27 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
   const destination = destinationFromStep(step, choices);
   if (destination) patch.destination = destination;
 
-  const target = requiresTargetForAction(resolvedAction) ? resolveTarget(step, resolvedAction, choices) : null;
+  let target = requiresTargetForAction(resolvedAction) ? resolveTarget(step, resolvedAction, choices) : null;
   if (requiresTargetForAction(resolvedAction)) {
     if (!target) return { status: "needs-choice", choices: ["target"], patch };
-    // The planned target died earlier this turn (an NPC at 0 HP): ask for a new one rather than
-    // attack the body. A target the user just picked is used as given.
+    // The planned target died earlier this turn (an NPC at 0 HP): never attack the body. Take the
+    // nearest living enemy the action still reaches; with none, ask, saying why. A target the user
+    // just picked is used as given.
     const targetActorDocument = target.token?.actor ?? target.token?.document?.actor ?? null;
     const targetHp = Number(targetActorDocument?.system?.attributes?.hp?.value);
     if (!Object.prototype.hasOwnProperty.call(choices, "targetTokenIds")
       && targetActorDocument?.type === "npc" && Number.isFinite(targetHp) && targetHp <= 0) {
-      return { status: "needs-choice", choices: ["target"], patch };
+      const replacement = livingTargetInReach(context, resolvedAction, target);
+      if (!replacement) {
+        const name = target.token?.name ?? targetActorDocument?.name ?? "";
+        return {
+          status: "needs-choice", choices: ["target"], patch,
+          reason: t("Exec.TargetDown", "{name} is down. Target another creature in Foundry, then run this step.", { name }),
+        };
+      }
+      target = replacement;
+      // The Strike (and native actions) resolve the target again from the run's choices.
+      choices = { ...choices, targetTokenIds: target.ids ?? [target.id], targetLabel: target.label };
     }
     patch.targetTokenIds = target.ids ?? [target.id];
     patch.targetLabel = target.label;

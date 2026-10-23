@@ -42,6 +42,8 @@ import {
   togglePanelForCurrentCombatant,
 } from "./ui/CombaterPanel.js";
 import { registerCombatTrackerIntel } from "./ui/combat-tracker-intel.js";
+import { registerCombatTrackerActions } from "./ui/combat-tracker-actions.js";
+import { autoFillOnTurnStart } from "./ui/panel/turn-start-auto-fill.js";
 import { cancelDestinationPicker } from "./ui/destination-picker.js";
 import { promptUnsustainedSpellCleanup } from "./engine/sustained-spells.js";
 import { expiredAreaRegionsForScene } from "./engine/area/duration.js";
@@ -376,6 +378,7 @@ Hooks.once("init", () => {
   Hooks.on("renderSettingsConfig", (_app, html) => mountFlankingSettingsCards(html));
   registerFlankingHighlightOriginHooks();
   registerCombatTrackerIntel();
+  registerCombatTrackerActions();
   registerRecallKnowledgeChatHooks();
   registerObservedIntelHooks();
   registerSpellstrikeHooks();
@@ -668,6 +671,8 @@ Hooks.on("updateCombat", async (combat, changed, options = {}) => {
   } else {
     await openCurrent("combat-turn");
   }
+  // "Auto-fill at turn start": plan the turn that just started, when it is this user's to plan.
+  await autoFillOnTurnStart(activePanel, combat);
 });
 
 Hooks.on("preUpdateToken", (token, changed) => {

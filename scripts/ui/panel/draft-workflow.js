@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../../constants.js";
 import { SETTINGS, settingOrDefault } from "../../settings.js";
+import { centerFlanksTarget } from "../../readers/positional/flank-reader.js";
 import {
   actionBuilderKey,
   builderAtomicActionsForStep,
@@ -1561,6 +1562,12 @@ export function atomizePanelAutoFillSteps(panel, autoFill, movementContext, pref
     // Origin for THIS step = where the prior committed strides left the actor (real position for
     // the first). Computed before any chaining update below so over-Speed checks use the true origin.
     const moveOrigin = mc.token?.plannedCenter ?? mc.token?.center;
+    // A Stride to Flank after an earlier move that already ends flanking its target spends an
+    // action to stand still: drop it (the earlier Stride prefers a flanking square).
+    if (step?.activityProfile?.setsUpFlank && moveOrigin
+      && centerFlanksTarget(mc, moveOrigin, step.preferredTarget ?? step.suggestedTarget)) {
+      return null;
+    }
     // Keep a pre-set destination (e.g. a composite's attack square) only if the actor can actually
     // reach it this move — Foundry's ruler is the authority, so an over-Speed square is dropped
     // rather than auto-committed as an impossible stride.
