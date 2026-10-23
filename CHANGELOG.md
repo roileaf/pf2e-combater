@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.6.0]
+
+### Added
+
+- **Setting: Auto-fill at turn start.** Off by default, per user. When on, a turn that starts and is yours to plan (your character; for the GM, a creature no active player controls) gets Auto-filled automatically, as if you clicked Auto-fill. A plan you already made is kept, and it respects "Hide Auto-fill from players".
+- **Setting: Reactions before a creature's first turn.** On by default (every creature can react from the start of the encounter). Turn it off for tables that rule a creature gets its reaction only when its first turn starts: until then its tracker shows "No reaction until its first turn", a reaction card doesn't spend it, and the planner doesn't fear Reactive Strikes from enemies that haven't acted yet.
+- **Setting: Show actions in the combat tracker.** Off by default, per user. When on, Foundry's combat tracker and PF2e HUD's tracker show the current creature's remaining actions (and a quickened one) and every creature's reaction, used or blocked, using the same tracking as the Combater panel, beside each row's controls. They update as actions are spent, and the GM can click them as on the panel: click spends an action or the reaction, right-click gives it back. A creature whose turn it isn’t shows its next-turn forecast in blue, and the diamonds’ tooltip lists the Slowed or Stunned conditions behind the count, with their icons. For a guardian with PF2e Guarder, the reaction glyphs show Guarder’s pool (a gold glyph per guardian-only reaction) and spend or restore through Guarder.
+
+### Fixed
+
+- **Heal can harm undead again, and isn't mislabeled.** 2.5.18 took Heal's two 2-action variants for a range choice and showed it as "Heal (vs. Living)". Heal now offers two modes like Harm: "Heal" for allies, and "Heal — vs. Undead" against undead enemies, which casts PF2e's Heal (vs. Undead). The variant picker only weighs variants that do the same thing.
+- **A Strike whose target went down retargets.** A planned Strike at an enemy an earlier Strike dropped no longer stops with "Target a token in Foundry first.": it attacks the nearest living enemy it still reaches. With none in reach, it says the target is down and asks for another.
+- **A Stride that closes on a target flanks it when it can.** Of the squares next to the target, the Stride now prefers one that flanks it with an ally, so the Strike is against an off-guard target. Auto-fill then drops the later Stride to Flank that would only have moved you there, which frees an action.
+- **The Quickened bolt stays inside the minimal bar’s tracker.** It spilled past the tracker onto End turn; it’s now a bare bolt inside the tracker, and End turn no longer breaks onto two lines. A full bar never pushes the expand button out past its edge.
+
 ## [2.5.21]
 
 ### Fixed
