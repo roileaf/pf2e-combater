@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **Setting: Reactions before a creature's first turn.** On by default (every creature can react from the start of the encounter). Turn it off for tables that rule a creature gets its reaction only when its first turn starts: until then its tracker shows "No reaction until its first turn", a reaction card doesn't spend it, and the planner doesn't fear Reactive Strikes from enemies that haven't acted yet.
+
 ## [2.5.19]
 
 ### Fixed
