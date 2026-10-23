@@ -1,10 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [2.5.20]
 
-### Added
+### Fixed
 
-- **Setting: Reactions before a creature's first turn.** On by default (every creature can react from the start of the encounter). Turn it off for tables that rule a creature gets its reaction only when its first turn starts: until then its tracker shows "No reaction until its first turn", a reaction card doesn't spend it, and the planner doesn't fear Reactive Strikes from enemies that haven't acted yet.
+- **Moving a token in combat no longer stutters the GM's game.** Each move rebuilt Combater's plan twice: once for the move and once for the effects other modules change in answer to it (cover, flanking). At a big table each rebuild froze the screen for about a second. A move and those follow-up changes now rebuild the plan once, after the token has landed.
+- **No more deprecation warning when old plans are cleared.** Removing plans from finished encounters used a form of deletion that Foundry 14 warns about in the console; it now uses the one Foundry 14 expects (Foundry 13 is unchanged).
 
 ## [2.5.19]
 
