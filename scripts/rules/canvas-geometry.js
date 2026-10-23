@@ -185,15 +185,57 @@ export function wallSegment(wall) {
   return [{ x: values[0], y: values[1] }, { x: values[2], y: values[3] }];
 }
 
+// Each wall as a plain segment with its bounding box, built once per walls list. A plan rebuild
+// tests hundreds of lines, and re-reading every wall's coordinates for each was most of a rebuild
+// on a scene with a thousand walls (about a second on a GM's machine). Door state is still read
+// live from the wall, so only a wall drawn, moved or deleted needs the cache rebuilt.
+const preparedWallsCache = new WeakMap();
+let preparedWallsVersion = 0;
+const BOX_EPSILON = 0.001;
+
+export function invalidatePreparedWalls() {
+  preparedWallsVersion += 1;
+}
+
+function preparedWalls(walls) {
+  const cached = preparedWallsCache.get(walls);
+  if (cached?.version === preparedWallsVersion && cached.length === walls.length) return cached.segments;
+  const segments = [];
+  for (const wall of walls) {
+    const segment = wallSegment(wall);
+    if (!segment) continue;
+    const [a, b] = segment;
+    segments.push({
+      wall, a, b,
+      minX: Math.min(a.x, b.x), maxX: Math.max(a.x, b.x),
+      minY: Math.min(a.y, b.y), maxY: Math.max(a.y, b.y),
+    });
+  }
+  preparedWallsCache.set(walls, { version: preparedWallsVersion, length: walls.length, segments });
+  return segments;
+}
+
+if (typeof globalThis.Hooks?.on === "function") {
+  for (const hook of ["createWall", "updateWall", "deleteWall", "canvasReady"]) {
+    globalThis.Hooks.on(hook, invalidatePreparedWalls);
+  }
+}
+
 function wallSegmentsBlock(from, to, options = {}, predicate = wallBlocksMovement) {
   const walls = wallPlaceables(options.walls);
   if (!Array.isArray(walls) || !walls.length) return false;
 
-  return walls.some((wall) => {
-    if (!predicate(wall)) return false;
-    const segment = wallSegment(wall);
-    return segment ? segmentsIntersect(from, to, segment[0], segment[1]) : false;
-  });
+  // A wall whose box misses the line's box cannot cross it (the margin keeps touching walls in).
+  const minX = Math.min(from.x, to.x) - BOX_EPSILON;
+  const maxX = Math.max(from.x, to.x) + BOX_EPSILON;
+  const minY = Math.min(from.y, to.y) - BOX_EPSILON;
+  const maxY = Math.max(from.y, to.y) + BOX_EPSILON;
+  for (const segment of preparedWalls(walls)) {
+    if (segment.maxX < minX || segment.minX > maxX || segment.maxY < minY || segment.minY > maxY) continue;
+    if (!predicate(segment.wall)) continue;
+    if (segmentsIntersect(from, to, segment.a, segment.b)) return true;
+  }
+  return false;
 }
 
 export function wallSegmentsBlockMovement(from, to, options = {}) {

@@ -51,6 +51,7 @@ import {
   wallBlocksLine,
   wallBlocksMovement,
   wallSegmentsBlockMovement,
+  invalidatePreparedWalls,
 } from "../../rules/canvas-geometry.js";
 import {
   areaTimerExpired,
@@ -9148,6 +9149,21 @@ assert.equal(
   false,
   "canvas geometry wall segment fallback ignores non-crossing segments",
 );
+// Walls are prepared once per list (segment + bounding box); a door opened later is still read
+// live, a moved wall needs invalidatePreparedWalls, and a line merely touching a wall end still counts.
+{
+  const door = { document: { move: 1, door: 1, ds: 0, c: [5, -5, 5, 5] } };
+  const far = { document: { move: 1, c: [500, 500, 600, 600] } };
+  const walls = [far, door];
+  assert.equal(wallSegmentsBlockMovement({ x: 0, y: 0 }, { x: 10, y: 0 }, { walls }), true, "a closed door blocks");
+  door.document.ds = 1;
+  assert.equal(wallSegmentsBlockMovement({ x: 0, y: 0 }, { x: 10, y: 0 }, { walls }), false, "an opened door no longer blocks, without rebuilding the cache");
+  door.document.ds = 0;
+  door.document.c = [50, -5, 50, 5];
+  invalidatePreparedWalls();
+  assert.equal(wallSegmentsBlockMovement({ x: 0, y: 0 }, { x: 10, y: 0 }, { walls }), false, "a moved wall is read again after invalidation");
+  assert.equal(wallSegmentsBlockMovement({ x: 0, y: 0 }, { x: 50, y: 0 }, { walls }), true, "a line ending on a wall still counts as crossing it");
+}
 let tokenCollisionCalled = false;
 assert.equal(
   canvasMovementPathBlocked({ x: 0, y: 0 }, { x: 5, y: 0 }, {
