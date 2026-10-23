@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.19]
+
+### Fixed
+
+- **Planning no longer stutters everyone else's game.** A player's plan is saved on their character so the GM sees it, and Combater rewrote it on almost every click even when nothing in it had changed. Foundry redraws every connected screen's combat tracker for each such change, so with a busy tracker every click froze the other screens, the GM's most of all, for a moment and paused their animations. An unchanged plan is no longer saved again or re-sent to the GM; a real change still is, once.
+- **Auto-fill no longer comes up empty.** When the best suggestion was a Step to the square you already stand on, Auto-fill filled the turn with nothing and still sent that empty plan to the GM. It now takes the next suggestion that does something, and when there is none it says so instead of clearing your plan.
+
 ## [2.5.18]
 
 ### Changed
