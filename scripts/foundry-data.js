@@ -25,6 +25,12 @@ export function systemValue(value) {
   return value;
 }
 
+// PF2e keeps rule-granted, in-memory conditions here as well as stored items.
+// An empty prepared collection is authoritative; plain actor data has only itemTypes.
+export function actorConditions(actor) {
+  return collectionValues(actor?.conditions ?? actor?.itemTypes?.condition);
+}
+
 export function entityKey(entity) {
   const key = entity?.id
     ?? entity?.uuid

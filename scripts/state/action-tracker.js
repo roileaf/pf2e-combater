@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../constants.js";
-import { collectionValues } from "../foundry-data.js";
+import { actorConditions, collectionValues } from "../foundry-data.js";
 import { actionBudget, quickenedEligible, turnActionPool } from "../engine/action/budget.js";
 import { slugify } from "../engine/action/text.js";
 import { readChatAction, readFreeStand } from "./chat-action-cost.js";
@@ -20,7 +20,7 @@ function turnMatches(snapshot, combat, combatantId = combat?.combatant?.id) {
 }
 
 function activeConditions(actor) {
-  return collectionValues(actor?.itemTypes?.condition).filter((item) => !item.system?.expired
+  return actorConditions(actor).filter((item) => !item.system?.expired
     && (item.active !== false || (item.slug ?? item.system?.slug) === "slowed"));
 }
 

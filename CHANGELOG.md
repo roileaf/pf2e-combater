@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.2]
+
+### Fixed
+
+- **Built-in Slowed reduces actions correctly.** Creatures such as the Zombie Shambler now show two actions and Slowed 1 in the HUD, and Auto-fill uses the same reduced budget. Conditions granted by PF2e abilities are now recognized alongside stored conditions, including in next-turn forecasts.
+
 ## [2.6.1]
 
 ### Fixed

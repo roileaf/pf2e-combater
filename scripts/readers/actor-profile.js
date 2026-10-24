@@ -1,6 +1,6 @@
 import { readCombatState } from "../rules/combat-state.js";
 import { KNOWN_SUBCLASS_SLUGS, SUBCLASS_TAGS } from "../rules/class-tactics-data/index.js";
-import { actorItems, collectionValues, systemValue, traitSlugs } from "../foundry-data.js";
+import { actorConditions, actorItems, collectionValues, systemValue, traitSlugs } from "../foundry-data.js";
 import { pf2eRuntime } from "../runtime/pf2e-runtime.js";
 
 const ABILITY_SLUGS = ["str", "dex", "con", "int", "wis", "cha"];
@@ -432,15 +432,15 @@ function conditionValue(condition) {
 }
 
 export function readConditions(actor) {
-  const conditions = collectionValues(actor?.itemTypes?.condition);
-  const entries = conditions
-    .map((condition) => [conditionSlug(condition), conditionValue(condition)])
-    .filter(([slug]) => Boolean(slug));
-
-  return {
-    slugs: entries.map(([slug]) => slug),
-    values: Object.fromEntries(entries),
-  };
+  const values = {};
+  for (const condition of actorConditions(actor)) {
+    const slug = conditionSlug(condition);
+    // Stunned can suppress Slowed, but both still determine actions regained.
+    if (!slug || condition.system?.expired || (condition.active === false && slug !== "slowed")) continue;
+    const value = conditionValue(condition);
+    values[slug] = slug in values ? Math.max(values[slug] ?? 0, value ?? 0) : value;
+  }
+  return { slugs: Object.keys(values), values };
 }
 
 function effectSlug(effect) {

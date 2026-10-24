@@ -29,6 +29,7 @@ await import("./self-test/tactical-routes.test.js");
 await import("./self-test/resource-horizon.test.js");
 await import("./self-test/turn-intent.test.js");
 await import("./self-test/action-tracker.test.js");
+await import("./self-test/prepared-conditions.test.js");
 await import("./self-test/grouped-draft-refresh.test.js");
 await import("./self-test/grouped-sudden-charge.test.js");
 await import("./self-test/damage-trigger.test.js");
