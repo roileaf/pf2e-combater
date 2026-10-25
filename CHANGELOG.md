@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.5]
+
+### Fixed
+
+- **Choose between a spell's area and the other template it offers.** Spout is a 5-foot cube, but its description also offers a 5-foot burst (centered in water). Combater only offered a choice when a description had two or more templates, and ignored the spell's own area, so Spout went straight to the cube. Place template now asks which one, the spell's own area first.
+
 ## [2.6.4]
 
 ### Fixed
