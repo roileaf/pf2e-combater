@@ -92,3 +92,22 @@ console.log("Area targets tests passed.");
   }
 }
 console.log("Area cube vertex tests passed.");
+
+// Roi, live: Spout also offers a @Template[burst|distance:5] (centered in water). The caster picks:
+// the spell's own 5-foot cube or that burst.
+{
+  const { classifySpell } = await import("../spell/classifier.js");
+  const spout = {
+    name: "Spout", type: "spell",
+    system: {
+      slug: "spout", area: { type: "cube", value: 5 }, range: { value: "30 feet" },
+      defense: { save: { basic: true, statistic: "reflex" } }, traits: { value: ["cantrip", "water"] },
+      damage: { 0: { formula: "2d4", type: "bludgeoning" } },
+      description: { value: "<p>Any creatures in the area take 2d4 bludgeoning damage.</p><p>You can change this spell's area to a @Template[burst|distance:5], provided you center the burst in a body of water.</p>" },
+    },
+  };
+  const profile = classifySpell(spout).targetingProfile;
+  assert.equal(profile.type, "cube", "the spell's own area is the default");
+  assert.deepEqual(profile.templates.map((entry) => `${entry.type} ${entry.distance}`), ["cube 5", "burst 5"], "and the burst is offered beside it");
+}
+console.log("Area template choice tests passed.");

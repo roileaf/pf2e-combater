@@ -449,11 +449,19 @@ function readSpellTemplates(spell) {
   const matches = [...raw.matchAll(/@Template\[([^\]]+)\]/gi)];
   if (!matches.length) return null;
   const seen = new Set();
-  const templates = matches
-    .map((match) => {
+  // The spell's own area is an option too: Spout is a 5-foot cube, or a 5-foot burst its
+  // description offers (@Template[burst|distance:5]) when centered in water.
+  const area = spell?.system?.area;
+  const ownArea = area?.type && Number.isFinite(Number(area.value))
+    ? `type:${String(area.type).toLowerCase()}|distance:${Number(area.value)}`
+    : null;
+  const templates = [...(ownArea ? [ownArea] : []), ...matches.map((match) => match[1])]
+    .map((body) => {
       const parts = Object.fromEntries(
-        match[1].split("|")
+        body.split("|")
           .map((part) => part.split(":"))
+          // A bare first word is the shape: @Template[burst|distance:5].
+          .map(([key, value], index) => (value === undefined && index === 0 ? ["type", key] : [key, value]))
           .filter(([key, value]) => key && value)
           .map(([key, value]) => [key.trim().toLowerCase(), value.trim().toLowerCase()]),
       );
