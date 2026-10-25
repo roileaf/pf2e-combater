@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.3]
+
+### Fixed
+
+- **Intel is shared by every token of the same creature.** What the party learned about one Goblin Warrior (Recall Knowledge, the GM's Intel edits, a Strike it was seen making) stayed with that one token, because each unlinked token keeps its own copy of the actor. Intel now lives on the actor itself, so every Goblin Warrior shows it. Intel already learned by a single token still shows on it, and moves to the shared Intel the next time that creature's Intel is saved.
+
 ## [2.6.2]
 
 ### Fixed
