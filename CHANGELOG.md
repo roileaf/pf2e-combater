@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.4]
+
+### Fixed
+
+- **Cube areas are placed square on the grid.** Placing a cube like Spout's turned the square to face the caster and hung it off a corner of where you placed it, so the outline didn't match the squares it hit. A cube now snaps to the grid like PF2e's own placement (centered on a square, a grid vertex or an edge), touching the squares under it, and can't be turned, and the creatures it plans to hit are the ones in those squares. With PF2e Aztec's Template Wizard installed, placing a template sometimes didn't register; it now always does, and the placement square no longer stays behind on the canvas.
+- **An area spell's damage follows its card and hits what the area covers.** When the spell card was slow to post, or another module posted a message during the cast (Fireball, Spout), Combater rolled the damage first, and the damage went to whoever was targeted before (the Blue Dragon) instead of the creatures in the area. Combater now waits for the spell card, and the area's creatures, or nobody, replace the earlier targets. The damage card lists every creature in the area too, not just the one the step had planned.
+- **An area hits every creature it touches.** A creature counted only when the area covered its middle, so a cube on a Huge dragon's corner square missed the dragon. Any square a creature occupies now counts.
+
 ## [2.6.3]
 
 ### Fixed
