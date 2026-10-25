@@ -182,7 +182,9 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
         actor,
         action: resolvedAction,
         event,
-        target,
+        // An area's targets are the creatures it covers, already targeted above. Naming the planned
+        // one would retarget only it, and the damage card would list just that creature.
+        target: areaExecution.areaMarker ? null : target,
         patch,
         trackSustainedSpell: !regionOp?.effectUuid,
         // An attack spell takes the step's multiple attack penalty, like a Strike.

@@ -61,6 +61,7 @@ await import("./self-test/spell-attack-roll.test.js");
 await import("./self-test/spell-variant-choice.test.js");
 await import("./self-test/combat-tracker-actions.test.js");
 await import("./self-test/intel-per-actor.test.js");
+await import("./self-test/area-cube.test.js");
 await import("./self-test/flank-approach.test.js");
 await import("./self-test/downed-target.test.js");
 await import("./self-test/turn-start-auto-fill.test.js");

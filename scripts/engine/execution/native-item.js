@@ -228,7 +228,10 @@ function messageMatchesCast(message, actor, item) {
     message?.item?.id,
     message?.item?.uuid,
   ].filter(Boolean).map(String);
-  if (!originIds.length || !itemIds.size) return true;
+  // A spell's card always names the spell. Another message posted during the cast (a module's note,
+  // an effect) isn't the card: taking it for one rolled Fireball's damage before Fireball's card.
+  if (!originIds.length) return item?.type !== "spell";
+  if (!itemIds.size) return true;
   return originIds.some((id) => itemIds.has(id));
 }
 
@@ -250,6 +253,8 @@ function spellCastResourceSufficient(actor, entry, item, action) {
   }
   return null;
 }
+
+const SPELL_CARD_WAIT_MS = 8000;
 
 async function waitForChatMessage(messagePromise, timeoutMs = 500) {
   const schedule = globalThis.setTimeout;
@@ -387,8 +392,10 @@ async function executeNativeItem({ actor, action, event }) {
         rank: action?.castRank ?? action?.rank,
         slotId: action?.slotId ?? action?.location,
       });
-      if (!castMessage && returned && typeof returned === "object") castMessage = returned;
-      if (!castMessage && hookId != null) castMessage = await waitForChatMessage(castMessagePromise) ?? null;
+      if (!castMessage && returned && typeof returned === "object" && messageMatchesCast(returned, actor, item)) castMessage = returned;
+      // The card can post well after cast() returns (seen live: 3 seconds, with other modules
+      // wrapping the cast). Damage is rolled after it, so wait for it rather than roll first.
+      if (!castMessage && hookId != null) castMessage = await waitForChatMessage(castMessagePromise, SPELL_CARD_WAIT_MS) ?? null;
     } finally {
       if (hookId != null) globalThis.Hooks?.off?.("createChatMessage", hookId);
     }

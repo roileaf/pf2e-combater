@@ -1,4 +1,4 @@
-import { areaMarkerLabel, areaMarkerShape, areaRegionDistance, areaRegionWidth, createAreaRegionData } from "../engine/area/region.js";
+import { areaMarkerLabel, areaMarkerShape, areaRegionDistance, areaRegionWidth, createAreaRegionData, gridAlignedCubeCenter } from "../engine/area/region.js";
 import { t } from "../i18n.js";
 import { canvasGridSize as gridSize } from "../rules/canvas-geometry.js";
 
@@ -194,13 +194,23 @@ function markerFromRegionShape({ context, action, shape, fallback }) {
   const data = normalizeShape(shape) ?? {};
   const type = areaMarkerShape(action);
   const distance = areaRegionDistance(action, { distance: action?.area?.value });
-  const center = point(data) ?? point(fallback?.center) ?? point(context?.token?.center) ?? { x: 0, y: 0 };
+  // A rectangle's x/y is its anchor (top-left unless set), not necessarily its center.
+  const anchored = data.type === "rectangle" && point(data)
+    ? { x: data.x + (0.5 - (numeric(data.anchorX) ?? 0)) * (numeric(data.width) ?? 0), y: data.y + (0.5 - (numeric(data.anchorY) ?? 0)) * (numeric(data.height) ?? 0) }
+    : null;
+  const loose = anchored ?? point(data) ?? point(fallback?.center) ?? point(context?.token?.center) ?? { x: 0, y: 0 };
+  // A cube sits on the grid and never turns (see createAreaRegionData).
+  const cube = type === "cube" || type === "square";
+  const snappedShape = cube ? createAreaRegionData({ context, action, marker: { center: loose } })?.shapes?.[0] : null;
+  const center = snappedShape && point(snappedShape)
+    ? { x: snappedShape.x + snappedShape.width / 2, y: snappedShape.y + snappedShape.height / 2 }
+    : loose;
   return {
     shape: type,
     center,
     distance,
     width: areaRegionWidth(action, { width: action?.area?.width }),
-    rotation: numeric(data.rotation ?? fallback?.rotation, rotationFromOrigin(context, center)) ?? 0,
+    rotation: cube ? 0 : numeric(data.rotation ?? fallback?.rotation, rotationFromOrigin(context, center)) ?? 0,
     originTokenId: context?.token?.id ?? context?.token?.uuid ?? null,
     label: areaMarkerLabel(type, distance),
   };
@@ -235,6 +245,30 @@ function lockPlacementShapeSize({ document, shape, context, action }) {
     else if (typeof object?.draw === "function") object.draw();
   } catch (error) {
     globalThis.console?.warn?.("pf2e-combater | Failed to lock area template size", error);
+  }
+}
+
+function snapPlacementCube(document, shape) {
+  if (typeof shape?.updateSource !== "function") return;
+  const width = numeric(shape.width) ?? 0;
+  const height = numeric(shape.height) ?? width;
+  const center = {
+    x: (numeric(shape.x) ?? 0) + (0.5 - (numeric(shape.anchorX) ?? 0)) * width,
+    y: (numeric(shape.y) ?? 0) + (0.5 - (numeric(shape.anchorY) ?? 0)) * height,
+  };
+  const snapped = gridAlignedCubeCenter(center, width);
+  // Corner on a grid vertex: Foundry anchors the rectangle there.
+  const corner = { x: snapped.x - width / 2, y: snapped.y - height / 2 };
+  const settled = shape.x === corner.x && shape.y === corner.y && !numeric(shape.rotation)
+    && !numeric(shape.anchorX) && !numeric(shape.anchorY);
+  if (settled) return;
+  try {
+    shape.updateSource({ x: corner.x, y: corner.y, anchorX: 0, anchorY: 0, rotation: 0 });
+    const shapes = [...(document?.shapes ?? [])];
+    document?.updateSource?.({ shapes: [...shapes.slice(0, -1), shape] });
+    document?.object?.renderFlags?.set?.({ refreshShapes: true });
+  } catch (error) {
+    globalThis.console?.warn?.("pf2e-combater | Failed to snap the cube template", error);
   }
 }
 
@@ -350,9 +384,26 @@ function chooseNativeAreaMarker({ context, action, onChoose, onCancel, onMove })
       await activateRegionPlacementControls(action);
       if (activeCleanup !== cleanup) return;
 
+      const cube = data.shapes?.[0]?.type === "rectangle";
       const placementPromise = globalThis.canvas.regions.placeRegion(data, {
         create: false,
+        // A cube sits on the grid and never turns: move the shape Foundry is placing to the grid
+        // squares under the cursor. Swapping the document's shape instead left Foundry placing a
+        // different shape object, and the click never placed the template.
+        allowRotation: !cube,
+        ...(cube ? {
+          onMove: ({ shape, position }) => {
+            const size = numeric(shape?.width) ?? 0;
+            // The square(s) under the cursor, corner on a vertex.
+            const center = gridAlignedCubeCenter(position, size);
+            shape?.updateSource?.({ x: center.x - size / 2, y: center.y - size / 2, anchorX: 0, anchorY: 0, rotation: 0 });
+            return false;
+          },
+        } : {}),
         onChange: ({ document, shape }) => {
+          // onMove isn't always called (seen live: Foundry snapped the square onto a grid corner),
+          // so snap the cube here too, on the very shape Foundry is placing.
+          if (cube) snapPlacementCube(document, shape);
           lockPlacementShapeSize({ document, shape, context, action });
           latestMarker = markerFromRegionShape({
             context,
@@ -386,12 +437,21 @@ function chooseNativeAreaMarker({ context, action, onChoose, onCancel, onMove })
 
       const document = await placementPromise;
       settled = true;
+      // The placement only picks where the area goes; Foundry leaves its preview square on the canvas
+      // when the region isn't created, so take it down. Combater draws the planned area itself.
+      try {
+        if (document?.object && !document.object.destroyed) document.object.destroy({ children: true });
+      } catch (_error) {
+        // Already gone.
+      }
       if (activeCleanup !== cleanup) return;
       if (!document) {
         stopAreaPicker();
         return;
       }
-      if (!placementConfirmed) {
+      // A placement that comes back with its shape was placed, even when preConfirm never ran
+      // (seen live: another wrapper of placeRegion dropped Combater's callbacks for Spout's cube).
+      if (!placementConfirmed && !firstRegionShape(document)) {
         activeCleanup = null;
         activeOnCancel = null;
         return;

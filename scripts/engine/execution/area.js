@@ -193,10 +193,10 @@ export async function prepareAreaExecution({ context, action, step, choices = {}
   const insideTokens = (tokensInAreaRegion({ context, action, region: regionDocument })
     ?? tokensInAreaMarker({ context, action, marker: areaMarker }))
     .filter((token) => !ownToken || (token?.id ?? token?.document?.id) !== ownToken);
-  if (insideTokens.length) {
-    setTokenTargets(insideTokens);
-    nextPatch.targetTokenIds = insideTokens.map((token) => targetTokenId(token)).filter(Boolean);
-  }
+  // Always target exactly what the area covers, even nothing: creatures targeted earlier would
+  // otherwise take the spell's damage and save.
+  setTokenTargets(insideTokens);
+  nextPatch.targetTokenIds = insideTokens.map((token) => targetTokenId(token)).filter(Boolean);
 
   return { status: "ready", patch: nextPatch, regionOp, areaMarker };
 }

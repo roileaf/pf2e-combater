@@ -79,6 +79,17 @@ export function areaMarkerLabel(shape, distance) {
   return `${shape.charAt(0).toUpperCase()}${shape.slice(1)} ${distance} ft`;
 }
 
+// Where a cube's center may sit, as PF2e's own placement allows: a square's center, a grid vertex,
+// or an edge's midpoint (every half square). A 5-foot cube on a vertex touches the four squares
+// around it, and the creatures in them.
+export function gridAlignedCubeCenter(center, _sizePx) {
+  const grid = gridSize();
+  if (globalThis.canvas?.grid?.isSquare === false || grid <= 1) return center;
+  const step = grid / 2;
+  const snap = (value) => Math.round(value / step) * step;
+  return { x: snap(center.x), y: snap(center.y) };
+}
+
 export function createAreaRegionData({ context, action, marker }) {
   const center = point(marker?.center) ?? point(marker) ?? point(context?.token?.center) ?? { x: 0, y: 0 };
   const type = areaRegionType(action, marker);
@@ -95,7 +106,10 @@ export function createAreaRegionData({ context, action, marker }) {
   } else if (type === "line") {
     shape = { ...baseShape, type: "line", length: distancePx, width: widthPx, rotation };
   } else if (type === "cube" || type === "square") {
-    shape = { ...baseShape, type: "rectangle", width: distancePx, height: distancePx, rotation };
+    // A cube sits on the grid and never turns: its corner on a grid vertex, as PF2e places it.
+    // The marker holds its center; the rectangle is anchored at its top-left corner.
+    const square = gridAlignedCubeCenter(center, distancePx);
+    shape = { x: square.x - distancePx / 2, y: square.y - distancePx / 2, type: "rectangle", width: distancePx, height: distancePx, anchorX: 0, anchorY: 0, rotation: 0 };
   } else if (type === "emanation") {
     const base = isSelfCenteredAreaAction(action) ? tokenBase(context) : null;
     const halfFootprint = base ? Math.max(base.width, base.height) / 2 : 0;
@@ -160,8 +174,9 @@ function pointInAreaShape(value, shape) {
       const radians = (numeric(shape.rotation, 0) * Math.PI) / 180;
       const cos = Math.cos(radians);
       const sin = Math.sin(radians);
-      const localX = dx * cos + dy * sin;
-      const localY = -dx * sin + dy * cos;
+      // x/y is the anchor point: the top-left corner by default, the center for a cube.
+      const localX = dx * cos + dy * sin + shape.width * numeric(shape.anchorX, 0);
+      const localY = -dx * sin + dy * cos + shape.height * numeric(shape.anchorY, 0);
       return localX >= 0 && localX <= shape.width && localY >= 0 && localY <= shape.height;
     }
     default:
@@ -177,13 +192,35 @@ function areaTargetAllowed(token, context, action) {
   ].some((id) => id && identities.includes(id)));
 }
 
+// The centers of the grid squares a creature occupies: a Huge dragon is in an area that covers
+// any of its squares, not only the one at its middle. Smaller than a square: its own center.
+function tokenSquareCenters(token) {
+  const center = point(token?.center);
+  if (!center) return [];
+  const document = token?.document ?? token;
+  const grid = gridSize();
+  const width = Number(document?.width);
+  const height = Number(document?.height);
+  if (!(width > 1 || height > 1) || grid <= 1) return [center];
+  const columns = Math.max(1, Math.round(width));
+  const rows = Math.max(1, Math.round(height));
+  const left = center.x - (columns * grid) / 2;
+  const top = center.y - (rows * grid) / 2;
+  const squares = [center];
+  for (let column = 0; column < columns; column += 1) {
+    for (let row = 0; row < rows; row += 1) {
+      squares.push({ x: left + (column + 0.5) * grid, y: top + (row + 0.5) * grid });
+    }
+  }
+  return squares;
+}
+
 export function tokensInAreaMarker({ context, action, marker }) {
   const shape = createAreaRegionData({ context, action, marker })?.shapes?.[0];
   if (!shape) return [];
   return (globalThis.canvas?.tokens?.placeables ?? []).filter((token) => {
     if (!areaTargetAllowed(token, context, action)) return false;
-    const center = point(token?.center);
-    return center && pointInAreaShape(center, shape);
+    return tokenSquareCenters(token).some((square) => pointInAreaShape(square, shape));
   });
 }
 
