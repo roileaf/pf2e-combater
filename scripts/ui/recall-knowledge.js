@@ -2,13 +2,11 @@ import { MODULE_ID } from "../constants.js";
 import { collectionValues } from "../foundry-data.js";
 import { t } from "../i18n.js";
 import {
-  INTEL_LEDGER_FLAG,
-  INTEL_FALSE_INFORMATION_FLAG,
-  INTEL_REVEAL_MODE_FLAG,
   intelCategoryLabel,
   intelLedgerView,
   normalizeIntelFalseInformation,
   readIntelLedger,
+  writeIntelFlags,
 } from "../rules/intel-ledger.js";
 import {
   RECALL_KNOWLEDGE_QUESTIONS,
@@ -126,10 +124,11 @@ async function saveRecallKnowledgeIntel(decision) {
   if (!Array.isArray(decision)) return false;
   try {
     for (const entry of decision) {
-      if (typeof entry.actor?.setFlag !== "function") throw new Error("Actor flags unavailable");
-      await entry.actor.setFlag(MODULE_ID, INTEL_LEDGER_FLAG, entry.value);
-      await entry.actor.setFlag(MODULE_ID, INTEL_REVEAL_MODE_FLAG, entry.revealMode);
-      await entry.actor.setFlag(MODULE_ID, INTEL_FALSE_INFORMATION_FLAG, normalizeIntelFalseInformation(entry.falseInformation));
+      await writeIntelFlags(entry.actor, {
+        ledger: entry.value,
+        revealMode: entry.revealMode,
+        falseInformation: normalizeIntelFalseInformation(entry.falseInformation),
+      });
     }
     globalThis.ui?.notifications?.info?.(t("Intel.Saved", "Intel ledger updated."));
     globalThis.ui?.combat?.render?.(true);

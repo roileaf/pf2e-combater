@@ -115,12 +115,10 @@ import {
   tacticPersonalityView,
 } from "../rules/tactic-personality.js";
 import {
-  INTEL_LEDGER_FLAG,
-  INTEL_FALSE_INFORMATION_FLAG,
-  INTEL_REVEAL_MODE_FLAG,
   intelLedgerView,
   intelTargetMatchesKey,
   normalizeIntelFalseInformation,
+  writeIntelFlags,
 } from "../rules/intel-ledger.js";
 import { readCombatContext } from "../state/combat-context.js";
 import { forgetLearnedPreference, learnedPreferenceView, setPlanPreferenceFeedback } from "../state/preference-profile.js";
@@ -665,10 +663,11 @@ class CombaterPanel extends HandlebarsApplicationMixin(ApplicationV2) {
 
     try {
       for (const entry of decision) {
-        if (typeof entry.actor?.setFlag !== "function") throw new Error("Actor flags unavailable");
-        await entry.actor.setFlag(MODULE_ID, INTEL_LEDGER_FLAG, entry.value);
-        await entry.actor.setFlag(MODULE_ID, INTEL_REVEAL_MODE_FLAG, entry.revealMode);
-        await entry.actor.setFlag(MODULE_ID, INTEL_FALSE_INFORMATION_FLAG, normalizeIntelFalseInformation(entry.falseInformation));
+        await writeIntelFlags(entry.actor, {
+          ledger: entry.value,
+          revealMode: entry.revealMode,
+          falseInformation: normalizeIntelFalseInformation(entry.falseInformation),
+        });
       }
       this._pinnedPlanId = null;
       this._pinnedFillPlanId = null;

@@ -270,9 +270,9 @@ assert.ok(panelContextWorkflowSource.includes("isPlayerControlledActor") && pane
 assert.ok(panelTemplateSource.includes("data-configure-intel"), "panel template should render the Recall Knowledge intel chip");
 assert.ok(panelEventBindingsSource.includes("data-configure-intel") && panelEventBindingsSource.includes("_configureIntelLedger"),
   "panel bindings should open Recall Knowledge intel config from the header chip");
-assert.ok(panelSource.includes("INTEL_LEDGER_FLAG") && panelSource.includes("setFlag(MODULE_ID, INTEL_LEDGER_FLAG"),
+assert.ok(panelSource.includes("writeIntelFlags(entry.actor") && panelSource.includes("ledger: entry.value"),
   "panel should persist Recall Knowledge intel on target actors");
-assert.ok(panelSource.includes("INTEL_REVEAL_MODE_FLAG") && panelSource.includes("setFlag(MODULE_ID, INTEL_REVEAL_MODE_FLAG")
+assert.ok(panelSource.includes("revealMode: entry.revealMode")
   && intelWindowTemplateSource.includes("data-intel-reveal-mode"),
   "GM Recall Knowledge editor should persist exact-vs-band reveal style per NPC");
 assert.ok(panelSource.includes("openIntelWindow") && panelSource.includes("_saveIntelLedger"),

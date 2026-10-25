@@ -143,31 +143,64 @@ export function intelTargetMatchesKey(target, key) {
   return Boolean(value) && targetIdentityValues(target).includes(value);
 }
 
-function readFlag(actor) {
-  if (actor?.intelLedger !== undefined) return actor.intelLedger;
-  const direct = actor?.flags?.[MODULE_ID]?.[INTEL_LEDGER_FLAG];
+function rawFlag(actor, key) {
+  const direct = actor?.flags?.[MODULE_ID]?.[key];
   if (direct !== undefined) return direct;
-  if (typeof actor?.getFlag === "function") return actor.getFlag(MODULE_ID, INTEL_LEDGER_FLAG);
+  if (typeof actor?.getFlag === "function") return actor.getFlag(MODULE_ID, key) ?? null;
   return null;
+}
+
+// Intel is about the creature, not one copy of it. An unlinked token's actor is the token's own
+// copy, so intel saved there stayed with that one token; it lives on the base actor instead, and
+// every token of that actor shares it.
+export function intelActor(actor) {
+  if (actor?.isToken !== true) return actor;
+  return actor.token?.baseActor ?? globalThis.game?.actors?.get?.(actor.id) ?? actor;
+}
+
+function readFlag(actor, key) {
+  const base = intelActor(actor);
+  const value = rawFlag(base, key);
+  return value !== null || base === actor ? value : rawFlag(actor, key);
+}
+
+function mergeCategoryValues(a, b) {
+  if (a === true || b === true) return true;
+  const values = [...new Set([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])])];
+  return values.length ? values : false;
 }
 
 function readRevealModeFlag(actorOrTarget) {
   if (actorOrTarget?.intelRevealMode !== undefined) return actorOrTarget.intelRevealMode;
   const actor = targetActor(actorOrTarget) ?? actorOrTarget;
   if (actor?.intelRevealMode !== undefined) return actor.intelRevealMode;
-  const direct = actor?.flags?.[MODULE_ID]?.[INTEL_REVEAL_MODE_FLAG];
-  if (direct !== undefined) return direct;
-  if (typeof actor?.getFlag === "function") return actor.getFlag(MODULE_ID, INTEL_REVEAL_MODE_FLAG);
-  return null;
+  return readFlag(actor, INTEL_REVEAL_MODE_FLAG);
 }
 
 function readFalseInformationFlag(actorOrTarget) {
   const actor = targetActor(actorOrTarget) ?? actorOrTarget;
   if (actor?.intelFalseInformation !== undefined) return actor.intelFalseInformation;
-  const direct = actor?.flags?.[MODULE_ID]?.[INTEL_FALSE_INFORMATION_FLAG];
-  if (direct !== undefined) return direct;
-  if (typeof actor?.getFlag === "function") return actor.getFlag(MODULE_ID, INTEL_FALSE_INFORMATION_FLAG);
-  return null;
+  return readFlag(actor, INTEL_FALSE_INFORMATION_FLAG);
+}
+
+// Saves to the base actor, and clears a token's own older copy so it reads the shared one.
+export async function writeIntelFlags(actor, values = {}) {
+  const base = intelActor(actor);
+  if (typeof base?.setFlag !== "function") throw new Error("Actor flags unavailable");
+  const keys = {
+    ledger: INTEL_LEDGER_FLAG,
+    revealMode: INTEL_REVEAL_MODE_FLAG,
+    falseInformation: INTEL_FALSE_INFORMATION_FLAG,
+  };
+  for (const [name, key] of Object.entries(keys)) {
+    if (values[name] !== undefined) await base.setFlag(MODULE_ID, key, values[name]);
+  }
+  if (base === actor) return base;
+  const tokenFlags = actor.token?.delta?._source?.flags?.[MODULE_ID] ?? {};
+  for (const key of Object.values(keys)) {
+    if (tokenFlags[key] !== undefined && typeof actor.unsetFlag === "function") await actor.unsetFlag(MODULE_ID, key);
+  }
+  return base;
 }
 
 export function normalizeIntelFalseInformation(value) {
@@ -255,7 +288,13 @@ export function normalizeIntelLedger(value) {
 }
 
 export function readIntelLedger(actor) {
-  return normalizeIntelLedger(readFlag(actor));
+  if (actor?.intelLedger !== undefined) return normalizeIntelLedger(actor.intelLedger);
+  const base = intelActor(actor);
+  const shared = normalizeIntelLedger(rawFlag(base, INTEL_LEDGER_FLAG));
+  if (base === actor) return shared;
+  // A token that learned something before intel was shared keeps it until the next save moves it.
+  const own = normalizeIntelLedger(rawFlag(actor, INTEL_LEDGER_FLAG));
+  return Object.fromEntries(Object.keys(shared).map((category) => [category, mergeCategoryValues(shared[category], own[category])]));
 }
 
 export function normalizeIntelRevealMode(value) {

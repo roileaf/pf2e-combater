@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../constants.js";
 import { SETTINGS, settingOrDefault } from "../settings.js";
-import { INTEL_LEDGER_FLAG, intelAbilityFactId, intelFactId, normalizeIntelLedger } from "./intel-ledger.js";
+import { INTEL_LEDGER_FLAG, intelAbilityFactId, intelActor, intelFactId, readIntelLedger, writeIntelFlags } from "./intel-ledger.js";
 
 // What the party sees an enemy do, it knows: a Strike it makes, a reaction it takes (Reactive Strike),
 // an ability it uses in the open. Recorded in that creature's Intel like a Recall Knowledge answer, so
@@ -25,12 +25,13 @@ export function observedIntelFact(message) {
 }
 
 export async function recordObservedIntel(actor, category, factId) {
-  if (!actor || !factId || typeof actor.setFlag !== "function") return false;
-  const ledger = normalizeIntelLedger(actor.getFlag?.(MODULE_ID, INTEL_LEDGER_FLAG));
+  if (!actor || !factId || typeof intelActor(actor)?.setFlag !== "function") return false;
+  const ledger = readIntelLedger(actor);
   const current = ledger[category];
   if (current === true || (Array.isArray(current) && current.includes(factId))) return false;
-  const raw = actor.getFlag?.(MODULE_ID, INTEL_LEDGER_FLAG) ?? {};
-  await actor.setFlag(MODULE_ID, INTEL_LEDGER_FLAG, { ...raw, [category]: [...(Array.isArray(current) ? current : []), factId] });
+  const raw = intelActor(actor).getFlag?.(MODULE_ID, INTEL_LEDGER_FLAG) ?? {};
+  // Every token of this creature learns it (see intelActor).
+  await writeIntelFlags(actor, { ledger: { ...raw, ...ledger, [category]: [...(Array.isArray(current) ? current : []), factId] } });
   return true;
 }
 
