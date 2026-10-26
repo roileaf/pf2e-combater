@@ -599,6 +599,10 @@
   /* The bar shrinks to its parts (see .combater-shell.is-minimal); the empty rest of the
      window must not swallow canvas clicks. */
   pointer-events: none;
+  /* The dark theme blurs behind the window root too, not only its content: the transparent root
+     blurred the canvas around the bar. Important beats the theme's own rule. */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .pf2e-combater.combater-panel.is-minimal > .window-header,
