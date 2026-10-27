@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- **No more blurred strip beside the minimal bar.** Foundry's dark theme blurs behind the whole window, not only its content. In minimal mode the window is a transparent strip wider than the bar, so the canvas around the bar was blurred. The minimal window no longer blurs anything. Thanks to patatecherie for the report and the fix.
+- **No more blurred strip beside the minimal bar.** UI modules such as Carolingian UI (glass effect) blur behind the whole window, not only its content. In minimal mode the window is a transparent strip wider than the bar, so the canvas around the bar was blurred. The minimal window no longer blurs anything. Thanks to patatecherie for the report and the fix.
 
 ## [2.6.5]
 
