@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.7]
+
+### Changed
+
+- **Sustain a Spell tells other modules it is a sustain.** The re-posted spell card is flagged `flags.pf2e-combater.sustain`, so animation modules can tell it from a new cast. With Animater 2.2.21, sustaining Spiritual Armament keeps its hovering weapon instead of replaying the cast.
+
 ## [2.6.6]
 
 ### Fixed
