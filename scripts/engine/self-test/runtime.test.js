@@ -2240,14 +2240,24 @@ try {
 
   // Sustaining re-posts the spell's chat card so the player can re-use its data; the posted
   // message is recorded as a chat revert op.
+  // The card is flagged as a sustain so Animater keeps the spell's animation instead of replaying the cast.
   const sustainChatMessages = [];
+  class SustainCard {
+    constructor(source = {}) { this.id = null; this.source = source; }
+    updateSource(changes) { this.source = { ...this.source, ...changes }; }
+    toObject() { return this.source; }
+    static async create(data) {
+      sustainChatMessages.push(data);
+      return { id: "sustain-msg-1" };
+    }
+  }
   const sustainSpellItem = {
     id: "spell-bless",
     name: "Bless",
     uuid: "Actor.valeros.Item.spell-bless",
-    toMessage: async () => {
-      sustainChatMessages.push("sustain-msg-1");
-      return { id: "sustain-msg-1" };
+    toMessage: async (_event, options) => {
+      assert.equal(options?.create, false, "sustain should build the card before posting it");
+      return new SustainCard({ content: "Bless" });
     },
   };
   createdEffects.set(sustainSpellItem.uuid, sustainSpellItem);
@@ -2258,6 +2268,11 @@ try {
   });
   assert.equal(sustainResult.status, "done");
   assert.equal(sustainChatMessages.length, 1, "sustaining should re-post the spell to chat to reuse its data");
+  assert.deepEqual(
+    sustainChatMessages[0].flags,
+    { "pf2e-combater": { sustain: { name: "Bless", spellUuid: sustainSpellItem.uuid } } },
+    "the re-posted card should be flagged as a sustain",
+  );
   assert.deepEqual(
     sustainResult.patch.execution.revert.ops,
     [{ kind: "chat", messageId: "sustain-msg-1" }],
