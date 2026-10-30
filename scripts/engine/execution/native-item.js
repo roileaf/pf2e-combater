@@ -10,6 +10,8 @@ import { pf2eRuntime } from "../../runtime/pf2e-runtime.js";
 import { parseActionText } from "../action/text.js";
 import { executeCommanderTactic } from "../../integrations/commanderer.js";
 import { summonsAssistantHandlesSpell } from "../../integrations/summons-assistant.js";
+import { readDamageProfile } from "../spell/classifier.js";
+import { heightenedSpellForRank } from "../spell/heightening.js";
 
 function numeric(value, fallback = null) {
   const number = Number(value);
@@ -399,7 +401,7 @@ async function executeNativeItem({ actor, action, event }) {
     } finally {
       if (hookId != null) globalThis.Hooks?.off?.("createChatMessage", hookId);
     }
-    return { spellCast: true, message: castMessage, castFailed: resourceOk === false };
+    return { spellCast: true, message: castMessage, castFailed: resourceOk === false, castSpell: spell };
   }
   if (typeof action?.generatedAction?.use === "function") return action.generatedAction.use({ event });
   if (typeof item?.use === "function") {
@@ -487,6 +489,13 @@ async function rollSpellAttack({ action, nativeResult, event, attackNumber = 1 }
   }
 }
 
+// The damage of the variant actually cast: Heal's 2-action version restores 1d8+8, not the base 1d8.
+function actionForCastVariant(action, castSpell) {
+  if (!castSpell || castSpell === action?.item) return action;
+  const damageProfile = readDamageProfile(heightenedSpellForRank(castSpell, numeric(action?.castRank ?? action?.rank)));
+  return damageProfile?.formula ? { ...action, damageProfile } : action;
+}
+
 export async function executeNativeAction({ actor, action, event, target = null, patch = {}, trackSustainedSpell = true, attackNumber = 1 }) {
   if (target?.tokens) setTokenTargets(target.tokens);
   else if (target?.token) setTarget(target.token);
@@ -518,7 +527,7 @@ export async function executeNativeAction({ actor, action, event, target = null,
   // An attack spell's damage depends on the hit: like a Strike, it is rolled from the card after.
   const damageMessageIds = attackMessageId ? [] : await rollActionDamageMessages({
     actor,
-    action,
+    action: actionForCastVariant(action, nativeResult?.castSpell),
     target,
     after: Number.isFinite(cardTimestamp) ? cardTimestamp : null,
     cardMessage,

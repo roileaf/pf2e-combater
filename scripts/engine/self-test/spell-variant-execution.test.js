@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { executeOpenItem } from "../execution/native-item.js";
+import { executeNativeAction, executeOpenItem } from "../execution/native-item.js";
 
 const castCalls = [];
 const entry = {
@@ -65,5 +65,38 @@ const unavailable = await executeOpenItem({
 });
 assert.equal(unavailable.variantUnavailable, true);
 assert.equal(castCalls.length, castCount, "missing planned variant must not cast the base spell");
+
+// Auto-rolled healing follows the cast variant: Heal's 2-action version restores 1d8+8, not 1d8.
+const healOverlays = new Map([
+  ["one", { overlayType: "override", sort: 1, system: { time: { value: "1" } } }],
+  ["two", { overlayType: "override", sort: 2, system: { time: { value: "2" }, damage: { 0: { formula: "1d8+8", kinds: ["healing"], type: "vitality" } }, heightening: { type: "interval", interval: 1, damage: { 0: "1d8+8" } }, target: { value: "1 willing living creature" } } }],
+]);
+const heal = {
+  id: "heal",
+  type: "spell",
+  hasVariants: true,
+  system: { level: { value: 1 }, time: { value: "1 to 3" }, damage: { 0: { formula: "1d8", kinds: ["healing"], type: "vitality" } }, target: { value: "1 willing living creature" } },
+  overlays: healOverlays,
+  loadVariant({ castRank, overlayIds }) {
+    const overlay = healOverlays.get(overlayIds[0]);
+    return { ...this, original: this, castRank, system: { ...this.system, ...overlay.system } };
+  },
+};
+const rolled = [];
+globalThis.game = { pf2e: { DamageRoll: class {
+  constructor(formula) { rolled.push(formula); }
+  async evaluate() {}
+  async toMessage() { return { id: `damage-${rolled.length}` }; }
+} } };
+const healAction = (castRank) => ({
+  item: heal, spellcastingEntryId: entry.id, actionCost: 2, variableActionCost: true, castRank, role: "healing",
+  targetingProfile: { ally: true }, activityProfile: { includes: ["healing"] },
+  damageProfile: { formula: "1d8", type: "vitality" },
+});
+await executeNativeAction({ actor, action: healAction(1) });
+assert.equal(rolled.at(-1), "(1d8+8)[vitality]", "2-action Heal rolls the variant's 1d8+8");
+await executeNativeAction({ actor, action: healAction(2) });
+assert.equal(rolled.at(-1), "((1d8+8) + (1d8+8))[vitality]", "heightened 2-action Heal adds 1d8+8 per rank");
+delete globalThis.game;
 
 console.log("PF2e Combater spell variant execution test passed");

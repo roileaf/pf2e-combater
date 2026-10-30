@@ -78,7 +78,7 @@ function diceAverage(formula) {
   return matched && total > 0 ? total : null;
 }
 
-function readDamageProfile(spell) {
+export function readDamageProfile(spell) {
   const damage = spell?.system?.damage;
   const partials = damage && typeof damage === "object" ? Object.values(damage) : [];
   const entries = partials
