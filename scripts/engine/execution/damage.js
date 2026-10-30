@@ -102,7 +102,11 @@ function damageFlavor(action) {
 function actionDamageFormula(action) {
   const profileFormula = action?.damageProfile?.formula;
   if (profileFormula) {
-    return { formula: String(profileFormula).trim(), type: action.damageProfile.type ?? null };
+    return {
+      formula: String(profileFormula).trim(),
+      type: action.damageProfile.type ?? null,
+      kinds: Array.isArray(action.damageProfile.kinds) ? action.damageProfile.kinds : [],
+    };
   }
   const raw = [
     action?.description?.value ?? action?.description,
@@ -129,6 +133,13 @@ function adjustedFormula(formula, modifier) {
   return `${formula}${modifier > 0 ? "+" : "-"}${Math.abs(modifier)}`;
 }
 
+// PF2e reads a roll's kind from its flavor: "vitality,healing" posts a healing card (Heal buttons),
+// plain "vitality" a damage card.
+function damageFlavorTags(type, kinds = []) {
+  if (!kinds.includes("healing")) return type;
+  return kinds.includes("damage") ? `${type},damage,healing` : `${type},healing`;
+}
+
 async function rollActionDamage({ actor, action, target = null, timestamp = null }) {
   const parsed = actionDamageFormula(action);
   if (!parsed?.formula) return null;
@@ -140,7 +151,7 @@ async function rollActionDamage({ actor, action, target = null, timestamp = null
   const preTyped = /\[[^\]]+\]/.test(parsed.formula);
   const formula = preTyped ? parsed.formula : adjustedFormula(parsed.formula, npcAdjustmentModifier(actor, action));
   const type = parsed.type ? String(parsed.type).toLowerCase() : null;
-  const typed = !type || preTyped ? formula : `(${formula})[${type}]`;
+  const typed = !type || preTyped ? formula : `(${formula})[${damageFlavorTags(type, parsed.kinds)}]`;
   try {
     const rollData = typeof actor?.getRollData === "function" ? actor.getRollData() : {};
     const showBreakdown = globalThis.game?.pf2e?.settings?.metagame?.breakdowns || Boolean(actor?.hasPlayerOwner);

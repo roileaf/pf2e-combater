@@ -94,9 +94,9 @@ const healAction = (castRank) => ({
   damageProfile: { formula: "1d8", type: "vitality" },
 });
 await executeNativeAction({ actor, action: healAction(1) });
-assert.equal(rolled.at(-1), "(1d8+8)[vitality]", "2-action Heal rolls the variant's 1d8+8");
+assert.equal(rolled.at(-1), "(1d8+8)[vitality,healing]", "2-action Heal rolls the variant's 1d8+8 as healing");
 await executeNativeAction({ actor, action: healAction(2) });
-assert.equal(rolled.at(-1), "((1d8+8) + (1d8+8))[vitality]", "heightened 2-action Heal adds 1d8+8 per rank");
+assert.equal(rolled.at(-1), "((1d8+8) + (1d8+8))[vitality,healing]", "heightened 2-action Heal adds 1d8+8 per rank");
 delete globalThis.game;
 
 console.log("PF2e Combater spell variant execution test passed");

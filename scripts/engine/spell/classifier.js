@@ -86,9 +86,11 @@ export function readDamageProfile(spell) {
     .map((entry) => {
       const formula = String(entry.formula ?? entry.value ?? "").trim();
       const type = String(entry.type ?? entry.damageType ?? "").trim().toLowerCase() || null;
+      const kinds = arrayValue(entry.kinds).map((kind) => String(kind).toLowerCase());
       return {
         formula: formula || null,
         type,
+        ...(kinds.length ? { kinds } : {}),
         average: diceAverage(formula),
       };
     })
@@ -105,6 +107,7 @@ export function readDamageProfile(spell) {
   return {
     formula: primary.formula,
     type: primary.type,
+    ...(primary.kinds ? { kinds: primary.kinds } : {}),
     entries,
     types: [...new Set(entries.map((entry) => entry.type).filter(Boolean))],
     average: average > 0 ? average : primary.average,
