@@ -1,14 +1,17 @@
 # Changelog
 
+## [2.6.8]
+
+### Fixed
+
+- **2-action Heal rolls its extra healing.** The cast card showed the right variant, but the auto-rolled healing came from the base spell: 1d8 instead of 1d8+8. Auto-rolled damage and healing now come from the variant actually cast, heightened to its rank.
+- **Auto-rolled healing posts a healing card.** Heal's roll came out as a damage card, so it could only damage its target. Healing spells now roll as healing, with PF2e's heal buttons. Thanks to Kimerus for both reports.
+
 ## [2.6.7]
 
 ### Changed
 
 - **Sustain a Spell tells other modules it is a sustain.** The re-posted spell card is flagged `flags.pf2e-combater.sustain`, so animation modules can tell it from a new cast. With Animater 2.2.21, sustaining Spiritual Armament keeps its hovering weapon instead of replaying the cast.
-
-### Fixed
-
-- **2-action Heal rolls its extra healing.** The cast card showed the right variant, but the auto-rolled healing came from the base spell: 1d8 instead of 1d8+8. Auto-rolled damage and healing now come from the variant actually cast, heightened to its rank. Thanks to Kimerus for the report.
 
 ## [2.6.6]
 
