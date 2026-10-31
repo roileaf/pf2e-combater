@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.15]
+
+### Fixed
+
+- **Assisted Recovery follows the Player Core rules.** A creature gets its benefit once per round: a second attempt that round is refused, and undoing the step gives the chance back. The GM can also rule that suitable help ends the damage outright (like jumping into a lake to end persistent fire), with no flat check; a GM helping picks that ruling from a list. You can also help yourself by targeting your own token.
+
 ## [2.6.14]
 
 ### Added
