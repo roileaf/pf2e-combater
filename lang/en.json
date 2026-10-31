@@ -673,7 +673,8 @@
       "StrikeStepAway": "{strike} -> Step Away",
       "Retreat": "Stride Away",
       "TakeCover": "Take Cover",
-      "StepArrow": "Step -> "
+      "StepArrow": "Step -> ",
+      "AssistedRecovery": "Assisted Recovery"
     },
     "Reason": {
       "StandThenStride": "Stand, then Stride toward {name}.",
@@ -796,7 +797,11 @@
       "RetchFailed": "Retch could not be resolved; see the console.",
       "PlanSharedBy": "PF2e Combater: {user} shared {actor} plan.",
       "ExecuteFailed": "Could not execute the step; see the console.",
-      "NoRecommendedArea": "Recommended area placement is unavailable."
+      "NoRecommendedArea": "Recommended area placement is unavailable.",
+      "RecoveryWaitingDc": "Waiting for the GM to rule on your help.",
+      "RecoveryRefused": "The GM didn't allow this help.",
+      "RecoveryNoGm": "No GM to rule on it; rolling against DC {dc}.",
+      "RecoveryFailed": "Assisted recovery could not be resolved; see the console."
     },
     "Choice": {
       "destination": "destination",
@@ -867,7 +872,12 @@
       "NoRecoveryApi": "Recovery check API is not available.",
       "RecoveryRolled": "Recovery check rolled.",
       "SpellstrikeRecharged": "Spellstrike recharged.",
-      "PreparedToAid": "Ready to Aid {ally}."
+      "PreparedToAid": "Ready to Aid {ally}.",
+      "NoPersistentDamage": "{ally} has no persistent damage to recover from.",
+      "RecoverySuccess": "Success: the persistent {damage} ends.",
+      "RecoveryFailure": "Failure: the persistent {damage} continues.",
+      "RecoveryFlavor": "Flat check DC {dc} to end persistent {damage}.",
+      "RecoveryNotRemoved": "The flat check succeeded, but the persistent {damage} couldn't be removed; an active GM is needed."
     },
     "ActReason": {
       "ReactionCanPunishA": "Reaction can punish a provoking enemy.",
@@ -1808,6 +1818,19 @@
     "Recharge": {
       "OneRoundLeft": "Recharging: 1 round left",
       "RoundsLeft": "Recharging: {count} rounds left"
+    },
+    "AssistedRecovery": {
+      "Title": "Assisted Recovery for {ally}",
+      "Rule": "{ally} gets an extra flat check against the persistent damage's DC to end it. Say how you help; the GM rules whether it counts.",
+      "RuleGm": "{ally} gets an extra flat check against the persistent damage's DC to end it.",
+      "Damage": "Persistent damage",
+      "Roll": "Roll flat check",
+      "DcTitle": "Assisted Recovery",
+      "DcMessage": "{actor} helps {ally} recover from persistent {damage}.",
+      "DamageOption": "{damage} (DC {dc})",
+      "Fitting": "Especially fitting help (DC {dc}), like dousing a fire with water",
+      "Counts": "Counts (DC {dc})",
+      "FittingButton": "Fitting help (DC {dc})"
     }
   }
 }

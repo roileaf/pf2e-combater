@@ -321,6 +321,19 @@ const GENERIC_ACTION_DEFS = [
     executable: "prepare-to-aid",
   },
   {
+    // Assisted recovery (Player Core, persistent damage): spending actions to help put out an
+    // ally's fire, bandage a bleed and so on gives them an extra flat check to end it, DC 10 when
+    // the help is especially fitting (GM's call). Aid can't do this: a flat check isn't a skill check.
+    id: "assisted-recovery",
+    name: "Assisted Recovery",
+    slug: "assisted-recovery",
+    actionCost: 2,
+    role: "recovery",
+    combatUse: "browse-only",
+    targetingProfile: { ally: true },
+    executable: "assisted-recovery",
+  },
+  {
     id: "command-an-animal",
     name: "Command an Animal",
     slug: "command-an-animal",
@@ -451,6 +464,7 @@ const ACTION_CONDITION_UUID_OVERRIDES = {
   stand: "Compendium.pf2e.conditionitems.Item.j91X7x0XSomq8d60", // Prone
   crawl: "Compendium.pf2e.conditionitems.Item.j91X7x0XSomq8d60", // Prone
   retch: "Compendium.pf2e.conditionitems.Item.fesd1n5eVhpCSS18", // Sickened
+  "assisted-recovery": "Compendium.pf2e.conditionitems.Item.lDVqvLKA6eF3Df60", // Persistent Damage
 };
 
 // Point each generic action at its pf2e.actionspf2e compendium entry so opening it shows the

@@ -6,6 +6,7 @@ import { resolveTarget } from "../../engine/execution/targets.js";
 import { revertDraftExecution, revertDraftStep } from "../../engine/action/revert.js";
 import { readSustainedSpellEntries } from "../../engine/sustained-spells.js";
 import { promptRetchDc, promptRetchResult } from "../retch-decision.js";
+import { chooseRecovery } from "../assisted-recovery.js";
 import { recallKnowledgeAttemptState } from "../../rules/recall-knowledge.js";
 import { requestRecallKnowledgeResolution, requestRetchDc, requestRetchResult } from "../../socket.js";
 import { clearActionPreview } from "../action/preview.js";
@@ -259,7 +260,37 @@ export function handlePanelExecutionChoice(panel, step, choice, event, result = 
     confirmPanelRetchResult(panel, step, event, result?.rolled ?? null);
     return true;
   }
+  if (choice === "recovery-dc") {
+    providePanelRecovery(panel, step, event, result?.recovery ?? null);
+    return true;
+  }
   return false;
+}
+
+// Assisted recovery: the helper picks the persistent damage, the GM sets the DC, then the step runs.
+export async function providePanelRecovery(panel, step, event, recovery) {
+  if (!recovery) return;
+  try {
+    await setPanelAwaitingGm(panel, step.instanceId, true);
+    let choice;
+    try {
+      choice = await chooseRecovery({ actorName: retchActorName(panel), recovery });
+    } finally {
+      await setPanelAwaitingGm(panel, step.instanceId, false);
+    }
+    if (!choice) return;
+    const result = await executeDraftStep({
+      context: panel._contextForDraftStep(step.instanceId) ?? panel._context,
+      step,
+      action: step.action ?? step,
+      event,
+      choices: choice,
+    });
+    await applyPanelExecutionResult(panel, step, result, event);
+  } catch (error) {
+    globalThis.console?.error?.("pf2e-combater | Assisted recovery step failed", error);
+    globalThis.ui?.notifications?.error?.(t("Notify.RecoveryFailed", "Assisted recovery could not be resolved; see the console."));
+  }
 }
 
 export function retchActorName(panel) {

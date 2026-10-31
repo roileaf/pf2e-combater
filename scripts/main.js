@@ -50,6 +50,7 @@ import { expiredAreaRegionsForScene } from "./engine/area/duration.js";
 import { INTEL_LEDGER_FLAG, INTEL_REVEAL_MODE_FLAG } from "./rules/intel-ledger.js";
 import { registerRecallKnowledgeChatHooks, resolveRecallKnowledgeRequest } from "./ui/recall-knowledge.js";
 import { promptAidDc } from "./ui/aid.js";
+import { endPersistentDamageRequest, promptRecoveryDc } from "./ui/assisted-recovery.js";
 import { applyAidEffect } from "./engine/execution/prepare-to-aid.js";
 import { registerObservedIntelHooks } from "./rules/observed-intel.js";
 import { registerSpellstrikeHooks } from "./rules/spellstrike-state.js";
@@ -477,6 +478,8 @@ Hooks.once("socketlib.ready", () => {
   socket.register("resolveRecallKnowledge", resolveRecallKnowledgeRequest);
   socket.register("applyAidEffect", applyAidEffect);
   socket.register("promptAidDc", promptAidDc);
+  socket.register("promptRecoveryDc", promptRecoveryDc);
+  socket.register("endPersistentDamage", endPersistentDamageRequest);
   socket.register("receiveSharedDraft", receiveSharedDraft);
   socket.register("liveEngineMatrixPing", respondLiveEngineMatrixPing);
   socket.register("turnControl", handleTurnControl);

@@ -18,6 +18,7 @@ import {
 import { executeDropProne, executeRetch, executeStand } from "../execution/conditions.js";
 import { executeNativeAction } from "../execution/native-item.js";
 import { executePrepareToAid } from "../execution/prepare-to-aid.js";
+import { executeAssistedRecovery } from "../execution/assisted-recovery.js";
 import { executeSystemAction } from "../execution/system-action.js";
 import { executeStrike, strikeVariantIndex } from "../execution/strike.js";
 import { setSpellstrikeExpended } from "../../rules/spellstrike-state.js";
@@ -136,6 +137,8 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
     result = { status: "done", patch: executionPatch({}, "done", { result: t("Exec.SpellstrikeRecharged", "Spellstrike recharged.") }) };
   } else if (resolvedAction?.executable === "prepare-to-aid") {
     result = await executePrepareToAid({ context, actor, target, patch });
+  } else if (resolvedAction?.executable === "assisted-recovery") {
+    result = await executeAssistedRecovery({ target, choices, patch });
   } else if (resolvedAction?.executable === "recovery-check") {
     // PF2e's own recovery check: rolls the flat check and updates the dying value.
     const roll = typeof actor?.rollRecovery === "function" ? await actor.rollRecovery(event) : null;

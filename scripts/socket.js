@@ -75,6 +75,27 @@ export async function requestApplyAidEffect(args = {}) {
   }
 }
 
+// PLAYER → active GM: set the assisted recovery flat check DC. Resolves to { dc } or
+// { cancelled: true }, or null when no GM is connected / socketlib is unavailable.
+export async function requestRecoveryDc(args = {}) {
+  if (!socket || !globalThis.game?.users?.activeGM) return null;
+  try {
+    return await socket.executeAsGM("promptRecoveryDc", args);
+  } catch (_error) {
+    return null;
+  }
+}
+
+// PLAYER → active GM: end an ally's persistent damage after a successful assisted recovery.
+export async function requestEndPersistentDamage(args = {}) {
+  if (!socket) return null;
+  try {
+    return await socket.executeAsGM("endPersistentDamage", args);
+  } catch (_error) {
+    return null;
+  }
+}
+
 export async function requestLiveEngineMatrixPing(args = {}) {
   if (!socket) return null;
   try {
