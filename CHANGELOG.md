@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.19]
+
+### Fixed
+
+- **Browser descriptions name your own target too.** With a token targeted in Foundry, an action's description no longer names the creature Combater would have picked ("Fear can control Kimerus Federys"); it names your target instead.
+
 ## [2.6.18]
 
 ### Fixed
