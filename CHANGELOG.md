@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.17]
+
+### Fixed
+
+- **Actions you add yourself run only on your own target.** An action picked from the browser could run on the browser's suggested target (its "vs …" creature) even when you had targeted someone else or no one. Only Auto-fill picks targets now: an action you add runs on your Foundry target, and with nothing targeted it waits for one. Shift-click "use best target" still works when you ask for it.
+- **A target you pick by hand is never swapped.** Combater no longer replaces a hand-picked target it thinks is down (an NPC at 0 HP) with the nearest living enemy.
+
 ## [2.6.16]
 
 ### Fixed
