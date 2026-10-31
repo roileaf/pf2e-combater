@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.6.16]
+
+### Fixed
+
+- **Picking an action from the browser on your turn now really runs it.** The own-turn check read whose turn it was from the panel's combat snapshot, which doesn't carry it, so picks were only ever added to the plan.
+- **Assisted Recovery rolls a real PF2e flat check.** Its card now shows the DC and "Result: Success/Failure by N" like PF2e's own persistent damage recovery, titled "Assisted Recovery: Persistent Damage (…)", and follows PF2e's metagame settings for showing DCs and results to players.
+- **DCs stay hidden from players when PF2e hides them.** With PF2e's "show DCs" metagame setting off, the Assisted Recovery dialog no longer lists each damage's DC to players, and the no-GM notices for Aid and Assisted Recovery don't name the DC.
+- **Assisted Recovery says "Waiting for the GM" only while the GM decides,** not while you're still choosing in its dialog.
+
 ## [2.6.15]
 
 ### Fixed
