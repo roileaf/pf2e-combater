@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.21]
+
+### Fixed
+
+- **An empty crossbow (or other reload weapon) offers Reload again.** Combater treated a weapon as loaded whenever ammunition was attached to it, even a spent bolt left at 0 or a magazine with no uses left. It now counts loaded rounds the way PF2e does, so the browser offers Reload and the Strike knows it must reload first.
+
 ## [2.6.20]
 
 ### Fixed
