@@ -473,7 +473,7 @@ try {
   globalThis.canvas = previousAutoTargetCanvas;
 }
 assert.ok(
-  panelPickerWorkflowSource.includes('targetSelection: useBestTarget ? "recommended" : "manual"')
+  panelPickerWorkflowSource.includes('targetSelection: recommended ? "recommended" : "manual"')
     && panelDraftWorkflowSource.includes('targetSelection: "manual"'),
   "manual target picks should be marked so old auto-target draft fields can be ignored safely",
 );
@@ -956,6 +956,20 @@ try {
     await choosePanelTarget(chipPanel, "chip-step");
     assert.equal(runs.length, 1, "the explicit target tool only stores the target");
     assert.equal(renders, 1);
+
+    // With nothing targeted, the chip runs on the step's planned target (the one its hover shows).
+    globalThis.game.user.targets = new Set();
+    chipStep = { instanceId: "chip-step", action: executionTargetAction, suggestedTarget: { type: "enemy", id: "target-token", name: "Goblin" } };
+    runs.length = 0;
+    await choosePanelTarget(chipPanel, "chip-step", { runAfter: true, event: click });
+    assert.deepEqual(chipStep.targetTokenIds, ["target-token"]);
+    assert.equal(chipStep.targetSelection, "recommended");
+    assert.equal(runs.length, 1, "and runs it in the same click");
+    chipStep = { instanceId: "chip-step", action: executionTargetAction };
+    await choosePanelTarget(chipPanel, "chip-step");
+    assert.equal(runs.length, 1, "the explicit target tool still asks for a Foundry target");
+    globalThis.game.user.targets = new Set([targetToken]);
+    runs.length = 1;
 
     // A browser pick runs at once on the creature's own turn when it's next and needs nothing more.
     const { runBrowserPickNow } = await import("../../ui/panel/draft-workflow.js");

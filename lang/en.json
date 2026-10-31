@@ -411,7 +411,7 @@
       "SharedTargetPrefix": "All steps target",
       "QuickPlan": "Plan",
       "QuickRun": "Click to run.",
-      "QuickTargetRun": "Click to run it on your current target (Shift-click: Best target).",
+      "QuickTargetRun": "Click to run it on your current target, or on its planned target if you have none (Shift-click: Best target).",
       "QuickUndo": "Done. Click to undo.",
       "QuickGroup": "{number}. {name} · {count} steps",
       "QuickMore": "Right-click for options.",
