@@ -1161,6 +1161,11 @@ assert.ok(
   "the search input should live in the pinned header, not inside the scroll body",
 );
 assert.ok(panelStyleSource.includes(".combater-browser-header"), "the browser header should be styled as a pinned region");
+// Compact tiles: an ⓘ beside the name opens details, and must not also add the action.
+assert.ok(/combater-browser-tile-name">\{\{name\}\} <span class="combater-browser-tile-info" data-tile-info="\{\{key\}\}"/.test(browserTemplateSource),
+  "each compact tile shows an info icon after its name");
+assert.ok(/\[data-tile-info\][\s\S]*?stopPropagation\(\)[\s\S]*?panel\._openBuilderAction/.test(browserSource),
+  "the tile info icon opens details without adding the action");
 // Window depth must be a box-shadow on the shell, never a `filter` on the window root: a filter
 // re-composites over Foundry's live canvas every frame and lags the canvas while the window is open.
 assert.equal(panelStyleSource.includes("filter: drop-shadow"), false,

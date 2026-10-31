@@ -161,6 +161,14 @@ export class CombaterBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
         else if (!("tileOver" in tile.dataset)) panel._addAction(key);
       });
     }
+    // Compact tiles: the ⓘ beside the name opens the action's details instead of adding it.
+    for (const info of element.querySelectorAll("[data-tile-info]")) {
+      info.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        panel._openBuilderAction(info.dataset.tileInfo);
+      });
+    }
     // Compact tiles: right-click stars the action (pins it to the top).
     for (const tile of element.querySelectorAll("[data-tile-favorite]")) {
       tile.addEventListener("contextmenu", (event) => {
