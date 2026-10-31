@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.23]
+
+### Fixed
+
+- **Healing Hands rolls Heal with d10s.** After a spell was cast, Combater rolled its healing or damage itself from the spell's formula, so feats that change the dice (like the cleric's Healing Hands) were skipped. It now rolls through the card's own Roll Healing / Roll Damage, the same as clicking it, so the caster's feats and rules apply.
+
 ## [2.6.22]
 
 ### Fixed
