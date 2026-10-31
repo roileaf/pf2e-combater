@@ -179,9 +179,10 @@ export async function choosePanelTarget(panel, instanceId, { useBestTarget = fal
     ? plannedTargetSelection(current)
     : currentTargetSelection();
   // The chip's one click: with nothing targeted in Foundry, run on the step's planned target (the
-  // one its hover preview shows) instead of asking for a target.
+  // one its hover preview shows) instead of asking for a target. Only Auto-fill's steps have one:
+  // an action the player added themselves waits for their own target.
   let recommended = useBestTarget;
-  if (runAfter && !selection.targetTokenIds.length) {
+  if (runAfter && !current.ownTarget && !selection.targetTokenIds.length) {
     selection = plannedTargetSelection(current);
     recommended = true;
   }

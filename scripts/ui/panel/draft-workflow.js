@@ -937,6 +937,8 @@ async function appendAtomizedActionToDraft(panel, actionKey, { listKey, canEdit,
           ...(atom?.movementAction ? { movementAction: atom.movementAction } : {}),
           requiresDestination: requiresDestinationForAction(atom),
           requiresTarget: requiresTargetForAction(atom),
+          // Only Auto-fill picks targets: an action you add yourself runs on your own Foundry target.
+          ownTarget: true,
           ...(atom?.groupId
             ? { groupId: atom.groupId, groupLabel: atom.groupLabel, ...(Number.isFinite(atom?.atomIndex) ? { atomIndex: atom.atomIndex } : {}) }
             : atom?.activityProfile?.requiresDistinctTargets

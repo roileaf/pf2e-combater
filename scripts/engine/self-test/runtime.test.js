@@ -992,6 +992,22 @@ try {
     globalThis.game.user.targets = new Set();
     assert.equal(await runBrowserPickNow(pickPanel, "chip-step", {}), false, "never on a Best-target guess");
     assert.equal(runs.length, 0);
+    // Kimerus (Discord): only Auto-fill picks targets. An action added from the browser never
+    // falls back to the Best target, even if the Foundry target is gone when the step stores it.
+    const goneTargetPanel = { ...pickPanel, _chooseTarget: (id, options) => {
+      globalThis.game.user.targets = new Set();
+      return choosePanelTarget(pickPanel, id, options);
+    } };
+    globalThis.game.user.targets = new Set([targetToken]);
+    const bestGoblin = { type: "enemy", id: "best-target-token", name: "Best Goblin" };
+    chipStep = { instanceId: "chip-step", ownTarget: true, action: { ...executionTargetAction, suggestedTarget: bestGoblin } };
+    await runBrowserPickNow(goneTargetPanel, "chip-step", {});
+    assert.equal(runs.length, 0, "a browser pick never runs on the Best target");
+    assert.equal(chipStep.targetTokenIds, undefined);
+    chipStep = { instanceId: "chip-step", ownTarget: true, action: { ...executionTargetAction, suggestedTarget: bestGoblin } };
+    await choosePanelTarget(chipPanel, "chip-step", { runAfter: true });
+    assert.equal(runs.length, 0, "nor does the minimal bar's play button with nothing targeted");
+    globalThis.game.user.targets = new Set([targetToken]);
     globalThis.game.user.targets = new Set([targetToken]);
     globalThis.game.combats = savedCombats;
   }

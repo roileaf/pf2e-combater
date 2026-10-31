@@ -99,10 +99,10 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
     if (!target) return { status: "needs-choice", choices: ["target"], patch };
     // The planned target died earlier this turn (an NPC at 0 HP): never attack the body. Take the
     // nearest living enemy the action still reaches; with none, ask, saying why. A target the user
-    // just picked is used as given.
+    // or picked by hand (their Foundry target) is used as given.
     const targetActorDocument = target.token?.actor ?? target.token?.document?.actor ?? null;
     const targetHp = Number(targetActorDocument?.system?.attributes?.hp?.value);
-    if (!Object.prototype.hasOwnProperty.call(choices, "targetTokenIds")
+    if (!Object.prototype.hasOwnProperty.call(choices, "targetTokenIds") && step.targetSelection !== "manual"
       && targetActorDocument?.type === "npc" && Number.isFinite(targetHp) && targetHp <= 0) {
       const replacement = livingTargetInReach(context, resolvedAction, target);
       if (!replacement) {

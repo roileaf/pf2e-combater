@@ -85,6 +85,8 @@ function targetSelectionSources(step, action, choices = {}) {
   // adjacent creature); only a step with neither asks for a target.
   // The planned target lives on the step (auto-fill) or its action (a recommendation).
   const stored = storedTargetSelection(step, action);
+  // An action the player added themselves never runs on the planner's pick.
+  if (step?.ownTarget) return [stored].filter((source) => source?.targetTokenIds?.length);
   const fromStep = plannedTargetSelection(step);
   const planned = { ...(fromStep.targetTokenIds.length ? fromStep : plannedTargetSelection(action)), planned: true };
   return [stored, planned].filter((source) => source?.targetTokenIds?.length);

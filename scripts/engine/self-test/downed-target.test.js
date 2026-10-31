@@ -42,6 +42,22 @@ try {
   assert.equal(none.status, "needs-choice", "with no living enemy in reach it asks for a target");
   assert.match(none.reason, /Hobgoblin Soldier is down/, "and says why");
   assert.equal(rolls.length, 1, "it never Strikes the body");
+
+  // Kimerus (Discord): a step run on the player's own Foundry target went at the Best target
+  // instead. A target picked by hand, even an NPC at 0 HP, is used as given.
+  const picked = await executeDraftStep({ context: context([
+    { id: "hob-1", name: "Hobgoblin Soldier", distance: 5, hpPercent: 0, token: { id: "hob-1" } },
+    { id: "hob-2", name: "Hobgoblin Soldier", distance: 5, hpPercent: 70, token: { id: "hob-2" } },
+  ]), step: { ...step, targetSelection: "manual" }, action: flail });
+  assert.equal(picked.status, "done");
+  assert.deepEqual(rolls.at(-1), ["hob-1"], "a hand-picked target is never swapped for another");
+
+  // Only Auto-fill picks targets: a step the player added never runs on the planner's pick.
+  const added = await executeDraftStep({ context: context([]),
+    step: { instanceId: "browser-strike", ownTarget: true, action: { ...flail, suggestedTarget: { type: "enemy", id: "hob-2", name: "Hobgoblin Soldier" } } },
+    action: { ...flail, suggestedTarget: { type: "enemy", id: "hob-2", name: "Hobgoblin Soldier" } } });
+  assert.equal(added.status, "needs-choice", "an added action asks for your target");
+  assert.equal(rolls.length, 2);
 } finally {
   Object.assign(globalThis, saved);
 }
