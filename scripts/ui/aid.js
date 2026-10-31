@@ -112,7 +112,10 @@ async function aidDc({ actor, ally, option, aided }) {
     return null;
   }
   if (Number.isFinite(answer?.dc)) return answer.dc;
-  notifications?.info?.(t("Notify.AidNoGm", "No GM to set the DC; rolling against DC {dc}.", { dc: AID_DC }));
+  // PF2e's metagame setting decides whether players see check DCs.
+  notifications?.info?.(globalThis.game?.pf2e?.settings?.metagame?.dcs === false
+    ? t("Notify.AidNoGmHidden", "No GM to set the DC; rolling against the usual DC.")
+    : t("Notify.AidNoGm", "No GM to set the DC; rolling against DC {dc}.", { dc: AID_DC }));
   return AID_DC;
 }
 

@@ -64,6 +64,37 @@ function recoveryFlags(actor, combat) {
   return combat?.started ? { [MODULE_ID]: { [RECOVERY_FLAG]: { actorUuid: actor?.uuid ?? null, combatId: combat.id, round: combat.round } } } : {};
 }
 
+// The flat check as PF2e rolls its own persistent damage recovery: a flat-check with the DC, so the
+// card shows the DC and "Result: Success by N" like PF2e's. Its message then gets the round mark.
+async function rollPf2eFlatCheck({ ally, damage, dc, title, flags }) {
+  const pf2e = globalThis.game?.pf2e;
+  if (typeof pf2e?.Check?.roll !== "function" || typeof pf2e?.CheckModifier !== "function") return null;
+  const label = `${title}: ${damage.condition?.name ?? damage.label}`;
+  const before = new Set((globalThis.game?.messages?.contents ?? []).map((message) => message.id));
+  const roll = await pf2e.Check.roll(new pf2e.CheckModifier(label, { modifiers: [] }), {
+    actor: ally, type: "flat-check", dc: { value: dc }, title: label, skipDialog: true,
+    options: new Set(["assisted-recovery", ...(damage.condition?.getRollOptions?.("item") ?? [])]),
+    domains: ["flat-check"],
+  }, null);
+  if (!roll) return { success: false, message: null };
+  const message = (globalThis.game?.messages?.contents ?? []).findLast?.((entry) => !before.has(entry.id) && entry.isRoll) ?? null;
+  if (message && flags?.[MODULE_ID]) await message.update?.({ flags });
+  return { success: Number(roll.degreeOfSuccess) >= 2, message };
+}
+
+// Without PF2e's check API (tests, or a future API change): a plain d20 against the DC.
+async function rollPlainFlatCheck({ damage, dc, title, speaker, flags }) {
+  const roll = await new globalThis.Roll("1d20").evaluate();
+  const success = roll.total >= dc;
+  const outcome = success ? t("Exec.RecoverySuccess", "Success: the persistent {damage} ends.", { damage: damage.label })
+    : t("Exec.RecoveryFailure", "Failure: the persistent {damage} continues.", { damage: damage.label });
+  const message = await roll.toMessage({
+    speaker, flags,
+    flavor: `<strong>${escapeHtml(title)}</strong><br>${escapeHtml(t("Exec.RecoveryFlavor", "Flat check DC {dc} to end persistent {damage}.", { dc, damage: damage.label }))}<br>${escapeHtml(outcome)}`,
+  });
+  return { success, message };
+}
+
 // Rolls the extra flat check to end one persistent damage, on an ally or yourself (whoever the step
 // targets). Until it knows which damage (when there are several) and the GM's ruling (the damage's
 // own DC, 10 for especially fitting help, or ending it outright), it asks as a "recovery-dc" choice.
@@ -102,15 +133,10 @@ export async function executeAssistedRecovery({ context = null, target, choices 
     };
   }
 
-  const roll = await new globalThis.Roll("1d20").evaluate();
-  const success = roll.total >= dc;
+  const pf2eCheck = await rollPf2eFlatCheck({ ally, damage, dc, title, flags: recoveryFlags(ally, combat) });
+  const { success, message } = pf2eCheck ?? await rollPlainFlatCheck({ damage, dc, title, speaker, flags: recoveryFlags(ally, combat) });
   const outcome = success ? t("Exec.RecoverySuccess", "Success: the persistent {damage} ends.", { damage: damage.label })
     : t("Exec.RecoveryFailure", "Failure: the persistent {damage} continues.", { damage: damage.label });
-  const message = await roll.toMessage({
-    speaker,
-    flags: recoveryFlags(ally, combat),
-    flavor: `<strong>${escapeHtml(title)}</strong><br>${escapeHtml(t("Exec.RecoveryFlavor", "Flat check DC {dc} to end persistent {damage}.", { dc, damage: damage.label }))}<br>${escapeHtml(outcome)}`,
-  });
   const ended = success ? await endPersistentDamage(damage) : false;
   const result = success && !ended
     ? t("Exec.RecoveryNotRemoved", "The flat check succeeded, but the persistent {damage} couldn't be removed; an active GM is needed.", { damage: damage.label })

@@ -8,7 +8,13 @@ function dialogClasses() {
   return ["pf2e-combater-delay-dialog", "pf2e-combater-ready-dialog"];
 }
 
+// PF2e's metagame setting decides whether players see check DCs; the GM always does.
+function dcsVisible() {
+  return globalThis.game?.user?.isGM === true || globalThis.game?.pf2e?.settings?.metagame?.dcs !== false;
+}
+
 function damageOptionLabel(damage) {
+  if (!dcsVisible()) return damage.label ?? "";
   return t("AssistedRecovery.DamageOption", "{damage} (DC {dc})", { damage: damage.label, dc: damage.dc ?? RECOVERY_DC });
 }
 
@@ -77,8 +83,9 @@ export async function promptRecoveryDc({ actorName = "", allyName = "", damage =
 
 // The helper's choices for an assisted recovery step: which damage, then the GM's ruling (or the
 // damage's own DC when no GM is connected). Resolves to { persistentId, dc } or
-// { persistentId, autoEnd: true }, or null when abandoned.
-export async function chooseRecovery({ actorName, recovery }) {
+// { persistentId, autoEnd: true }, or null when abandoned. onWaiting(true/false) brackets the wait
+// for the GM, so the step shows "Waiting for the GM" only then, not while the helper still chooses.
+export async function chooseRecovery({ actorName, recovery, onWaiting = null }) {
   const isGM = globalThis.game?.user?.isGM === true;
   const help = await promptRecoveryHelp(recovery, { asGm: isGM });
   if (!help) return null;
@@ -90,14 +97,22 @@ export async function chooseRecovery({ actorName, recovery }) {
   }
   const notifications = globalThis.ui?.notifications;
   notifications?.info?.(t("Notify.RecoveryWaitingDc", "Waiting for the GM to rule on your help."));
-  const answer = await requestRecoveryDc({ actorName, allyName: recovery.allyName, damage: damage?.label ?? "", dc: base });
+  await onWaiting?.(true);
+  let answer;
+  try {
+    answer = await requestRecoveryDc({ actorName, allyName: recovery.allyName, damage: damage?.label ?? "", dc: base });
+  } finally {
+    await onWaiting?.(false);
+  }
   if (answer?.cancelled) {
     notifications?.warn?.(t("Notify.RecoveryRefused", "The GM didn't allow this help."));
     return null;
   }
   if (answer?.autoEnd === true) return { persistentId: help.persistentId, autoEnd: true };
   if (Number.isFinite(answer?.dc)) return { persistentId: help.persistentId, dc: answer.dc };
-  notifications?.info?.(t("Notify.RecoveryNoGm", "No GM to rule on it; rolling against DC {dc}.", { dc: base }));
+  notifications?.info?.(dcsVisible()
+    ? t("Notify.RecoveryNoGm", "No GM to rule on it; rolling against DC {dc}.", { dc: base })
+    : t("Notify.RecoveryNoGmHidden", "No GM to rule on it; rolling against the damage's own DC."));
   return { persistentId: help.persistentId, dc: base };
 }
 

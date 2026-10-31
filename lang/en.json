@@ -801,7 +801,9 @@
       "RecoveryWaitingDc": "Waiting for the GM to rule on your help.",
       "RecoveryRefused": "The GM didn't allow this help.",
       "RecoveryNoGm": "No GM to rule on it; rolling against DC {dc}.",
-      "RecoveryFailed": "Assisted recovery could not be resolved; see the console."
+      "RecoveryFailed": "Assisted recovery could not be resolved; see the console.",
+      "RecoveryNoGmHidden": "No GM to rule on it; rolling against the damage's own DC.",
+      "AidNoGmHidden": "No GM to set the DC; rolling against the usual DC."
     },
     "Choice": {
       "destination": "destination",

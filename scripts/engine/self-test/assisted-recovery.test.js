@@ -117,6 +117,30 @@ try {
   assert.match(created.at(-1).content, /Assisted Recovery/);
   assert.deepEqual(result.patch.execution.revert?.ops?.[0], { kind: "chat", messageId: "ended-card" });
   assert.equal((await runInCombat()).status, "failed", "ending it outright also uses the round's assisted recovery");
+
+  // With PF2e's check API, it rolls a real flat check, so the card shows the DC and
+  // "Result: Success by N" like PF2e's own recovery; the card still gets the round mark.
+  combat.round = 5;
+  allyActor.itemTypes.condition = [condition("fire", "1d6", "fire")];
+  const checks = [];
+  const flatCard = { id: "pf2e-card", isRoll: true, flags: {}, update: async (data) => { Object.assign(flatCard.flags, data.flags); } };
+  globalThis.game.pf2e = {
+    CheckModifier: function CheckModifier(slug, statistic) { this.slug = slug; this.statistic = statistic; },
+    Check: { roll: async (check, context) => { checks.push({ check, context }); globalThis.game.messages.contents.push(flatCard); return { degreeOfSuccess: 2 }; } },
+  };
+  const rolledBefore = messages.length;
+  result = await runInCombat({ persistentId: "fire", dc: 10 });
+  assert.equal(result.status, "done");
+  assert.equal(messages.length, rolledBefore, "no plain d20");
+  assert.equal(checks[0].context.type, "flat-check");
+  assert.deepEqual(checks[0].context.dc, { value: 10 });
+  assert.deepEqual(checks[0].check.statistic.modifiers, [], "a flat check has no modifiers");
+  assert.match(checks[0].check.slug, /^Assisted Recovery: /);
+  assert.ok(checks[0].context.options.has("assisted-recovery"));
+  assert.deepEqual(flatCard.flags["pf2e-combater"].assistedRecovery, { actorUuid: "Actor.sirena", combatId: "combat-1", round: 5 });
+  assert.match(result.patch.execution.result, /ends/);
+  assert.deepEqual(result.patch.execution.revert?.ops?.[0], { kind: "chat", messageId: "pf2e-card" });
+  delete globalThis.game.pf2e;
 } finally {
   setSocket(null);
   Object.assign(globalThis, saved);
@@ -158,7 +182,10 @@ try {
     setSocket({ executeAsGM: async (name, args) => { asked.push({ name, args }); return gmAnswer; } });
     const pending = { allyName: "Sirena", damages: [{ id: "fire", label: "1d6 fire", dc: 15 }, { id: "bleed", label: "2 bleed", dc: 17 }], persistentId: null };
 
-    assert.deepEqual(await chooseRecovery({ actorName: "Edran", recovery: pending }), { persistentId: "fire", dc: 10 }, "the GM's ruling is used");
+    const waiting = [];
+    const onWaiting = (on) => { waiting.push([on, prompts.length]); };
+    assert.deepEqual(await chooseRecovery({ actorName: "Edran", recovery: pending, onWaiting }), { persistentId: "fire", dc: 10 }, "the GM's ruling is used");
+    assert.deepEqual(waiting, [[true, 1], [false, 1]], "\"Waiting for the GM\" starts only after the helper's own dialog, and ends with the GM's answer");
     assert.match(prompts[0], /name="persistent"/, "with several, the helper picks which persistent damage");
     assert.match(prompts[0], /2 bleed \(DC 17\)/, "each shows its own DC");
     assert.doesNotMatch(prompts[0], /name="how"/, "no free-text field: the player says it out loud");
@@ -188,6 +215,30 @@ try {
     assert.deepEqual(waits.at(-1).buttons.find((button) => button.action === "ends").callback(), { autoEnd: true });
     await promptRecoveryDc({ dc: 8 });
     assert.deepEqual(waits.at(-1).buttons.map((button) => button.action), ["ok", "ends", "cancel"], "no fitting button when the DC is already 10 or lower");
+  } finally {
+    setSocket(null);
+    Object.assign(globalThis, keep);
+  }
+}
+// PF2e's metagame "show DCs" setting: with it off, a player's dialog doesn't reveal the DCs; the GM's does.
+{
+  const { chooseRecovery } = await import("../../ui/assisted-recovery.js");
+  const keep = Object.fromEntries(["game", "foundry", "ui"].map((key) => [key, globalThis[key]]));
+  try {
+    const prompts = [];
+    globalThis.game = { user: { isGM: false }, users: { activeGM: { id: "gm" } }, pf2e: { settings: { metagame: { dcs: false } } } };
+    globalThis.ui = { notifications: { info() {}, warn() {} } };
+    globalThis.foundry = { utils: { escapeHTML: String }, applications: { api: { DialogV2: {
+      prompt: async (options) => { prompts.push(options.content); return { persistentId: "fire", ruling: "counts" }; },
+    } } } };
+    setSocket({ executeAsGM: async () => ({ dc: 15 }) });
+    const pending = { allyName: "Sirena", damages: [{ id: "fire", label: "1d6 fire", dc: 15 }, { id: "bleed", label: "2 bleed", dc: 17 }], persistentId: null };
+    await chooseRecovery({ actorName: "Edran", recovery: pending });
+    assert.doesNotMatch(prompts[0], /DC 1[57]/, "hidden from the player");
+    assert.match(prompts[0], /2 bleed/);
+    globalThis.game.user.isGM = true;
+    await chooseRecovery({ actorName: "Edran", recovery: pending });
+    assert.match(prompts[1], /2 bleed \(DC 17\)/, "the GM always sees them");
   } finally {
     setSocket(null);
     Object.assign(globalThis, keep);

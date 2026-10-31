@@ -271,13 +271,11 @@ export function handlePanelExecutionChoice(panel, step, choice, event, result = 
 export async function providePanelRecovery(panel, step, event, recovery) {
   if (!recovery) return;
   try {
-    await setPanelAwaitingGm(panel, step.instanceId, true);
-    let choice;
-    try {
-      choice = await chooseRecovery({ actorName: retchActorName(panel), recovery });
-    } finally {
-      await setPanelAwaitingGm(panel, step.instanceId, false);
-    }
+    const choice = await chooseRecovery({
+      actorName: retchActorName(panel),
+      recovery,
+      onWaiting: (on) => setPanelAwaitingGm(panel, step.instanceId, on),
+    });
     if (!choice) return;
     const result = await executeDraftStep({
       context: panel._contextForDraftStep(step.instanceId) ?? panel._context,
