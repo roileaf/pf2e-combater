@@ -1332,6 +1332,7 @@ const QUICK_CHOICES = [
 function quickStepTools(step) {
   const tools = [];
   const add = (when, attr, icon, tooltip, extra = {}) => { if (when) tools.push({ attr, icon, tooltip, ...extra }); };
+  add(true, "open-draft-step", "fa-circle-info", t("Browser.OpenDetails", "Open action details"));
   add(step.canChooseSummon, "choose-summon", "fa-paw", step.summonLabel || t("Summon.Choose", "Choose summon"));
   add(step.canChooseTarget, "choose-target", "fa-crosshairs", step.targetToolTip, { needed: Boolean(step.targetButtonLabel) });
   add(step.canChooseArea, "choose-area", "fa-draw-polygon", t("Panel.SetTemplate", "Place template"), { needed: Boolean(step.areaButtonLabel) });
@@ -1379,7 +1380,10 @@ function doneQuickChip(step) {
     isDone: true,
     tooltip: `${what}. ${undo} ${t("Panel.QuickMore", "Right-click for options.")}`,
     title: what,
-    tools: [{ attr: "revert-step", icon: "fa-rotate-left", tooltip: t("Panel.RevertStep", "Revert this step"), run: true }],
+    tools: [
+      { attr: "open-draft-step", icon: "fa-circle-info", tooltip: t("Browser.OpenDetails", "Open action details") },
+      { attr: "revert-step", icon: "fa-rotate-left", tooltip: t("Panel.RevertStep", "Revert this step"), run: true },
+    ],
   }];
 }
 

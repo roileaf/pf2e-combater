@@ -55,7 +55,7 @@ assert.equal(ranChips[0].isDone, true);
 assert.equal(ranChips[0].attr, "revert-step", "clicking a run step's chip undoes it");
 assert.equal(ranChips[0].icon, "fa-rotate-left");
 assert.match(ranChips[0].tooltip, /^1\. r1 Riding Horse\. Done\. Click to undo\./);
-assert.deepEqual(ranChips[0].tools.map((tool) => tool.attr), ["revert-step"], "its right-click menu offers undo");
+assert.deepEqual(ranChips[0].tools.map((tool) => tool.attr), ["open-draft-step", "revert-step"], "its right-click menu offers details and undo");
 assert.equal(ranChips[1].isNext, true, "the next step to run is still the next pending one");
 assert.deepEqual(layout.quickSteps[0].chips.map((chip) => chip.instanceId), ["f1", "f2"]);
 const flurryChips = decoratePlanLayout([{ ...flurry, groupLabel: "Flurry of Blows", children: [
@@ -84,9 +84,10 @@ const tooled = decoratePlanLayout([step("x", {
   canChooseTarget: true, targetToolTip: "Use target", canCycleMap: true, mapToolLabel: "MAP -5", mapToolTip: "Cycle MAP",
   canRemoveDraftStep: true, executionBlocked: true,
 })]).quickSteps[0].tools;
-assert.deepEqual(tooled.map((tool) => tool.attr), ["choose-target", "cycle-map", "execute-draft-step", "remove-draft-step"], "right-click shows the row's buttons in row order");
-assert.equal(tooled[1].text, "MAP -5");
-assert.equal(tooled[2].disabled, true, "run stays disabled until the step is ready");
+assert.deepEqual(tooled.map((tool) => tool.attr), ["open-draft-step", "choose-target", "cycle-map", "execute-draft-step", "remove-draft-step"], "right-click shows details, then the row's buttons in row order");
+assert.equal(tooled[0].icon, "fa-circle-info");
+assert.equal(tooled[2].text, "MAP -5");
+assert.equal(tooled[3].disabled, true, "run stays disabled until the step is ready");
 
 const mixed = decoratePlanLayout([step("a"), step("b", { targetLabel: "Goblin" })]);
 assert.equal(mixed.sharedTarget, null, "different targets keep per-row labels");
