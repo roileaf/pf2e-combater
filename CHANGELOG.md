@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.20]
+
+### Fixed
+
+- **Picking an action from the browser on your turn runs it again.** With a token targeted, the pick was only added to the plan since 2.6.17: the run check read the plan from before your target was saved. The minimal bar's play button had the same problem.
+
 ## [2.6.19]
 
 ### Fixed
