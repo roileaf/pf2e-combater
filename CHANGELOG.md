@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.6.11]
+
+### Added
+
+- **Picking an action from the browser on your turn runs it.** When it's the creature's own turn, the action is next in the plan, and it needs nothing more (a target, if needed, is your current Foundry target; it never runs on a Best-target guess), it runs as soon as you pick it. Otherwise it's only added to the plan, as before. Turn it off with the "Run browser picks on your turn" setting.
+- **Compact browser tiles have an ⓘ beside the name.** It opens the action's details; clicking the rest of the tile still adds it.
+
+### Fixed
+
+- **The minimized bar's target chip shows the run icon.** A step that runs on your current target in one click still showed a crosshair, as if a choice were missing.
+
 ## [2.6.10]
 
 ### Fixed
