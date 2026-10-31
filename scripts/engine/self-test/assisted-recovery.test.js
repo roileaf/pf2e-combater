@@ -33,7 +33,7 @@ try {
   globalThis.game = { user: { id: "player", isGM: false, targets: new Set() } };
   globalThis.canvas = { tokens: { placeables: [token], get: (id) => (id === token.id ? token : null), setTargets() {} } };
   globalThis.ChatMessage = { getSpeaker: () => ({ alias: "Sirena Valcrest" }), create: async () => ({ id: "card" }) };
-  globalThis.Roll = class { constructor(formula) { this.formula = formula; } async evaluate() { this.total = die; return this; } async toMessage(data) { messages.push(data); return { id: "flat-check" }; } };
+  globalThis.Roll = class { constructor(formula) { this.formula = formula; } async evaluate() { this.total = die; return this; } async toMessage(data) { messages.push(data); globalThis.game.messages?.contents?.push?.({ flags: data.flags }); return { id: "flat-check" }; } };
   const step = { instanceId: "recovery", targetTokenIds: ["ally-1"], targetSelection: "manual", action: recovery };
   const run = (choices = {}) => executeDraftStep({ context, step, action: recovery, choices });
 
@@ -70,6 +70,53 @@ try {
   result = await run({ dc: 15, persistentId: "fire" });
   assert.deepEqual(asked, [{ name: "endPersistentDamage", args: { conditionUuid: "Actor.sirena.Item.fire" } }]);
   assert.match(result.patch.execution.result, /ends/);
+  setSocket(null);
+
+  // Player Core: "You can take steps to help yourself recover, or an ally can help you." Targeting
+  // your own token works like targeting an ally.
+  const selfActor = { id: "edran", uuid: "Actor.edran", name: "Edran Voss", itemTypes: { condition: [condition("acid", "1d4", "acid")] } };
+  const selfToken = { id: "edran-token", name: "Edran Voss", document: { id: "edran-token", name: "Edran Voss" }, actor: selfActor, setTarget() {} };
+  globalThis.canvas.tokens.placeables.push(selfToken);
+  const baseGet = globalThis.canvas.tokens.get;
+  globalThis.canvas.tokens.get = (id) => (id === selfToken.id ? selfToken : baseGet(id));
+  const selfStep = { ...step, instanceId: "self", targetTokenIds: ["edran-token"] };
+  result = await executeDraftStep({ context, step: selfStep, action: recovery, choices: { persistentId: "acid", dc: 15 } });
+  assert.equal(result.status, "done");
+  assert.ok(deleted.includes("acid"), "you can help yourself recover");
+
+  // Once per round per creature: the chat card marks the round, so a second attempt is refused
+  // before anyone is asked anything; a new round, or undoing the step (deleting the card), allows it.
+  const combat = { id: "combat-1", started: true, round: 3 };
+  const inCombat = { ...context, combat };
+  allyActor.uuid = "Actor.sirena";
+  allyActor.itemTypes.condition = [condition("fire", "1d6", "fire")];
+  globalThis.game.messages = { contents: [] };
+  die = 5;
+  const runInCombat = (choices = {}) => executeDraftStep({ context: inCombat, step, action: recovery, choices });
+  result = await runInCombat({ persistentId: "fire", dc: 15 });
+  assert.match(result.patch.execution.result, /continues/);
+  assert.deepEqual(messages.at(-1).flags["pf2e-combater"].assistedRecovery, { actorUuid: "Actor.sirena", combatId: "combat-1", round: 3 });
+  result = await runInCombat();
+  assert.equal(result.status, "failed", "a second assisted recovery in the same round is refused");
+  assert.match(result.error, /already had assisted recovery this round/);
+  combat.round = 4;
+  result = await runInCombat();
+  assert.equal(result.status, "needs-choice", "next round it's allowed again");
+  globalThis.game.messages.contents.length = 0;
+  combat.round = 3;
+  assert.equal((await runInCombat()).status, "needs-choice", "undoing the step's card gives the chance back");
+
+  // The GM can rule that the help ends it outright (a dunk in a lake for fire): no roll.
+  const created = [];
+  globalThis.ChatMessage.create = async (data) => { created.push(data); globalThis.game.messages.contents.push({ flags: data.flags }); return { id: "ended-card" }; };
+  const rolled = messages.length;
+  result = await runInCombat({ persistentId: "fire", autoEnd: true });
+  assert.equal(result.status, "done");
+  assert.equal(messages.length, rolled, "no flat check is rolled");
+  assert.match(result.patch.execution.result, /ends \(GM's ruling\)/);
+  assert.match(created.at(-1).content, /Assisted Recovery/);
+  assert.deepEqual(result.patch.execution.revert?.ops?.[0], { kind: "chat", messageId: "ended-card" });
+  assert.equal((await runInCombat()).status, "failed", "ending it outright also uses the round's assisted recovery");
 } finally {
   setSocket(null);
   Object.assign(globalThis, saved);
@@ -100,7 +147,7 @@ try {
     const prompts = [];
     const asked = [];
     let gmAnswer = { dc: 10 };
-    let helpAnswer = { persistentId: "fire", fitting: false };
+    let helpAnswer = { persistentId: "fire", ruling: "counts" };
     const waits = [];
     globalThis.game = { user: { isGM: false }, users: { activeGM: { id: "gm" } } };
     globalThis.ui = { notifications: { info() {}, warn() {} } };
@@ -115,27 +162,32 @@ try {
     assert.match(prompts[0], /name="persistent"/, "with several, the helper picks which persistent damage");
     assert.match(prompts[0], /2 bleed \(DC 17\)/, "each shows its own DC");
     assert.doesNotMatch(prompts[0], /name="how"/, "no free-text field: the player says it out loud");
-    assert.doesNotMatch(prompts[0], /name="dc"|name="fitting"/, "the player rules on nothing");
+    assert.doesNotMatch(prompts[0], /name="dc"|name="ruling"/, "the player rules on nothing");
     assert.deepEqual(asked[0], { name: "promptRecoveryDc", args: { actorName: "Edran", allyName: "Sirena", damage: "1d6 fire", dc: 15 } });
     gmAnswer = { cancelled: true };
     assert.equal(await chooseRecovery({ actorName: "Edran", recovery: pending }), null, "help the GM doesn't allow isn't rolled");
+    gmAnswer = { autoEnd: true };
+    assert.deepEqual(await chooseRecovery({ actorName: "Edran", recovery: pending }), { persistentId: "fire", autoEnd: true }, "the GM can rule it ends outright");
     gmAnswer = null;
-    helpAnswer = { persistentId: "bleed", fitting: false };
+    helpAnswer = { persistentId: "bleed", ruling: "counts" };
     assert.deepEqual(await chooseRecovery({ actorName: "Edran", recovery: pending }), { persistentId: "bleed", dc: 17 }, "without a GM, the damage's own DC");
 
     globalThis.game.user.isGM = true;
-    helpAnswer = { persistentId: "bleed", fitting: true };
-    assert.deepEqual(await chooseRecovery({ actorName: "Edran", recovery: pending }), { persistentId: "bleed", dc: 10 }, "a GM helping marks especially fitting help");
-    assert.match(prompts.at(-1), /name="fitting"/);
-    helpAnswer = { persistentId: "bleed", fitting: false };
+    helpAnswer = { persistentId: "bleed", ruling: "fitting" };
+    assert.deepEqual(await chooseRecovery({ actorName: "Edran", recovery: pending }), { persistentId: "bleed", dc: 10 }, "a GM helping rules especially fitting help");
+    assert.match(prompts.at(-1), /name="ruling"/);
+    helpAnswer = { persistentId: "bleed", ruling: "counts" };
     assert.deepEqual(await chooseRecovery({ actorName: "Edran", recovery: pending }), { persistentId: "bleed", dc: 17 });
-    assert.equal(asked.length, 3, "a GM isn't asked over the socket");
+    helpAnswer = { persistentId: "bleed", ruling: "ends" };
+    assert.deepEqual(await chooseRecovery({ actorName: "Edran", recovery: pending }), { persistentId: "bleed", autoEnd: true });
+    assert.equal(asked.length, 4, "a GM isn't asked over the socket");
 
-    // The GM's prompt: the damage's own DC, the fitting DC 10, or not allowed.
+    // The GM's prompt: the damage's own DC, the fitting DC 10, ends it outright, or not allowed.
     assert.deepEqual(await promptRecoveryDc({ actorName: "Edran", allyName: "Sirena", damage: "1d6 fire", dc: 15 }), { dc: 10 });
-    assert.deepEqual(waits.at(-1).buttons.map((button) => button.label), ["Counts (DC 15)", "Fitting help (DC 10)", "Not allowed"]);
+    assert.deepEqual(waits.at(-1).buttons.map((button) => button.label), ["Counts (DC 15)", "Fitting help (DC 10)", "Ends it", "Not allowed"]);
+    assert.deepEqual(waits.at(-1).buttons.find((button) => button.action === "ends").callback(), { autoEnd: true });
     await promptRecoveryDc({ dc: 8 });
-    assert.deepEqual(waits.at(-1).buttons.map((button) => button.action), ["ok", "cancel"], "no fitting button when the DC is already 10 or lower");
+    assert.deepEqual(waits.at(-1).buttons.map((button) => button.action), ["ok", "ends", "cancel"], "no fitting button when the DC is already 10 or lower");
   } finally {
     setSocket(null);
     Object.assign(globalThis, keep);

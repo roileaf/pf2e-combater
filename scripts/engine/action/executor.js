@@ -138,7 +138,7 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
   } else if (resolvedAction?.executable === "prepare-to-aid") {
     result = await executePrepareToAid({ context, actor, target, patch });
   } else if (resolvedAction?.executable === "assisted-recovery") {
-    result = await executeAssistedRecovery({ target, choices, patch });
+    result = await executeAssistedRecovery({ context, target, choices, patch });
   } else if (resolvedAction?.executable === "recovery-check") {
     // PF2e's own recovery check: rolls the flat check and updates the dying value.
     const roll = typeof actor?.rollRecovery === "function" ? await actor.rollRecovery(event) : null;

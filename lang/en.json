@@ -877,7 +877,10 @@
       "RecoverySuccess": "Success: the persistent {damage} ends.",
       "RecoveryFailure": "Failure: the persistent {damage} continues.",
       "RecoveryFlavor": "Flat check DC {dc} to end persistent {damage}.",
-      "RecoveryNotRemoved": "The flat check succeeded, but the persistent {damage} couldn't be removed; an active GM is needed."
+      "RecoveryNotRemoved": "The flat check succeeded, but the persistent {damage} couldn't be removed; an active GM is needed.",
+      "RecoveryOncePerRound": "{ally} already had assisted recovery this round.",
+      "RecoveryEndedOutright": "The persistent {damage} ends (GM's ruling).",
+      "RecoveryNotRemovedOutright": "The persistent {damage} couldn't be removed; an active GM is needed."
     },
     "ActReason": {
       "ReactionCanPunishA": "Reaction can punish a provoking enemy.",
@@ -1828,9 +1831,14 @@
       "DcTitle": "Assisted Recovery",
       "DcMessage": "{actor} helps {ally} recover from persistent {damage}.",
       "DamageOption": "{damage} (DC {dc})",
-      "Fitting": "Especially fitting help (DC {dc}), like dousing a fire with water",
       "Counts": "Counts (DC {dc})",
-      "FittingButton": "Fitting help (DC {dc})"
+      "FittingButton": "Fitting help (DC {dc})",
+      "Ruling": "Your ruling",
+      "RulingCounts": "Counts: the damage's DC",
+      "RulingFitting": "Especially fitting help: DC {dc}, like dousing a fire with water",
+      "RulingEnds": "Ends it outright, like jumping into a lake",
+      "Resolve": "Resolve",
+      "EndsButton": "Ends it"
     }
   }
 }

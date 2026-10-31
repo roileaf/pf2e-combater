@@ -5010,9 +5010,6 @@
 .pf2e-combater-ready-dialog .combater-ready-rule { margin: 0; color: #c3cdd9; font-size: 13px; line-height: 1.45; }
 .pf2e-combater-ready-dialog .combater-ready-field { display: flex; flex-direction: column; gap: 4px; }
 .pf2e-combater-ready-dialog .combater-ready-field[hidden] { display: none; }
-.pf2e-combater-ready-dialog .combater-ready-field.is-check { flex-direction: row; align-items: center; gap: 8px; cursor: pointer; }
-.pf2e-combater-ready-dialog .combater-ready-field.is-check > input { flex: 0 0 auto; margin: 0; }
-.pf2e-combater-ready-dialog .combater-ready-field.is-check > span { font-weight: 500; }
 /* The GM's assisted recovery ruling: three buttons sized to their labels, each on one line. */
 .pf2e-combater-recovery-dialog .form-footer button { flex: 1 1 auto; white-space: nowrap; }
 .pf2e-combater-ready-dialog .combater-ready-field > span { color: #e4e9ef; font-size: 13px; font-weight: 600; }
