@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.14]
+
+### Added
+
+- **Assisted Recovery.** Helping an ally put out persistent fire (or stop a bleed) couldn't be planned: Aid doesn't apply, since ending persistent damage is a flat check, not a skill check. Assisted Recovery is a new 2-action general action that targets an ally. You pick which persistent damage and say at the table how you help. The flat check uses that damage's own DC (usually 15); the GM rules whether the help counts, is especially fitting (DC 10, like dousing a fire with water), or isn't allowed. It rolls the ally's extra flat check and ends the damage on a success. Auto-fill never picks it; add it from the action browser. Thanks to Kimerus for the question.
+
 ## [2.6.13]
 
 ### Added
