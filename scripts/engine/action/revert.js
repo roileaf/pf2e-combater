@@ -1,5 +1,6 @@
 import { contextActorDocument } from "../actor-context.js";
 import { revertCondition } from "../execution/conditions.js";
+import { revertPreparedAid } from "../execution/prepare-to-aid.js";
 import { resetDraftExecution } from "../execution/state.js";
 import { revertChat, revertEffect, revertRegion } from "../revert/documents.js";
 import { revertCarryType, revertConsumable, revertFrequency, revertReload } from "../revert/item-resources.js";
@@ -31,6 +32,8 @@ async function applyRevertOp(op, scope) {
       return revertFrequency(op, scope);
     case "chat":
       return revertChat(op);
+    case "prepared-aid":
+      return revertPreparedAid(op);
     case "slot":
       return revertSlot(op, scope);
     default:

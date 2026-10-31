@@ -13,6 +13,8 @@ const FALLBACK_ART = {
   "raise-a-shield": "icons/equipment/shield/heater-steel-worn.webp",
   interact: "icons/skills/melee/hand-grip-staff-yellow-brown.webp",
   delay: "icons/magic/time/hourglass-tilted-gray.webp",
+  // PF2e's Aid action only has the Reaction glyph; its Effect: Aid icon is the one players know.
+  "prepare-to-aid": "systems/pf2e/icons/spells/efficient-apport.webp",
 };
 
 function baseSlug(slug) {

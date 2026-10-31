@@ -53,6 +53,28 @@ export async function requestRecallKnowledgeResolution(args = {}) {
   }
 }
 
+// PLAYER → active GM: ask for the Aid DC once the player has picked the check. Resolves to
+// { dc } or { cancelled: true }, or null when no GM is connected / socketlib is unavailable.
+export async function requestAidDc(args = {}) {
+  if (!socket || !globalThis.game?.users?.activeGM) return null;
+  try {
+    return await socket.executeAsGM("promptAidDc", args);
+  } catch (_error) {
+    return null;
+  }
+}
+
+// PLAYER → active GM: put Effect: Aid on an ally the player doesn't own. Resolves to true/false,
+// or null when no GM is connected / socketlib is unavailable.
+export async function requestApplyAidEffect(args = {}) {
+  if (!socket) return null;
+  try {
+    return await socket.executeAsGM("applyAidEffect", args);
+  } catch (_error) {
+    return null;
+  }
+}
+
 export async function requestLiveEngineMatrixPing(args = {}) {
   if (!socket) return null;
   try {

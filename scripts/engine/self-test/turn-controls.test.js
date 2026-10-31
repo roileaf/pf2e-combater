@@ -321,6 +321,18 @@ try {
   await assert.rejects(act(combat, "ready-clear", { readiedId: "a" }, "p-a"), /no readied action/);
   assert.equal(reactionUsed(combat.combatants.get("a")), false, "discarding a readied action spends no reaction");
 
+  // Prepare to Aid leaves the Aid waiting like a readied action, without ending the turn.
+  combat = fixture();
+  await act(combat, "prepare-aid", { readiedId: "a", allyUuid: "Actor.sirena", allyName: "Sirena" }, "p-a");
+  assert.equal(combat.combatant.id, "a", "preparing to Aid doesn't end the turn");
+  assert.deepEqual(readiedAction(combat.combatants.get("a")).aid, { allyUuid: "Actor.sirena", allyName: "Sirena" });
+  const aidView = turnControlsView(context(combat, "a"), combat, gm);
+  assert.match(aidView.readied.title, /Prepared to Aid · Sirena/);
+  assert.equal(aidView.readied.useLabel, "Aid");
+  await assert.rejects(act(combat, "prepare-aid", { readiedId: "a" }, "p-b"), /own turn/);
+  await act(combat, "ready-clear", { readiedId: "a", used: true }, "p-a");
+  assert.equal(reactionUsed(combat.combatants.get("a")), true, "Aiding spends the reaction");
+
   // A readied Stride keeps its chosen destination; anything else is dropped.
   combat = fixture();
   await act(combat, "ready", { label: "Stride", movement: { slug: "stride", destination: { x: "150", y: 250, elevation: 5 }, movementPlan: { id: "plan", waypoints: [{ x: 150, y: 250 }] } } });
@@ -430,7 +442,8 @@ try {
   const trained = readyChoices({ type: "character", skills: { athletics: { rank: 1 }, deception: { rank: 2 } } });
   assert.ok(trained.some((choice) => choice.action === "disarm") && trained.some((choice) => choice.action === "feint"));
   assert.equal(untrained.find((choice) => choice.action === "trip")?.value, "skill:trip");
-  assert.equal(untrained.find((choice) => choice.action === "prepare-to-aid")?.label, "Prepare to Aid", "Prepare to Aid can be readied");
+  // Readying Prepare to Aid would spend the reaction Aid itself needs; it is planned on your turn instead.
+  assert.ok(!untrained.some((choice) => choice.action === "prepare-to-aid" || choice.value?.includes("prepare-to-aid")));
 }
 
 console.log("Turn controls and Delay tests passed.");

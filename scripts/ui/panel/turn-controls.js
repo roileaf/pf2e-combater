@@ -1,10 +1,11 @@
 import { t, pf2eActionName } from "../../i18n.js";
 import { SETTINGS, settingOrDefault } from "../../settings.js";
-import { isSocketReady, requestTurnControl } from "../../socket.js";
+import { isSocketReady } from "../../socket.js";
 import {
-  attacksThisTurn, delayedTurn, delayTargets, delayUnavailableReason, handleTurnControl, ownsTurn,
-  reactionUsed, readiedAction, readyUnavailableReason, turnCombatantName, turnIdentity,
+  attacksThisTurn, delayedTurn, delayTargets, delayUnavailableReason, ownsTurn,
+  reactionUsed, readiedAction, readyUnavailableReason, sendTurnControlRequest, turnCombatantName, turnIdentity,
 } from "../../state/turn-controls.js";
+import { performAid } from "../aid.js";
 import { bindPopoverMenu } from "./utility-menu.js";
 import { chooseDestination } from "../destination-picker.js";
 import { clearActionPreview } from "../action/preview.js";
@@ -45,14 +46,19 @@ export function turnControlsView(context, combat = globalThis.game?.combat, user
       tooltip: t("TurnControls.RejoinHint", "Take your delayed turn when {name}'s turn ends.", { name: turnCombatantName(active, user) }),
     } : null;
   const ready = readiedAction(selected);
+  const aidAlly = ready?.aid?.allyName ?? "";
   const readied = ready ? {
     id: selected.id, label: ready.label,
     hasMovement: Boolean(ready.movement?.destination),
     moveLabel: t("TurnControls.ReadiedMove", "Change destination"),
-    title: t("TurnControls.ReadiedTitle", "Readied · {action}", { action: ready.label }),
-    hint: t("TurnControls.ReadiedHint", "Use it as a reaction when the declared trigger happens, before this creature's next turn."),
+    title: ready.aid
+      ? t("TurnControls.PreparedAidTitle", "Prepared to Aid · {ally}", { ally: aidAlly })
+      : t("TurnControls.ReadiedTitle", "Readied · {action}", { action: ready.label }),
+    hint: ready.aid
+      ? t("TurnControls.PreparedAidHint", "Use your reaction to Aid when {ally} attempts the check, before this creature's next turn.", { ally: aidAlly })
+      : t("TurnControls.ReadiedHint", "Use it as a reaction when the declared trigger happens, before this creature's next turn."),
     canUse: connected && ownsTurn(selected, user),
-    useLabel: t("TurnControls.ReadiedUse", "Use"),
+    useLabel: ready.aid ? t("Action.Aid", "Aid") : t("TurnControls.ReadiedUse", "Use"),
     clearLabel: t("TurnControls.ReadiedClear", "Discard"),
   } : null;
   return {
@@ -122,10 +128,7 @@ const READY_SKILL_ACTIONS = [
   ["palm-an-object", "fa-hand"],
   ["force-open", "fa-door-open"],
   ["escape", "fa-unlock"],
-  ["prepare-to-aid", "fa-handshake-angle"],
 ];
-// Combater's own actions with no PF2e action behind them: using them only announces the reaction.
-const READY_ANNOUNCE_ONLY = new Set(["prepare-to-aid"]);
 // PF2e: these need at least trained proficiency; the rest can be attempted untrained.
 const READY_TRAINED_ONLY = new Set(["disarm", "feint"]);
 const GENERIC_ACTION_ART = /default-icons|icons\/actions\//;
@@ -144,7 +147,7 @@ function readySkillChoices(actor) {
     const skill = action.skill ?? "";
     const rank = Number(actor?.skills?.[skill]?.rank ?? actor?.system?.skills?.[skill]?.rank);
     if (READY_TRAINED_ONLY.has(slug) && actor?.type === "character" && !(rank > 0)) return [];
-    const label = slug === "prepare-to-aid" ? t("Action.PrepareToAid", "Prepare to Aid") : pf2eActionName(slug);
+    const label = pf2eActionName(slug);
     const img = globalThis.game?.pf2e?.actions?.get?.(slug)?.img ?? "";
     return [{
       value: `skill:${slug}`, strike: null, action: slug, label, text: label, group: "skill",
@@ -411,6 +414,10 @@ async function useReadied(panel, combatant, event) {
     });
     if (result?.status !== "done") throw Error(result?.error ?? t("TurnControls.ReadiedMoveFailed", "The readied movement could not be completed."));
   }
+  if (ready.aid) {
+    const ally = ready.aid.allyUuid ? await globalThis.fromUuid?.(ready.aid.allyUuid) : null;
+    return performAid({ actor: combatant.actor, ally, event });
+  }
   if (ready.strike) {
     const strike = readyStrikes(combatant.actor).find((action) => action.slug === ready.strike);
     const variant = strike?.variants?.[ready.mapIndex] ?? strike?.variants?.[0];
@@ -418,7 +425,7 @@ async function useReadied(panel, combatant, event) {
     const roll = await variant.roll({ event });
     return roll !== null && roll !== undefined;
   }
-  if (ready.skillAction && !READY_ANNOUNCE_ONLY.has(ready.skillAction)) {
+  if (ready.skillAction) {
     // A readied skill action rolls the real PF2e action against the user's current target.
     const action = GENERIC_ACTIONS.find((entry) => entry.slug === ready.skillAction);
     const targetToken = globalThis.game?.user?.targets?.first?.() ?? null;
@@ -434,11 +441,7 @@ async function useReadied(panel, combatant, event) {
 }
 
 export async function sendTurnControl(request) {
-  const user = globalThis.game?.user;
-  const activeGM = globalThis.game?.users?.activeGM;
-  const result = user?.isGM && (!activeGM || activeGM.id === user.id)
-    ? await handleTurnControl.call({ socketdata: { userId: user.id } }, request)
-    : await requestTurnControl(request);
+  const result = await sendTurnControlRequest(request);
   if (!result) throw Error(t("TurnControls.Unavailable", "An active GM is required for turn controls."));
   return result;
 }

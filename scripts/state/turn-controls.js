@@ -308,6 +308,18 @@ async function performTurnControl(request, senderId) {
     if (request.used === true && !(ready.strike && sundryCountsOffTurnStrikes())) await notifySundryReaction(holder.actor);
     return true;
   }
+  if (request.action === "prepare-aid") {
+    // Prepare to Aid is spent on the creature's own turn and leaves the Aid reaction waiting, like a
+    // readied action: it shares the readied slot, so it gets the same Use button and expiry.
+    const holder = combat.combatants.get(request.readiedId);
+    if (!holder) throw Error(t("TurnControls.NotCurrent", "This turn is no longer active."));
+    if (!ownsTurn(holder, user)) throw Error(t("TurnControls.NotOwner", "You can only control your own turn."));
+    const text = (value, max) => (typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, max) : "");
+    const aid = { allyUuid: text(request.allyUuid, 200), allyName: text(request.allyName, 80) };
+    const label = t("Action.PrepareToAid", "Prepare to Aid");
+    await holder.update({ [`flags.${MODULE_ID}.${READY_FLAG}`]: { label, aid, round: combat.round } }, { turnEvents: false });
+    return true;
+  }
   if (request.action === "reaction") {
     const holder = combat.combatants.get(request.reactionId);
     if (!holder) throw Error(t("TurnControls.NotCurrent", "This turn is no longer active."));
@@ -374,6 +386,15 @@ async function performTurnControl(request, senderId) {
   const nextRound = combat.round + Number(combat.turns.indexOf(next) < index);
   await moveAndAdvance(combat, active, afterId, next.id, nextRound, delay);
   return true;
+}
+
+// The active GM runs turn controls; anyone else asks it over the socket.
+export function sendTurnControlRequest(request) {
+  const user = globalThis.game?.user;
+  const activeGM = globalThis.game?.users?.activeGM;
+  return user?.isGM && (!activeGM || activeGM.id === user.id)
+    ? handleTurnControl.call({ socketdata: { userId: user.id } }, request)
+    : requestTurnControl(request);
 }
 
 // socketlib supplies the sender on `this`; never accept an actor/user identity

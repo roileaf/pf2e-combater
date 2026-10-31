@@ -6532,3 +6532,10 @@
   background: none;
   box-shadow: none;
 }
+
+/* Prepare to Aid chat card: who is ready to help whom. */
+.pf2e-combater-aid-card { display: flex; flex-direction: column; gap: 8px; }
+.pf2e-combater-aid-card .combater-aid-head { display: flex; align-items: center; gap: 10px; }
+.pf2e-combater-aid-card .combater-aid-head > i { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; background: color-mix(in srgb, #3f8a5f 18%, transparent); color: #3f8a5f; font-size: 16px; }
+.pf2e-combater-aid-card .combater-aid-head strong { display: block; font-size: 14px; }
+.pf2e-combater-aid-card .combater-aid-head span { display: block; font-size: 12px; opacity: 0.8; }

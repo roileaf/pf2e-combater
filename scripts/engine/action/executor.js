@@ -135,7 +135,7 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
     await setSpellstrikeExpended(actor, false);
     result = { status: "done", patch: executionPatch({}, "done", { result: t("Exec.SpellstrikeRecharged", "Spellstrike recharged.") }) };
   } else if (resolvedAction?.executable === "prepare-to-aid") {
-    result = await executePrepareToAid({ actor, target, patch });
+    result = await executePrepareToAid({ context, actor, target, patch });
   } else if (resolvedAction?.executable === "recovery-check") {
     // PF2e's own recovery check: rolls the flat check and updates the dying value.
     const roll = typeof actor?.rollRecovery === "function" ? await actor.rollRecovery(event) : null;
