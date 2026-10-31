@@ -1,4 +1,6 @@
 import { t } from "../i18n.js";
+import { requiresTargetForAction } from "../engine/action/requirements.js";
+import { currentTargetSelection, plannedTargetSelection } from "../engine/execution/targets.js";
 import { actionArt } from "./action-art.js";
 
 const NOT_ENOUGH_ACTIONS = () => t("Disabled.NotEnoughActions", "Not enough actions remaining.");
@@ -29,11 +31,25 @@ function byName(left, right) {
 // Turns one decorated action into a compact one-line row: the success chance
 // becomes a column, the shared best target and the shared budget warning are
 // lifted out, and everything else waits in the expanded details.
-function browserRow(action, { sharedTarget, expanded }) {
+// The creatures you've targeted in Foundry. An action you add runs on them, not on the Best target.
+function yourTarget() {
+  const selection = currentTargetSelection();
+  const names = selection.targets
+    .map((token) => token?.name ?? token?.document?.name ?? token?.actor?.name ?? "")
+    .filter(Boolean);
+  return { ids: new Set(selection.targetTokenIds.map(String)), name: [...new Set(names)].join(", ") };
+}
+
+function browserRow(action, { sharedTarget, expanded, targeted }) {
   const chips = Array.isArray(action?.detailChips) ? action.detailChips : [];
-  const preflight = chips.find((chip) => chip?.class === "is-preflight");
   const extraChips = chips.filter((chip) => chip?.class !== "is-preflight" && chip?.class !== "is-best-target");
-  const target = bestTargetName(action);
+  // With your own target, an action that needs one goes at it: the header names it, and odds
+  // worked out against some other creature are left out.
+  const onYourTarget = Boolean(targeted) && requiresTargetForAction(action);
+  const oddsForYourTarget = !onYourTarget
+    || plannedTargetSelection(action).targetTokenIds.some((id) => targeted.ids.has(String(id)));
+  const preflight = oddsForYourTarget ? chips.find((chip) => chip?.class === "is-preflight") : null;
+  const target = onYourTarget ? "" : bestTargetName(action);
   const budgetOnly = action?.overBudget === true && action?.disabledReason === NOT_ENOUGH_ACTIONS();
   return {
     ...action,
@@ -84,10 +100,12 @@ export function browserViewContext(base, { expanded = null, sort = "best", compa
   const activeTab = tabs.find((tab) => tab.active) ?? tabs[0];
   const visibleSections = builder.searchQuery ? builder.mergedSearchResults ?? [] : activeTab?.sections ?? [];
   const visibleActions = visibleSections.flatMap((section) => section.actions ?? []);
+  const own = yourTarget();
+  const targeted = own.ids.size ? own : null;
   const shared = mostCommon(visibleActions.map(bestTargetName));
-  const sharedTarget = shared.count >= 2 ? shared.value : "";
+  const sharedTarget = targeted ? own.name : shared.count >= 2 ? shared.value : "";
   const decorateSection = (section) => {
-    const actions = (section.actions ?? []).map((action) => browserRow(action, { sharedTarget, expanded }))
+    const actions = (section.actions ?? []).map((action) => browserRow(action, { sharedTarget, expanded, targeted }))
       .map((row) => (compact ? {
         ...row,
         tileTooltip: tileTooltip({ ...row, readonly: base.readonly }),
@@ -111,7 +129,9 @@ export function browserViewContext(base, { expanded = null, sort = "best", compa
       pips: Array.from({ length: Math.min(6, remaining) }, () => ({})),
       remainingLabel: t(remaining === 1 ? "Browser.ActionLeft" : "Browser.ActionsLeft", remaining === 1 ? "{count} action left" : "{count} actions left", { count: remaining }),
       overLabel: overBudget ? t("Browser.OverBudget", "too few for these actions · add them as uncounted instead") : "",
-      sharedTargetLabel: sharedTarget ? t("Browser.SharedTargetPrefix", "Best target") : "",
+      sharedTargetLabel: targeted
+        ? t("Browser.YourTargetPrefix", "Your target")
+        : sharedTarget ? t("Browser.SharedTargetPrefix", "Best target") : "",
       sharedTarget,
     },
     compact,

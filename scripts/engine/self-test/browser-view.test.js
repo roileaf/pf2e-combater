@@ -40,4 +40,34 @@ const [longsword, shortbow] = browserViewContext(npcBase, { compact: true }).bui
 assert.equal(longsword.tileImg, "icons/weapons/swords/longsword.webp", "an NPC Strike shows its weapon's art");
 assert.equal(shortbow.tileImg, generic, "with no matching weapon the Strike keeps the generic icon instead of a blank tile");
 
+// Kimerus (Discord): Fear read "vs Kimerus Federys" while he had Serena targeted. With your own
+// Foundry target, the browser names it, and odds worked out for another creature are left out.
+{
+  const kimerus = { type: "enemy", id: "kimerus", name: "Kimerus Federys" };
+  const serena = { type: "enemy", id: "serena", name: "Serena Valcrest" };
+  const spell = (key, target) => action(key, { targetingProfile: { enemy: true }, suggestedTarget: target, detailChips: [{ class: "is-preflight", label: "55 %" }] });
+  const spells = { readonly: false, builder: { remainingTotalActions: 3, tabsList: [{ id: "two", active: true, sections: [{ label: "Spells", actions: [
+    spell("Fear", kimerus), spell("Frostbite", kimerus), spell("Hydraulic Push", serena), action("Light"),
+  ] }] }] } };
+  const savedGame = globalThis.game;
+  try {
+    globalThis.game = { ...savedGame, user: { ...savedGame?.user, targets: new Set() } };
+    const suggested = browserViewContext(spells);
+    assert.equal(suggested.browserBar.sharedTargetLabel, "Best target");
+    assert.equal(suggested.browserBar.sharedTarget, "Kimerus Federys");
+
+    globalThis.game.user.targets = new Set([{ id: "serena", name: "Serena Valcrest" }]);
+    const view = browserViewContext(spells);
+    const [fear, , push, light] = view.builder.tabsList[0].sections[0].actions;
+    assert.equal(view.browserBar.sharedTargetLabel, "Your target");
+    assert.equal(view.browserBar.sharedTarget, "Serena Valcrest");
+    assert.equal(fear.rowTarget, "", "Fear no longer names the Best target");
+    assert.equal(fear.odds, "", "its odds were for Kimerus, so they're left out");
+    assert.equal(push.odds, "55%", "odds against your own target stay");
+    assert.equal(light.rowTarget, "");
+  } finally {
+    globalThis.game = savedGame;
+  }
+}
+
 console.log("Browser view tests passed.");

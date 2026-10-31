@@ -503,6 +503,7 @@
       "AddToPlan": "Add to plan",
       "OverBudget": "too few for these actions · add them as uncounted instead",
       "SharedTargetPrefix": "Best target",
+      "YourTargetPrefix": "Your target",
       "SortName": "A–Z",
       "SortBest": "Best",
       "TileHint": "Click to add, Shift-click as uncounted. Right-click to star.",
