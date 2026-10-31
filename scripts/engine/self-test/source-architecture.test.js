@@ -582,8 +582,9 @@ assert.ok(
 assert.ok(
   panelEventBindingsSource.includes("useBestTarget: event.shiftKey")
     && panelPickerWorkflowSource.includes("plannedTargetSelection")
-    && panelPickerWorkflowSource.includes('targetSelection: useBestTarget ? "recommended" : "manual"'),
-  "Shift-clicking target selection should commit the scored Best target while normal click keeps the current Foundry target",
+    && panelPickerWorkflowSource.includes("let recommended = useBestTarget;")
+    && panelPickerWorkflowSource.includes('targetSelection: recommended ? "recommended" : "manual"'),
+  "Shift-clicking target selection should commit the scored Best target while normal click keeps the current Foundry target (the run chip falls back to the planned target)",
 );
 for (const pattern of [
   "chooseDestination({",
@@ -1162,10 +1163,23 @@ assert.ok(
 );
 assert.ok(panelStyleSource.includes(".combater-browser-header"), "the browser header should be styled as a pinned region");
 // Compact tiles: an ⓘ beside the name opens details, and must not also add the action.
-assert.ok(/combater-browser-tile-name">\{\{name\}\} <span class="combater-browser-tile-info" data-tile-info="\{\{key\}\}"/.test(browserTemplateSource),
-  "each compact tile shows an info icon after its name");
-assert.ok(/\[data-tile-info\][\s\S]*?stopPropagation\(\)[\s\S]*?panel\._openBuilderAction/.test(browserSource),
-  "the tile info icon opens details without adding the action");
+assert.ok(/combater-browser-tile-name">\{\{name\}\}&nbsp;<span class="combater-browser-tile-info" data-tile-info="\{\{key\}\}"/.test(browserTemplateSource),
+  "each compact tile shows an info icon after its name, kept on the name's last line");
+assert.ok(/\.combater-browser-tile-info \{\s*pointer-events: auto;/.test(panelStyleSource),
+  "the ⓘ takes back the pointer events Foundry's `button > *` rule removes, or clicks land on the tile");
+assert.ok(/const info = tileInfoAt\(tile, event\);\s*if \(info\) \{[\s\S]*?panel\._openBuilderAction\(info\.dataset\.tileInfo\);\s*return;/.test(browserSource),
+  "the tile info icon opens details and returns before the tile's add");
+{
+  const { tileInfoAt } = await import("../../ui/browser-view.js");
+  const info = { dataset: { tileInfo: "heal" }, closest: () => info };
+  const tile = { contains: (node) => node === info, closest: () => null };
+  assert.equal(tileInfoAt(tile, { target: info }), info, "a click reported on the ⓘ opens details");
+  const root = { elementsFromPoint: () => [info, tile] };
+  assert.equal(tileInfoAt(tile, { target: tile, clientX: 40, clientY: 50 }, root), info,
+    "a click on the ⓘ reported on the tile's <button> (as Firefox does) still opens details");
+  assert.equal(tileInfoAt(tile, { target: tile, clientX: 40, clientY: 50 }, { elementsFromPoint: () => [tile] }), null,
+    "a click elsewhere on the tile adds the action");
+}
 // Window depth must be a box-shadow on the shell, never a `filter` on the window root: a filter
 // re-composites over Foundry's live canvas every frame and lags the canvas while the window is open.
 assert.equal(panelStyleSource.includes("filter: drop-shadow"), false,

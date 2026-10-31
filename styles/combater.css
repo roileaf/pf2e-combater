@@ -6405,10 +6405,14 @@
   font-size: 11.5px;
 }
 
-/* The ⓘ after a tile's name opens the action's details; the rest of the tile adds it. */
+/* The ⓘ after a tile's name opens the action's details; the rest of the tile adds it. Foundry's
+   core `button > * { pointer-events: none }` reaches it through the name span, so the click would
+   land on the tile's button and add the action: the ⓘ takes pointer events back. */
 .pf2e-combater.combater-browser .combater-browser-tile-info {
-  display: inline-block;
-  margin-left: 1px;
+  pointer-events: auto;
+  /* Plain inline (glyph too): an inline-block may wrap away from the name despite the &nbsp;. */
+  display: inline;
+  --fa-display: inline;
   color: #8d9aa8;
   font-size: 0.9em;
   cursor: help;

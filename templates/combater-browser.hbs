@@ -65,7 +65,7 @@
       {{#each actions}}
         <button type="button" class="combater-browser-tile{{#if favorite}} is-favorite{{/if}}{{#if disabled}} is-disabled{{/if}}{{#if userExcluded}} is-excluded{{/if}}{{#if overBudget}} is-over{{/if}}"{{#unless readonly}}{{#unless blockedByExclusion}} data-tile-add="{{key}}"{{#if overBudget}} data-tile-over{{/if}}{{#if hideUncounted}} data-tile-no-uncounted{{/if}}{{/unless}} data-tile-favorite="{{key}}"{{/unless}} data-tooltip="{{tileTooltip}}" aria-label="{{tileTooltip}}">
           {{#if tileImg}}<img src="{{tileImg}}" alt="">{{/if}}
-          <span class="combater-browser-tile-name">{{name}} <span class="combater-browser-tile-info" data-tile-info="{{key}}" role="button" data-tooltip="{{localize "PF2E_COMBATER.Browser.OpenDetails"}}" aria-label="{{localize "PF2E_COMBATER.Browser.OpenDetails"}}"><i class="fa-solid fa-circle-info" aria-hidden="true"></i></span></span>
+          <span class="combater-browser-tile-name">{{name}}&nbsp;<span class="combater-browser-tile-info" data-tile-info="{{key}}" role="button" data-tooltip="{{localize "PF2E_COMBATER.Browser.OpenDetails"}}" aria-label="{{localize "PF2E_COMBATER.Browser.OpenDetails"}}"><i class="fa-solid fa-circle-info" aria-hidden="true"></i></span></span>
           {{#if favorite}}<i class="fa-solid fa-star combater-browser-tile-star" aria-hidden="true"></i>{{/if}}
           {{#if recharge}}<span class="combater-browser-tile-badge is-recharge"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>{{recharge.rounds}}</span>{{else if odds}}<span class="combater-browser-tile-badge">{{odds}}</span>{{/if}}
         </button>

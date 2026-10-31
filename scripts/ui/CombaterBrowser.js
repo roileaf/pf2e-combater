@@ -1,6 +1,6 @@
 import { MODULE_ID, STORAGE_KEYS } from "../constants.js";
 import { t } from "../i18n.js";
-import { browserViewContext } from "./browser-view.js";
+import { browserViewContext, tileInfoAt } from "./browser-view.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -153,20 +153,21 @@ export class CombaterBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
     });
 
     element.querySelector("[data-browser-compact]")?.addEventListener("click", () => this._toggleCompact());
-    // Compact tiles: click adds; Shift-click adds as uncounted (also when out of actions).
-    for (const tile of element.querySelectorAll("[data-tile-add]")) {
+    // Compact tiles: the ⓘ beside the name opens the action's details; elsewhere a click adds,
+    // Shift-click as uncounted (also when out of actions). The ⓘ sits inside the tile's <button>,
+    // and some browsers report such clicks on the button itself, so look at what is under the pointer.
+    for (const tile of element.querySelectorAll(".combater-browser-tile")) {
       tile.addEventListener("click", (event) => {
+        const info = tileInfoAt(tile, event);
+        if (info) {
+          event.preventDefault();
+          panel._openBuilderAction(info.dataset.tileInfo);
+          return;
+        }
         const key = tile.dataset.tileAdd;
+        if (!key) return;
         if (event.shiftKey && !("tileNoUncounted" in tile.dataset)) panel._addUncountedAction(key);
         else if (!("tileOver" in tile.dataset)) panel._addAction(key);
-      });
-    }
-    // Compact tiles: the ⓘ beside the name opens the action's details instead of adding it.
-    for (const info of element.querySelectorAll("[data-tile-info]")) {
-      info.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        panel._openBuilderAction(info.dataset.tileInfo);
       });
     }
     // Compact tiles: right-click stars the action (pins it to the top).

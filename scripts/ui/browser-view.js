@@ -65,6 +65,18 @@ function tileTooltip(row) {
   return [[what, odds].filter(Boolean).join(" "), why, how].filter(Boolean).join(" · ");
 }
 
+// The compact tile's ⓘ under a click, found from the event target or, when the browser reports a
+// click inside a <button> on the button itself, from the elements at the pointer.
+export function tileInfoAt(tile, event, root = globalThis.document) {
+  const fromTarget = event?.target?.closest?.("[data-tile-info]");
+  if (fromTarget && tile.contains(fromTarget)) return fromTarget;
+  const x = Number(event?.clientX);
+  const y = Number(event?.clientY);
+  if (!(x || y)) return null;
+  const hits = root?.elementsFromPoint?.(x, y) ?? [];
+  return hits.map((node) => node?.closest?.("[data-tile-info]")).find((node) => node && tile.contains(node)) ?? null;
+}
+
 export function browserViewContext(base, { expanded = null, sort = "best", compact = false } = {}) {
   const builder = base?.builder;
   if (!builder) return base;
