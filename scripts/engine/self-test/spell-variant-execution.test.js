@@ -97,6 +97,36 @@ await executeNativeAction({ actor, action: healAction(1) });
 assert.equal(rolled.at(-1), "(1d8+8)[vitality,healing]", "2-action Heal rolls the variant's 1d8+8 as healing");
 await executeNativeAction({ actor, action: healAction(2) });
 assert.equal(rolled.at(-1), "((1d8+8) + (1d8+8))[vitality,healing]", "heightened 2-action Heal adds 1d8+8 per rank");
+
+// A spell PF2e can roll goes through its own Roll Damage / Roll Healing, so the caster's rules apply: Healing Hands
+// turns Heal's d8s into d10s, which a formula rolled here would miss.
+const hookHandlers = new Map();
+globalThis.Hooks = {
+  on: (name, handler) => { hookHandlers.set(name, handler); return 1; },
+  off: () => { hookHandlers.clear(); },
+};
+const nativeRolls = [];
+const rollableHeal = {
+  ...heal,
+  loadVariant(options) {
+    const variant = heal.loadVariant.call(this, options);
+    return {
+      ...variant,
+      async rollDamage(event) {
+        nativeRolls.push({ event, rank: this.castRank });
+        hookHandlers.get("createChatMessage")?.({ id: "pf2e-heal-roll", flags: { pf2e: { context: { type: "damage-roll" } } } });
+        return {};
+      },
+    };
+  },
+};
+const rolledBefore = rolled.length;
+const nativeHeal = await executeNativeAction({ actor, action: { ...healAction(1), item: rollableHeal } });
+assert.equal(nativeRolls.length, 1, "2-action Heal rolls through PF2e's own spell damage");
+assert.equal(nativeRolls[0].rank, 1);
+assert.equal(rolled.length, rolledBefore, "no formula roll on top of PF2e's");
+assert.ok(JSON.stringify(nativeHeal.patch).includes("pf2e-heal-roll"), "PF2e's damage message can be undone with the step");
+delete globalThis.Hooks;
 delete globalThis.game;
 
 console.log("PF2e Combater spell variant execution test passed");

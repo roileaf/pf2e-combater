@@ -2,7 +2,7 @@ import { systemValue } from "../../foundry-data.js";
 import { t } from "../../i18n.js";
 import { buildSustainedSpellEffectData, parseSpellDuration } from "../area/duration.js";
 import { chatActionRevert, chatMessageFromResult } from "./chat-revert.js";
-import { flushPendingChat, rollActionDamageMessages } from "./damage.js";
+import { damageWaitsForTrigger, flushPendingChat, rollActionDamageMessages } from "./damage.js";
 import { createGuidance } from "./guidance.js";
 import { attachRevertOp, executionPatch } from "./results.js";
 import { setTarget, setTokenTargets } from "./targets.js";
@@ -489,6 +489,40 @@ async function rollSpellAttack({ action, nativeResult, event, attackNumber = 1 }
   }
 }
 
+function hasSpellDamage(spell) {
+  const damage = spell?.system?.damage;
+  return Boolean(damage && typeof damage === "object" && Object.keys(damage).length);
+}
+
+// Roll a cast spell's damage as its card's Roll Damage (Roll Healing) button does, so PF2e applies the caster's
+// rules (Healing Hands rolls Heal's d8s as d10s). Returns null when PF2e can't roll it, so the
+// caller rolls the formula instead; otherwise the damage message's id (null if the dialog was closed).
+async function rollSpellDamage({ action, nativeResult, event }) {
+  if (nativeResult?.spellCast !== true || damageWaitsForTrigger(action)) return null;
+  if (action?.activityProfile?.damageScalesWithActions === true) return null;
+  const card = chatMessageFromResult(nativeResult);
+  let spell = null;
+  try { spell = card?.item ?? null; } catch (_error) { /* A deleted origin falls back to the cast spell. */ }
+  if (typeof spell?.rollDamage !== "function") spell = nativeResult?.castSpell ?? null;
+  if (typeof spell?.rollDamage !== "function" || !hasSpellDamage(spell)) return null;
+  let damageMessageId = null;
+  const hooks = globalThis.Hooks;
+  const hookId = hooks?.on?.("createChatMessage", (message) => {
+    if (!damageMessageId && message?.id !== card?.id && message?.flags?.pf2e?.context?.type === "damage-roll") {
+      damageMessageId = message.id;
+    }
+  }) ?? null;
+  try {
+    await spell.rollDamage(event ?? {});
+    return { messageId: damageMessageId };
+  } catch (error) {
+    globalThis.console?.warn?.("pf2e-combater | Spell damage roll failed", error);
+    return damageMessageId ? { messageId: damageMessageId } : null;
+  } finally {
+    if (hookId != null) hooks?.off?.("createChatMessage", hookId);
+  }
+}
+
 // The damage of the variant actually cast: Heal's 2-action version restores 1d8+8, not the base 1d8.
 function actionForCastVariant(action, castSpell) {
   if (!castSpell || castSpell === action?.item) return action;
@@ -525,7 +559,8 @@ export async function executeNativeAction({ actor, action, event, target = null,
     ? await rollSpellAttack({ action, nativeResult, event, attackNumber })
     : null;
   // An attack spell's damage depends on the hit: like a Strike, it is rolled from the card after.
-  const damageMessageIds = attackMessageId ? [] : await rollActionDamageMessages({
+  const spellDamage = attackMessageId ? null : await rollSpellDamage({ action, nativeResult, event });
+  const damageMessageIds = attackMessageId ? [] : spellDamage ? [spellDamage.messageId].filter(Boolean) : await rollActionDamageMessages({
     actor,
     action: actionForCastVariant(action, nativeResult?.castSpell),
     target,
