@@ -24,7 +24,13 @@ const SETTINGS = {
   reactionsBeforeFirstTurn: "reactionsBeforeFirstTurn",
   combatTrackerActions: "combatTrackerActions",
   autoFillOnTurnStart: "autoFillOnTurnStart",
+  runBrowserPicks: "runBrowserPicks",
 };
+
+// On your own turn, an action picked from the browser runs at once when nothing else is needed.
+export function runBrowserPicks() {
+  return settingOrDefault(SETTINGS.runBrowserPicks, true) !== false;
+}
 
 // Show each creature's actions and reaction in Foundry's and PF2e HUD's combat trackers.
 export function combatTrackerActions() {
@@ -150,6 +156,15 @@ export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu }
     type: Boolean,
     default: true,
     onChange: () => Hooks.callAll("pf2e-combater.turnNavigationChanged"),
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.runBrowserPicks, {
+    name: "PF2E_COMBATER.Settings.RunBrowserPicks.Name",
+    hint: "PF2E_COMBATER.Settings.RunBrowserPicks.Hint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
   });
 
   game.settings.register(MODULE_ID, SETTINGS.enableSpellRecommendations, {

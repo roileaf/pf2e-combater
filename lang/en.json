@@ -169,6 +169,10 @@
       "TurnHint": "End turn, with Delay and Ready in its menu."
     },
     "Settings": {
+      "RunBrowserPicks": {
+        "Name": "Run browser picks on your turn",
+        "Hint": "On your own turn, an action you pick from the browser runs at once when it's next in the plan and needs nothing more (a target, if needed, is your current Foundry target). Otherwise it's only added to the plan."
+      },
       "ShowTurnNavigation": {
         "Name": "Show turn navigation",
         "Hint": "Show the upcoming-turn carousel, End turn, and Delay controls in your Combater window."

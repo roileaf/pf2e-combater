@@ -956,6 +956,24 @@ try {
     await choosePanelTarget(chipPanel, "chip-step");
     assert.equal(runs.length, 1, "the explicit target tool only stores the target");
     assert.equal(renders, 1);
+
+    // A browser pick runs at once on the creature's own turn when it's next and needs nothing more.
+    const { runBrowserPickNow } = await import("../../ui/panel/draft-workflow.js");
+    const combat = { started: true, combatant: { id: "me" } };
+    const pickPanel = { ...chipPanel, _context: { ...executionContext, combat, combatant: { id: "me" } }, _canExecuteDraft: () => true };
+    pickPanel._chooseTarget = (id, options) => choosePanelTarget(pickPanel, id, options);
+    const fresh = () => { chipStep = { instanceId: "chip-step", action: executionTargetAction }; runs.length = 0; };
+    fresh();
+    assert.equal(await runBrowserPickNow(pickPanel, "chip-step", { steps: [{ execution: { status: "done" } }] }), true);
+    assert.deepEqual(chipStep.targetTokenIds, ["target-token"], "it runs on the player's own Foundry target");
+    assert.equal(runs.length, 1);
+    fresh();
+    assert.equal(await runBrowserPickNow(pickPanel, "chip-step", { steps: [{ execution: { status: "pending" } }] }), false, "an earlier step still to run keeps it planned");
+    assert.equal(await runBrowserPickNow({ ...pickPanel, _context: { ...pickPanel._context, combatant: { id: "other" } } }, "chip-step", {}), false, "only on the creature's own turn");
+    globalThis.game.user.targets = new Set();
+    assert.equal(await runBrowserPickNow(pickPanel, "chip-step", {}), false, "never on a Best-target guess");
+    assert.equal(runs.length, 0);
+    globalThis.game.user.targets = new Set([targetToken]);
   }
   let nestedBestTargetStep = {
     instanceId: "nested-best-target-step",

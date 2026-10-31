@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../../constants.js";
-import { SETTINGS, settingOrDefault } from "../../settings.js";
+import { SETTINGS, runBrowserPicks, settingOrDefault } from "../../settings.js";
+import { executionReadinessForStep } from "../../engine/execution/state.js";
 import { centerFlanksTarget } from "../../readers/positional/flank-reader.js";
 import {
   actionBuilderKey,
@@ -952,6 +953,29 @@ async function appendAtomizedActionToDraft(panel, actionKey, { listKey, canEdit,
   // A Stride you just added needs its square: go straight to picking it on the map.
   const move = added.find(({ atom }) => requiresDestinationForAction(atom) && !atom?.destination);
   if (move && listKey === "steps") await panel._chooseDestination(move.instanceId);
+  else if (listKey === "steps" && added.length === 1) await runBrowserPickNow(panel, added[0].instanceId, draft);
+}
+
+// On the creature's own turn, a single action picked from the browser runs at once when it's next
+// in the plan and needs nothing more. A target, if needed, must be the player's own Foundry target:
+// it never runs on a Best-target guess. Anything else leaves it planned, as before.
+export async function runBrowserPickNow(panel, instanceId, draftBefore) {
+  if (!runBrowserPicks() || !panel._canExecuteDraft?.()) return false;
+  const context = panel._context;
+  const combat = context?.combat ?? globalThis.game?.combat;
+  if (!combat?.started || !context?.combatant?.id || combat.combatant?.id !== context.combatant.id) return false;
+  if ((draftBefore?.steps ?? []).some((step) => !step?.stale && step?.execution?.status !== "done")) return false;
+  const step = panel._findDraftStep(instanceId);
+  if (!step) return false;
+  const action = step.action ?? step;
+  if (requiresTargetForAction(action)) {
+    if (!currentTargetSelection().targetTokenIds.length) return false;
+    await panel._chooseTarget(instanceId, { runAfter: true });
+    return true;
+  }
+  if (executionReadinessForStep(step, action).choices.length) return false;
+  await panel._executeDraftStep(instanceId, null);
+  return true;
 }
 
 export async function addPanelSustainSpell(panel, spellId) {
