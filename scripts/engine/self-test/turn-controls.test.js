@@ -430,6 +430,7 @@ try {
   const trained = readyChoices({ type: "character", skills: { athletics: { rank: 1 }, deception: { rank: 2 } } });
   assert.ok(trained.some((choice) => choice.action === "disarm") && trained.some((choice) => choice.action === "feint"));
   assert.equal(untrained.find((choice) => choice.action === "trip")?.value, "skill:trip");
+  assert.equal(untrained.find((choice) => choice.action === "prepare-to-aid")?.label, "Prepare to Aid", "Prepare to Aid can be readied");
 }
 
 console.log("Turn controls and Delay tests passed.");

@@ -122,7 +122,10 @@ const READY_SKILL_ACTIONS = [
   ["palm-an-object", "fa-hand"],
   ["force-open", "fa-door-open"],
   ["escape", "fa-unlock"],
+  ["prepare-to-aid", "fa-handshake-angle"],
 ];
+// Combater's own actions with no PF2e action behind them: using them only announces the reaction.
+const READY_ANNOUNCE_ONLY = new Set(["prepare-to-aid"]);
 // PF2e: these need at least trained proficiency; the rest can be attempted untrained.
 const READY_TRAINED_ONLY = new Set(["disarm", "feint"]);
 const GENERIC_ACTION_ART = /default-icons|icons\/actions\//;
@@ -141,7 +144,7 @@ function readySkillChoices(actor) {
     const skill = action.skill ?? "";
     const rank = Number(actor?.skills?.[skill]?.rank ?? actor?.system?.skills?.[skill]?.rank);
     if (READY_TRAINED_ONLY.has(slug) && actor?.type === "character" && !(rank > 0)) return [];
-    const label = pf2eActionName(slug);
+    const label = slug === "prepare-to-aid" ? t("Action.PrepareToAid", "Prepare to Aid") : pf2eActionName(slug);
     const img = globalThis.game?.pf2e?.actions?.get?.(slug)?.img ?? "";
     return [{
       value: `skill:${slug}`, strike: null, action: slug, label, text: label, group: "skill",
@@ -415,7 +418,7 @@ async function useReadied(panel, combatant, event) {
     const roll = await variant.roll({ event });
     return roll !== null && roll !== undefined;
   }
-  if (ready.skillAction) {
+  if (ready.skillAction && !READY_ANNOUNCE_ONLY.has(ready.skillAction)) {
     // A readied skill action rolls the real PF2e action against the user's current target.
     const action = GENERIC_ACTIONS.find((entry) => entry.slug === ready.skillAction);
     const targetToken = globalThis.game?.user?.targets?.first?.() ?? null;

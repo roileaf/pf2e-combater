@@ -624,6 +624,7 @@
       "CouldNotRestoreConsumable": "could not restore the consumed item"
     },
     "Action": {
+      "PrepareToAid": "Prepare to Aid",
       "StandStride": "Stand -> Stride",
       "ElementalBlast2": "{base} ({mode}, 2 actions)",
       "ElementalBlast1": "{base} ({mode})",
@@ -832,7 +833,8 @@
       "Reloaded": "Reloaded {name}.",
       "NoRecoveryApi": "Recovery check API is not available.",
       "RecoveryRolled": "Recovery check rolled.",
-      "SpellstrikeRecharged": "Spellstrike recharged."
+      "SpellstrikeRecharged": "Spellstrike recharged.",
+      "PreparedToAid": "Ready to Aid {ally}."
     },
     "ActReason": {
       "ReactionCanPunishA": "Reaction can punish a provoking enemy.",

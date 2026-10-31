@@ -307,6 +307,18 @@ const GENERIC_ACTION_DEFS = [
     executable: "pf2e-action",
   },
   {
+    // Aid is a reaction, but it needs an action on your turn to prepare: this is that action, so
+    // Strike, Strike, Prepare to Aid can be planned. Only ever chosen by the player.
+    id: "prepare-to-aid",
+    name: "Prepare to Aid",
+    slug: "prepare-to-aid",
+    actionCost: 1,
+    role: "setup",
+    combatUse: "browse-only",
+    targetingProfile: { ally: true },
+    executable: "prepare-to-aid",
+  },
+  {
     id: "command-an-animal",
     name: "Command an Animal",
     slug: "command-an-animal",
