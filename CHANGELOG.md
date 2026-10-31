@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.22]
+
+### Fixed
+
+- **Elixir of Life is no longer listed under Attacks.** The browser counted any action with a damage roll as an attack, including a healing roll. Healing items now go under Items, and items that deal damage, like Alchemist's Fire, stay under Attacks.
+
 ## [2.6.21]
 
 ### Fixed
