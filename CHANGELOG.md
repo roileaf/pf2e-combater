@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.18]
+
+### Fixed
+
+- **The browser names your own target.** With a token targeted in Foundry, the browser's header says "Your target" with its name instead of "Best target", and actions that need a target no longer read "vs" the creature Combater would have picked. Success odds worked out against a different creature are left out; odds against your target stay.
+
 ## [2.6.17]
 
 ### Fixed
