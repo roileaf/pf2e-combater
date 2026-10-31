@@ -77,6 +77,8 @@ const choosing = decoratePlanLayout([
 ]).quickSteps;
 assert.deepEqual(choosing.map((entry) => entry.attr), ["choose-target", "choose-destination", "execute-draft-step"], "a chip makes the step's missing choice before running it");
 assert.equal(choosing[0].blocked, false, "a needed choice keeps the chip clickable");
+assert.deepEqual([choosing[0].icon, choosing[0].needsChoice], ["fa-play", false], "the target chip runs on the current target, so it shows as a run");
+assert.deepEqual([choosing[1].icon, choosing[1].needsChoice], ["fa-location-crosshairs", true]);
 assert.equal(choosing[2].blocked, true);
 const tooled = decoratePlanLayout([step("x", {
   canChooseTarget: true, targetToolTip: "Use target", canCycleMap: true, mapToolLabel: "MAP -5", mapToolTip: "Cycle MAP",

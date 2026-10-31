@@ -1320,8 +1320,9 @@ function hasMoreStepTools(step) {
 // missing (in the order the full row shows them), otherwise run it.
 const QUICK_CHOICES = [
   { attr: "choose-summon", icon: "fa-paw", when: (step) => step.canChooseSummon && step.summonButtonLabel, label: (step) => step.summonButtonLabel },
-  // Takes the player's Foundry target and runs the step in the same click (choosePanelTarget's runAfter).
-  { attr: "choose-target", icon: "fa-crosshairs", when: (step) => step.canChooseTarget && step.targetButtonLabel, label: () => t("Panel.QuickTargetRun", "Click to run it on your current target (Shift-click: Best target).") },
+  // Takes the player's Foundry target and runs the step in the same click (choosePanelTarget's runAfter),
+  // so it looks like a run, not a choice still to make.
+  { attr: "choose-target", icon: "fa-play", runs: true, when: (step) => step.canChooseTarget && step.targetButtonLabel, label: () => t("Panel.QuickTargetRun", "Click to run it on your current target (Shift-click: Best target).") },
   { attr: "choose-area", icon: "fa-draw-polygon", when: (step) => step.canChooseArea && step.areaButtonLabel, label: (step) => step.areaButtonLabel },
   { attr: "choose-swap-items", icon: "fa-right-left", when: (step) => step.canChooseSwapItems && step.swapButtonLabel, label: (step) => step.swapButtonLabel },
   { attr: "choose-destination", icon: "fa-location-crosshairs", when: (step) => step.canChooseDestination && step.destinationButtonLabel, label: (step) => step.destinationButtonLabel },
@@ -1409,7 +1410,7 @@ function quickChips(steps, nextId) {
         mapBadge: Number(step.mapPenaltyValue) > 0 ? `−${step.mapPenaltyValue}` : "",
         attr: choice?.attr ?? "execute-draft-step",
         icon: choice?.icon ?? "fa-play",
-        needsChoice: Boolean(choice),
+        needsChoice: Boolean(choice && !choice.runs),
         blocked,
         isNext: step.instanceId === nextId,
         tooltip: `${what}. ${does} ${t("Panel.QuickMore", "Right-click for options.")}`,
