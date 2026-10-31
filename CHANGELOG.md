@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.6.10]
+
+### Fixed
+
+- **Prepare to Aid rolls Aid and gives the bonus.** It only posted a chat line. The prepared Aid now waits in the turn controls like a readied action: an Aid button that spends your reaction, until you use it or your next turn starts. You pick the check that fits the help: a skill, Lore, Perception (marked as the GM's call, since Aid is normally a skill check or attack roll), or one of your Strikes when helping an attack. The GM then sets the DC (15 is filled in) or refuses the help; without a GM it uses DC 15. You also say which of the ally's checks you're helping (an attack roll, a skill, or Perception as the GM's call); it defaults to match your own check. The roll puts PF2e's Effect: Aid on the ally, applying only to that check, with the bonus the roll earned (+1, +2 to +4 on a critical success by proficiency, −1 on a critical failure). A player who doesn't own the ally needs an active GM to place it.
+
+### Changed
+
+- **One click runs a step on your current target.** In the minimized bar, a step without a target took two clicks: one to take your Foundry target, another to run it. Now the click does both. Shift-click still uses the Best target, and the target tool in the right-click menu still only sets the target.
+- **Prepare to Aid is no longer offered in the Ready dialog.** Readying it would spend the reaction Aid itself needs. Plan it on your turn instead (Strike, Strike, Prepare to Aid); it now holds the Aid for you.
+
 ## [2.6.9]
 
 ### Added
