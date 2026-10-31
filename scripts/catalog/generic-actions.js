@@ -24,6 +24,8 @@ const ACTION_COMPENDIUM_IDS = {
   "recall-knowledge": "1OagaWtBpVXExToo",
   "administer-first-aid": "MHLuKy4nQO2Z4Am1",
   "command-an-animal": "q9nbyIF0PEBqMtYe",
+  // Combater's own action; its details are PF2e's Aid, the reaction it prepares.
+  "prepare-to-aid": "HCl3pzVefiv9ZKQW",
   hide: "XMcnh4cSI32tljXa",
   sneak: "VMozDqMMuK5kpoX4",
   steal: "RDXXE7wMrSPCLv5k",

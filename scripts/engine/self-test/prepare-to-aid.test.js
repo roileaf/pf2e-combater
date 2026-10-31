@@ -15,6 +15,7 @@ const { candidates, rejected } = buildCandidates(context);
 const prepare = candidates.find((action) => action.slug === "prepare-to-aid");
 assert.ok(prepare, `Prepare to Aid is offered: ${rejected.find((entry) => entry.action?.slug === "prepare-to-aid")?.reason ?? "not detected"}`);
 assert.equal(prepare.actionCost, 1);
+assert.equal(prepare.uuid, "Compendium.pf2e.actionspf2e.Item.HCl3pzVefiv9ZKQW", "its details open PF2e's Aid, not a chat guidance card");
 const { actionArt } = await import("../../ui/action-art.js");
 assert.equal(actionArt("prepare-to-aid", "systems/pf2e/icons/actions/OneAction.webp"), "systems/pf2e/icons/spells/efficient-apport.webp", "it shows the Aid art, not the cost glyph");
 assert.equal(prepare.suggestedTarget?.id, "ally-1", "it targets an ally");
