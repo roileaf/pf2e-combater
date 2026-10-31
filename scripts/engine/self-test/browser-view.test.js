@@ -45,7 +45,7 @@ assert.equal(shortbow.tileImg, generic, "with no matching weapon the Strike keep
 {
   const kimerus = { type: "enemy", id: "kimerus", name: "Kimerus Federys" };
   const serena = { type: "enemy", id: "serena", name: "Serena Valcrest" };
-  const spell = (key, target) => action(key, { targetingProfile: { enemy: true }, suggestedTarget: target, detailChips: [{ class: "is-preflight", label: "55 %" }] });
+  const spell = (key, target) => action(key, { reason: `${key} can control ${target.name}.`, targetingProfile: { enemy: true }, suggestedTarget: target, detailChips: [{ class: "is-preflight", label: "55 %" }] });
   const spells = { readonly: false, builder: { remainingTotalActions: 3, tabsList: [{ id: "two", active: true, sections: [{ label: "Spells", actions: [
     spell("Fear", kimerus), spell("Frostbite", kimerus), spell("Hydraulic Push", serena), action("Light"),
   ] }] }] } };
@@ -64,6 +64,9 @@ assert.equal(shortbow.tileImg, generic, "with no matching weapon the Strike keep
     assert.equal(fear.rowTarget, "", "Fear no longer names the Best target");
     assert.equal(fear.odds, "", "its odds were for Kimerus, so they're left out");
     assert.equal(push.odds, "55%", "odds against your own target stay");
+    assert.equal(fear.reason, "Fear can control Serena Valcrest.", "its reason names your target, not Kimerus");
+    assert.equal(push.reason, "Hydraulic Push can control Serena Valcrest.");
+    assert.equal(suggested.builder.tabsList[0].sections[0].actions[0].reason, "Fear can control Kimerus Federys.", "without a target the reason is unchanged");
     assert.equal(light.rowTarget, "");
   } finally {
     globalThis.game = savedGame;

@@ -50,9 +50,16 @@ function browserRow(action, { sharedTarget, expanded, targeted }) {
     || plannedTargetSelection(action).targetTokenIds.some((id) => targeted.ids.has(String(id)));
   const preflight = oddsForYourTarget ? chips.find((chip) => chip?.class === "is-preflight") : null;
   const target = onYourTarget ? "" : bestTargetName(action);
+  // The planner's reason names the creature it would pick ("Fear can control Kimerus Federys"):
+  // name yours instead.
+  const bestName = onYourTarget && !oddsForYourTarget ? bestTargetName(action) : "";
+  const reason = bestName && typeof action?.reason === "string"
+    ? action.reason.split(bestName).join(targeted.name)
+    : action?.reason;
   const budgetOnly = action?.overBudget === true && action?.disabledReason === NOT_ENOUGH_ACTIONS();
   return {
     ...action,
+    reason,
     odds: oddsLabel(preflight),
     oddsTooltip: preflight?.tooltip ?? "",
     oddsTooltipHtml: preflight?.tooltipHtml ?? "",
