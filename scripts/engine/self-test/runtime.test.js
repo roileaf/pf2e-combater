@@ -939,23 +939,26 @@ try {
     let chipStep = { instanceId: "chip-step", action: executionTargetAction };
     const runs = [];
     let renders = 0;
+    // As in Foundry, the panel's steps come from its last render: a stored change shows up only
+    // after the next one (Kimerus: a browser pick on his own target stopped running in 2.6.17).
+    let renderedStep = null;
     const chipPanel = {
       ...bestTargetPanel,
-      _findDraftStep: () => chipStep,
-      _findActiveStep: () => chipStep,
-      _persistActiveDraftStep: async (step) => { chipStep = step; },
-      render: async () => { renders += 1; },
+      _findDraftStep: () => renderedStep ?? chipStep,
+      _findActiveStep: () => renderedStep ?? chipStep,
+      _persistActiveDraftStep: async (step) => { renderedStep ??= chipStep; chipStep = step; },
+      render: async () => { renders += 1; renderedStep = null; },
       _executeDraftStep: async (id, event) => { runs.push({ id, event }); },
     };
     const click = { type: "click" };
     await choosePanelTarget(chipPanel, "chip-step", { runAfter: true, event: click });
     assert.deepEqual(chipStep.targetTokenIds, ["target-token"], "the chip stores the current Foundry target");
     assert.deepEqual(runs, [{ id: "chip-step", event: click }], "and runs the step without a second click");
-    assert.equal(renders, 0);
+    assert.equal(renders, 1);
     chipStep = { instanceId: "chip-step", action: executionTargetAction };
     await choosePanelTarget(chipPanel, "chip-step");
     assert.equal(runs.length, 1, "the explicit target tool only stores the target");
-    assert.equal(renders, 1);
+    assert.equal(renders, 2);
 
     // With nothing targeted, the chip runs on the step's planned target (the one its hover shows).
     globalThis.game.user.targets = new Set();
@@ -981,7 +984,7 @@ try {
     const snapshot = { id: combat.id, round: 1, turn: 0, started: true };
     const pickPanel = { ...chipPanel, _context: { ...executionContext, combat: snapshot, combatant: { id: "me" } }, _canExecuteDraft: () => true };
     pickPanel._chooseTarget = (id, options) => choosePanelTarget(pickPanel, id, options);
-    const fresh = () => { chipStep = { instanceId: "chip-step", action: executionTargetAction }; runs.length = 0; };
+    const fresh = () => { chipStep = { instanceId: "chip-step", ownTarget: true, action: executionTargetAction }; runs.length = 0; };
     fresh();
     assert.equal(await runBrowserPickNow(pickPanel, "chip-step", { steps: [{ execution: { status: "done" } }] }), true);
     assert.deepEqual(chipStep.targetTokenIds, ["target-token"], "it runs on the player's own Foundry target");

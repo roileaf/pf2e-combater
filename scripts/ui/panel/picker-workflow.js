@@ -197,12 +197,12 @@ export async function choosePanelTarget(panel, instanceId, { useBestTarget = fal
     targetLabel: selection.targetLabel,
     targetSelection: recommended ? "recommended" : "manual",
   }));
+  // The panel's steps come from its last render: render first, so the run sees the stored target.
+  await panel.render({ force: true });
   const updated = runAfter ? panel._findDraftStep(instanceId) : null;
   if (updated && !executionReadinessForStep(updated, updated.action ?? updated).choices.length) {
     await panel._executeDraftStep(instanceId, event);
-    return;
   }
-  await panel.render({ force: true });
 }
 
 export async function removePanelAreaTemplate(panel, instanceId) {
