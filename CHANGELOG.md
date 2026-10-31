@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.9]
+
+### Added
+
+- **Prepare to Aid.** Aid is a reaction, but it takes an action on your turn to get ready, so a turn like Strike, Strike, Aid couldn't be planned. Prepare to Aid is now a 1-action general action that targets an ally. Running it tells the table who you're ready to help; Aid itself is still rolled from PF2e when that ally acts. Auto-fill never picks it, you add it yourself. It can also be chosen in the Ready dialog. Thanks to Kimerus for the suggestion.
+
 ## [2.6.8]
 
 ### Fixed
