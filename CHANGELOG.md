@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.13]
+
+### Added
+
+- **ⓘ in the minimized bar's right-click menu.** A plan chip's menu now starts with an ⓘ that opens the step's action details, for steps still to run and ones already run.
+
 ## [2.6.12]
 
 ### Fixed
