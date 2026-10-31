@@ -812,6 +812,17 @@ assert.equal(
   "attacks",
   "a Stand-first move-and-strike composite should stay under Attacks",
 );
+// A healing roll is a damage profile, not an attack: Elixir of Life is an item.
+assert.equal(
+  builderActionCategory({ name: "Elixir of Life (Minor)", item: { type: "consumable" }, damageProfile: { type: "healing", formula: "1d6" } }).id,
+  "items",
+  "a healing consumable should not be listed under Attacks",
+);
+assert.equal(
+  builderActionCategory({ name: "Alchemist's Fire", item: { type: "consumable" }, damageProfile: { type: "fire", formula: "1d8" } }).id,
+  "attacks",
+  "a damaging consumable stays under Attacks",
+);
 // Situational is condition-gated: when prone, Stand/Crawl (condition met, even over budget) show,
 // but Retch/Escape (condition unmet -> available:false) are dropped entirely, not shown disabled.
 assert.deepEqual(

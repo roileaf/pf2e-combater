@@ -96,7 +96,9 @@ export function builderActionCategory(action) {
   if (source === "minion-action" || profile.minionBrowseAction === true) return categoryMeta("companions");
   if (isSituationalAction(action, profile, source, includesStrike)) return categoryMeta("situational");
   if (source.startsWith("spell") || itemType === "spell" || profile.spell === true) return categoryMeta("spells");
-  if (source === "strike" || action?.attackTrait === true || action?.damageProfile || ATTACK_ROLES.has(role) || traits.has("attack")) return categoryMeta("attacks");
+  // A healing roll (Elixir of Life) is a damage profile too, but it isn't an attack.
+  const deals = action?.damageProfile && normalize(action.damageProfile.type) !== "healing";
+  if (source === "strike" || action?.attackTrait === true || deals || ATTACK_ROLES.has(role) || traits.has("attack")) return categoryMeta("attacks");
   if (action?.requiresDestination === true || role === "mobility" || [...slugs].some((slug) => MOVEMENT_SLUGS.has(slug)) || includes.has("move") || includes.has("stride")) return categoryMeta("movement");
   if (DEFENSE_ROLES.has(role) || itemCategory === "defensive" || [...slugs].some((slug) => DEFENSE_SLUGS.has(slug))) return categoryMeta("defense");
   if (action?.skill || action?.statistic || action?.targetSave || action?.targetDefense) return categoryMeta("skills");
