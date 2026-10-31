@@ -973,8 +973,13 @@ try {
 
     // A browser pick runs at once on the creature's own turn when it's next and needs nothing more.
     const { runBrowserPickNow } = await import("../../ui/panel/draft-workflow.js");
-    const combat = { started: true, combatant: { id: "me" } };
-    const pickPanel = { ...chipPanel, _context: { ...executionContext, combat, combatant: { id: "me" } }, _canExecuteDraft: () => true };
+    // As in Foundry: the panel holds only a snapshot of the combat; whose turn it is lives on the
+    // Combat document in game.combats.
+    const combat = { id: "pick-combat", started: true, combatant: { id: "me" } };
+    const savedCombats = globalThis.game.combats;
+    globalThis.game.combats = { get: (id) => (id === combat.id ? combat : null) };
+    const snapshot = { id: combat.id, round: 1, turn: 0, started: true };
+    const pickPanel = { ...chipPanel, _context: { ...executionContext, combat: snapshot, combatant: { id: "me" } }, _canExecuteDraft: () => true };
     pickPanel._chooseTarget = (id, options) => choosePanelTarget(pickPanel, id, options);
     const fresh = () => { chipStep = { instanceId: "chip-step", action: executionTargetAction }; runs.length = 0; };
     fresh();
@@ -988,6 +993,7 @@ try {
     assert.equal(await runBrowserPickNow(pickPanel, "chip-step", {}), false, "never on a Best-target guess");
     assert.equal(runs.length, 0);
     globalThis.game.user.targets = new Set([targetToken]);
+    globalThis.game.combats = savedCombats;
   }
   let nestedBestTargetStep = {
     instanceId: "nested-best-target-step",

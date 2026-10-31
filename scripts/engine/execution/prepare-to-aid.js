@@ -11,7 +11,8 @@ function escapeHtml(value) {
 // In an encounter the prepared Aid waits on the combatant, like a readied action: the turn controls
 // show an Aid button until it is used or the creature's next turn starts. Resolves true once stored.
 async function storePreparedAid(context, allyUuid, allyName) {
-  const combat = context?.combat;
+  // context.combat is a snapshot ({ id, round, turn, started }); the turn identity needs the Combat.
+  const combat = globalThis.game?.combats?.get?.(context?.combat?.id) ?? context?.combat;
   const combatant = context?.combatant;
   if (!combat?.started || !combatant?.id) return false;
   try {

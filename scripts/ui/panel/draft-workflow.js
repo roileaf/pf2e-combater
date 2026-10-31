@@ -962,7 +962,8 @@ async function appendAtomizedActionToDraft(panel, actionKey, { listKey, canEdit,
 export async function runBrowserPickNow(panel, instanceId, draftBefore) {
   if (!runBrowserPicks() || !panel._canExecuteDraft?.()) return false;
   const context = panel._context;
-  const combat = context?.combat ?? globalThis.game?.combat;
+  // context.combat is only a snapshot ({ id, round, turn, started }): whose turn it is lives on the Combat.
+  const combat = globalThis.game?.combats?.get?.(context?.combat?.id) ?? globalThis.game?.combat;
   if (!combat?.started || !context?.combatant?.id || combat.combatant?.id !== context.combatant.id) return false;
   if ((draftBefore?.steps ?? []).some((step) => !step?.stale && step?.execution?.status !== "done")) return false;
   const step = panel._findDraftStep(instanceId);
