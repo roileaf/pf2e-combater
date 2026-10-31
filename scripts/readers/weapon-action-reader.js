@@ -260,9 +260,18 @@ function weaponReloadValue(weapon) {
   return null;
 }
 
+// As PF2e counts it: a loaded round is an attached ammo item with quantity left (a magazine, with
+// uses left). A spent bolt can stay attached at 0, and the crossbow is still empty.
 function weaponHasLoadedAmmo(weapon) {
   const subitems = weapon?.subitems;
-  return typeof subitems?.some === "function" && subitems.some((item) => item?.type === "ammo");
+  if (typeof subitems?.some !== "function") return false;
+  return subitems.some((item) => {
+    const isRound = item?.type === "ammo" || (item?.type === "weapon" && item?.system?.usage?.canBeAmmo === true);
+    if (!isRound) return false;
+    const uses = item?.system?.uses;
+    const rounds = Number(uses?.max) > 1 ? uses.value : item?.quantity ?? item?.system?.quantity ?? 1;
+    return Number(rounds) > 0;
+  });
 }
 
 function readReloadWeaponActions(actor) {

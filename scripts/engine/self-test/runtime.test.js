@@ -13388,6 +13388,21 @@ assert.ok(
   !readActionSources(loadedPistolContext).some((action) => action.slug === "reload-pistol"),
   "an already-loaded firearm (has a loaded ammo subitem) should not offer a Reload action",
 );
+// Kimerus (Discord): an empty crossbow offered no Reload. A spent round can stay attached at
+// quantity 0 (a magazine at 0 uses); PF2e counts that weapon as empty, so it gets its Reload.
+for (const spent of [
+  { id: "round-1", type: "ammo", quantity: 0 },
+  { id: "mag-1", type: "ammo", quantity: 1, system: { uses: { value: 0, max: 6 } } },
+]) {
+  const emptyContext = {
+    ...loadedPistolContext,
+    actor: { ...loadedPistolContext.actor, document: { ...loadedPistolContext.actor.document, itemTypes: {
+      ...loadedPistolContext.actor.document.itemTypes,
+      weapon: [{ ...reloadContext.actor.document.itemTypes.weapon[0], subitems: new FakeCollection([[spent.id, spent]]) }],
+    } } },
+  };
+  assert.ok(readActionSources(emptyContext).some((action) => action.slug === "reload-pistol"), `a weapon holding only a spent ${spent.id} offers Reload`);
+}
 
 // A reload-0 ammunition weapon (e.g. a bow) reloads as part of firing, so it should not add a
 // separate free Reload action to the action list.

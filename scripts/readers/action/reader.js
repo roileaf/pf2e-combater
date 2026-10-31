@@ -312,7 +312,9 @@ export function actorStrikeOptions(actor, context = null, { includeUnready = fal
         range,
         reload,
         // PF2e ammunition tracking: a reload weapon with nothing loaded can't fire until Reloaded.
-        ...(strike.ammunition?.requiresReload === true && Array.isArray(strike.ammunition?.loaded) && strike.ammunition.loaded.length === 0
+        // A spent bolt can stay listed with quantity 0.
+        ...(strike.ammunition?.requiresReload === true && Array.isArray(strike.ammunition?.loaded)
+          && !strike.ammunition.loaded.some((round) => Number(round?.quantity ?? 1) > 0)
           ? { startsUnloaded: true } : {}),
         detected: true,
         available: strikeAvailability.available,
