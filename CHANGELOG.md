@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.12]
+
+### Fixed
+
+- **The tile ⓘ opens details instead of adding the action.** Foundry turns off clicks on everything inside a button, so a click on the ⓘ landed on the tile and added the action to the plan. The ⓘ also stays on the name's last line instead of wrapping below it.
+- **The minimized bar's run chip uses the step's planned target when nothing is targeted.** It showed "Target a token in Foundry first." even though the step already had a target, the one its hover shows. Your Foundry target still wins when you have one.
+- **Prepare to Aid's details open PF2e's Aid.** Opening its details posted a generic chat card; it now shows the Aid action's rules.
+
 ## [2.6.11]
 
 ### Added
