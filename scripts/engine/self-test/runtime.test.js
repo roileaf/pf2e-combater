@@ -934,6 +934,29 @@ try {
   assert.deepEqual(bestTargetStep.targetTokenIds, ["best-target-token"], "Shift-target should use scored Best target, not current Foundry target");
   assert.equal(bestTargetStep.targetLabel, "Target: Best Goblin");
   assert.equal(bestTargetStep.targetSelection, "recommended");
+  // The minimal bar's chip takes the current Foundry target and runs the step in the same click.
+  {
+    let chipStep = { instanceId: "chip-step", action: executionTargetAction };
+    const runs = [];
+    let renders = 0;
+    const chipPanel = {
+      ...bestTargetPanel,
+      _findDraftStep: () => chipStep,
+      _findActiveStep: () => chipStep,
+      _persistActiveDraftStep: async (step) => { chipStep = step; },
+      render: async () => { renders += 1; },
+      _executeDraftStep: async (id, event) => { runs.push({ id, event }); },
+    };
+    const click = { type: "click" };
+    await choosePanelTarget(chipPanel, "chip-step", { runAfter: true, event: click });
+    assert.deepEqual(chipStep.targetTokenIds, ["target-token"], "the chip stores the current Foundry target");
+    assert.deepEqual(runs, [{ id: "chip-step", event: click }], "and runs the step without a second click");
+    assert.equal(renders, 0);
+    chipStep = { instanceId: "chip-step", action: executionTargetAction };
+    await choosePanelTarget(chipPanel, "chip-step");
+    assert.equal(runs.length, 1, "the explicit target tool only stores the target");
+    assert.equal(renders, 1);
+  }
   let nestedBestTargetStep = {
     instanceId: "nested-best-target-step",
     suggestedTarget: null,

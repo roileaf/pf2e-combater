@@ -14,6 +14,7 @@ import { cancelDestinationPicker, chooseDestination } from "../destination-picke
 import { cancelAreaPicker, chooseAreaMarker } from "../area-picker.js";
 import { clearRangeOverlay, showRangeOverlay, updateRangePlacement } from "../range-overlay.js";
 import { t } from "../../i18n.js";
+import { executionReadinessForStep } from "../../engine/execution/state.js";
 
 function escapeHtml(value) {
   return foundry?.utils?.escapeHTML
@@ -165,7 +166,9 @@ export function choosePanelDestination(panel, instanceId) {
   if (!picker.native) showDestinationPickerPreview(panel, instanceId);
 }
 
-export async function choosePanelTarget(panel, instanceId, { useBestTarget = false, reason = "" } = {}) {
+// runAfter (the minimal bar's step chip): with the target taken from Foundry, run the step in the same
+// click when nothing else is still to choose, rather than making the player click the chip twice.
+export async function choosePanelTarget(panel, instanceId, { useBestTarget = false, reason = "", runAfter = false, event = null } = {}) {
   if (!panel._canExecuteDraft()) return;
   const step = panel._findDraftStep(instanceId);
   if (!panel._context || !step) return;
@@ -185,6 +188,11 @@ export async function choosePanelTarget(panel, instanceId, { useBestTarget = fal
     targetLabel: selection.targetLabel,
     targetSelection: useBestTarget ? "recommended" : "manual",
   }));
+  const updated = runAfter ? panel._findDraftStep(instanceId) : null;
+  if (updated && !executionReadinessForStep(updated, updated.action ?? updated).choices.length) {
+    await panel._executeDraftStep(instanceId, event);
+    return;
+  }
   await panel.render({ force: true });
 }
 

@@ -1320,7 +1320,8 @@ function hasMoreStepTools(step) {
 // missing (in the order the full row shows them), otherwise run it.
 const QUICK_CHOICES = [
   { attr: "choose-summon", icon: "fa-paw", when: (step) => step.canChooseSummon && step.summonButtonLabel, label: (step) => step.summonButtonLabel },
-  { attr: "choose-target", icon: "fa-crosshairs", when: (step) => step.canChooseTarget && step.targetButtonLabel, label: (step) => step.targetButtonLabel },
+  // Takes the player's Foundry target and runs the step in the same click (choosePanelTarget's runAfter).
+  { attr: "choose-target", icon: "fa-crosshairs", when: (step) => step.canChooseTarget && step.targetButtonLabel, label: () => t("Panel.QuickTargetRun", "Click to run it on your current target (Shift-click: Best target).") },
   { attr: "choose-area", icon: "fa-draw-polygon", when: (step) => step.canChooseArea && step.areaButtonLabel, label: (step) => step.areaButtonLabel },
   { attr: "choose-swap-items", icon: "fa-right-left", when: (step) => step.canChooseSwapItems && step.swapButtonLabel, label: (step) => step.swapButtonLabel },
   { attr: "choose-destination", icon: "fa-location-crosshairs", when: (step) => step.canChooseDestination && step.destinationButtonLabel, label: (step) => step.destinationButtonLabel },

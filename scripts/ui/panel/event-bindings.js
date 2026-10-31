@@ -175,8 +175,10 @@ export function activatePanelRenderBindings(panel, element) {
   }
 
   for (const button of element.querySelectorAll("[data-choose-target]")) {
+    // The minimal bar's step chip runs the step once its target is taken; the explicit target tools don't.
+    const runAfter = button.hasAttribute("data-quick-step");
     button.addEventListener("click", (event) => panel._chooseTarget(button.dataset.chooseTarget, {
-      useBestTarget: event.shiftKey,
+      useBestTarget: event.shiftKey, runAfter, event,
     }));
   }
 
