@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.24]
+
+### Fixed
+
+- **Auto-fill no longer casts Forbidding Ward on yourself.** Auto-fill aimed every defensive action at the caster, which suits Raise a Shield but not Forbidding Ward, which can only ward an ally. It now plans the ally in range it helps most, and no target at all when no ally is in range.
+
 ## [2.6.23]
 
 ### Fixed
