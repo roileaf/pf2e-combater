@@ -372,9 +372,19 @@ function readRequirementsText(action) {
   return match?.[1]?.trim() ?? "";
 }
 
+// "Against a creature it has grabbed", "creatures grabbed by it": only the user's own grab counts.
+const OWN_GRAB_PATTERN = /\b(?:it|you|they|he|she) (?:has|have|is|are) (?:grabbed|grabbing|restrained|restraining)\b|\b(?:grabbed|restrained) by (?:it|you|them|him|her)\b/;
+
+function requiresOwnGrab(action) {
+  // "@UUID[...]{Grabbed}" reads as its label.
+  const text = normalizeText(rawDescription(action).replace(/@\w+\[[^\]]*\](?:\{([^}]*)\})?/g, "$1"));
+  return OWN_GRAB_PATTERN.test(text);
+}
+
 function readTargetConditionRequirement(action) {
   const requirements = readRequirementsText(action);
-  if (!requirements) return null;
+  // Maul has no Requirements line: "two claw Strikes against a creature it has Grabbed".
+  if (!requirements) return requiresOwnGrab(action) ? { requiresTargetCondition: "grabbed" } : null;
 
   const mentionsTarget = /\b(?:creature|target|enemy|foe|opponent|victim)\b/.test(requirements);
   const grabbed = /\bgrabbed\b/.test(requirements);
@@ -542,6 +552,11 @@ function decorateClassificationResult(action, result) {
     && !profile.requiresAnyTargetCondition
   ) {
     result.activityProfile = withTargetConditionRequirement(profile, targetConditionRequirement);
+  }
+  const needsGrab = [result.activityProfile?.requiresTargetCondition, ...(result.activityProfile?.requiresAnyTargetCondition ?? [])]
+    .some((condition) => condition === "grabbed" || condition === "restrained");
+  if (needsGrab && profile.npcFamily !== "grab-rider" && requiresOwnGrab(action)) {
+    result.activityProfile = { ...result.activityProfile, requiresOwnGrab: true };
   }
 
   const damageProfile = readDamageProfile(action);

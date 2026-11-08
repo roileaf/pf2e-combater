@@ -433,14 +433,20 @@ function conditionValue(condition) {
 
 export function readConditions(actor) {
   const values = {};
+  // Who applied a grab: PF2e records the grabber as the condition's origin actor.
+  const origins = {};
   for (const condition of actorConditions(actor)) {
     const slug = conditionSlug(condition);
     // Stunned can suppress Slowed, but both still determine actions regained.
     if (!slug || condition.system?.expired || (condition.active === false && slug !== "slowed")) continue;
     const value = conditionValue(condition);
     values[slug] = slug in values ? Math.max(values[slug] ?? 0, value ?? 0) : value;
+    const origin = condition.system?.context?.origin?.actor;
+    if ((slug === "grabbed" || slug === "restrained") && typeof origin === "string" && origin) {
+      origins[slug] = [...(origins[slug] ?? []), origin];
+    }
   }
-  return { slugs: Object.keys(values), values };
+  return { slugs: Object.keys(values), values, ...(Object.keys(origins).length ? { origins } : {}) };
 }
 
 function effectSlug(effect) {

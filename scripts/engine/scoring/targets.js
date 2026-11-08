@@ -15,6 +15,7 @@ import {
   contextActorDocument,
   damageAdjustment,
   damageTypes,
+  hasAnyCondition,
   hasCondition,
   hpPercent,
   inRange,
@@ -31,6 +32,7 @@ import {
 } from "./facts.js";
 import { canAttackTarget, contextAllies, contextEnemies, firstContextTarget } from "../target-pool.js";
 import { profileReach } from "./tactic-helpers.js";
+import { grabbedBySelf } from "../own-grab.js";
 import { actionSkillDcSlug, skillCheckScore } from "./skills.js";
 import { t } from "../../i18n.js";
 
@@ -364,6 +366,10 @@ function canAffectTarget(context, action, target) {
       && !targetHasTokenMark(target, uuids) && !targetHasMarkState(target, "hunted-prey")) return false;
   }
   if (mark && targetHasMarkState(target, mark)) return false;
+  // Maul: a creature someone else is grabbing isn't this creature's to maul.
+  if (action?.activityProfile?.requiresOwnGrab === true
+      && hasAnyCondition(target, ["grabbed", "restrained"])
+    && !grabbedBySelf(context, target, profileReach(context?.profile ?? context?.actor?.profile))) return false;
   return true;
 }
 

@@ -5,6 +5,7 @@ import { contextTriggerEvents } from "../../rules/event-context.js";
 import { scoreCandidate } from "../scoring.js";
 import { readCombatState, targetHasMarkState, targetHasTokenMark } from "../../rules/combat-state.js";
 import { contextActorDocument } from "../actor-context.js";
+import { grabbedBySelf } from "../own-grab.js";
 
 const TARGET_CONDITION_CHAIN_BONUS = 36;
 const GRAB_RIDER_CHAIN_BONUS = 24;
@@ -340,8 +341,11 @@ export function grabbedSetupTargetSourceStep(candidate, steps) {
 // Class marks (Hunt Prey) live on the actor's state or the target's effects, not its conditions.
 const TOKEN_MARK_STATE_KEYS = { "hunted-prey": "huntedPreyTokenUuids" };
 
-function targetHasRequiredState(context, target, requirement) {
-  if (targetHasCondition(target, requirement)) return true;
+function targetHasRequiredState(context, target, requirement, candidate = null) {
+  if (targetHasCondition(target, requirement)) {
+    const ownGrab = candidate?.activityProfile?.requiresOwnGrab === true && ["grabbed", "restrained"].includes(requirement);
+    return !ownGrab || grabbedBySelf(context, target, currentAttackRange(candidate));
+  }
   const stateKey = TOKEN_MARK_STATE_KEYS[requirement];
   if (!stateKey || !target) return false;
   if (targetHasMarkState(target, requirement)) return true;
@@ -359,7 +363,7 @@ export function targetConditionSourceStep(context, candidate, steps) {
   let sourceStep = null;
 
   for (const group of optionGroups) {
-    if (group.some((requirement) => targetHasRequiredState(context, currentTarget, requirement))) continue;
+    if (group.some((requirement) => targetHasRequiredState(context, currentTarget, requirement, candidate))) continue;
 
     const step = steps.toReversed().find((candidateStep) =>
       stepSatisfiesTargetConditionRequirement(candidateStep, group),
@@ -409,7 +413,7 @@ export function targetConditionSatisfied(context, candidate, steps) {
   const markMoved = (requirement) => Boolean(TOKEN_MARK_STATE_KEYS[requirement]) && steps.some((step) =>
     candidateAppliedConditions(step).has(requirement) && !samePlannedTarget(context, candidate, step));
   return optionGroups.every((group) =>
-    group.some((requirement) => targetHasRequiredState(context, target, requirement) && !markMoved(requirement))
+    group.some((requirement) => targetHasRequiredState(context, target, requirement, candidate) && !markMoved(requirement))
     || steps.some((step) => plannedStepSatisfiesTargetCondition(context, candidate, step, group)),
   );
 }
