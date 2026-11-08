@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { suggestedTargetFor } from "../scoring/tactics.js";
 import { executeDraftStep } from "../action/executor.js";
 
 // Roi, live: Grimmyr's third Strike was planned at a Hobgoblin Soldier an earlier Strike dropped.
@@ -61,4 +62,17 @@ try {
 } finally {
   Object.assign(globalThis, saved);
 }
+// Forbidding Ward wards an ally, never the caster: Auto-fill must not plan it on yourself.
+const forbiddingWard = {
+  name: "Forbidding Ward", slug: "forbidding-ward", role: "defense", source: "spell-curated",
+  targetingProfile: { ally: true, self: false, enemy: false, maxRange: 30 },
+  activityProfile: { acBuff: true, saveBuff: true },
+  item: { type: "spell", system: { range: { value: "30 feet" }, target: { value: "1 ally and 1 enemy" } } },
+};
+const wardContext = (allies) => ({ actor: { id: "cleric", name: "Cleric" }, allies, enemies: [{ id: "ogre", name: "Ogre", distance: 10 }] });
+const fighter = { id: "fighter", name: "Fighter", distance: 15, hp: { value: 30, max: 30 } };
+assert.equal(suggestedTargetFor(wardContext([fighter]), forbiddingWard, "defense")?.id, "fighter", "Forbidding Ward goes to the ally in range");
+assert.equal(suggestedTargetFor(wardContext([{ ...fighter, distance: 60 }]), forbiddingWard, "defense"), null, "with no ally in range it has no target, not the caster");
+assert.equal(suggestedTargetFor(wardContext([]), { ...forbiddingWard, slug: "shield", targetingProfile: { self: true } }, "defense")?.type, "self", "a self defense still goes to the caster");
+
 console.log("Downed target tests passed.");

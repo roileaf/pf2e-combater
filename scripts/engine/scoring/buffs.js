@@ -156,6 +156,8 @@ function buffRecipients(context, action, { ignoreRange = false } = {}) {
       recipients.push({ entity: ally, type: "ally" });
     }
   }
+  // A spell for an ally only (Forbidding Ward) has no one to go to with no ally in range.
+  if (!recipients.length && targeting.self === false && targeting.ally === true) return [];
   return recipients.length ? recipients : [{ entity: selfEntity(context), type: "self" }];
 }
 

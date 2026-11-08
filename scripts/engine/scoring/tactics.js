@@ -424,6 +424,11 @@ export function suggestedTargetFor(context, action, role, preferredTarget = firs
     role === "defense"
     || ["raise-a-shield", "take-cover", "hide", "sneak"].includes(action.slug)
   ) {
+    // Forbidding Ward wards an ally, never the caster: plan the ally it would help most, or none.
+    if (action.targetingProfile?.ally === true && action.targetingProfile?.self === false) {
+      const recipient = bestBuffRecipient(context, action);
+      return recipient?.type === "ally" ? targetReference(recipient.entity, "ally") : null;
+    }
     return selfReference(context);
   }
 
