@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.25]
+
+### Fixed
+
+- **Maul only targets a creature the combatant grabbed itself.** Combater read a grabbed-target rule only from an ability's Requirements line, so Maul ("two claw Strikes against a creature it has Grabbed") could target anyone. It now reads "a creature it has grabbed" and "grabbed by it" from the effect text too (Maul, Constrict and the like), and counts only the combatant's own grab: the grabber PF2e records on the condition, or, when none is recorded, a grabbed creature within its reach. A creature an ally or another creature grabbed is not a target.
+
 ## [2.6.24]
 
 ### Fixed
