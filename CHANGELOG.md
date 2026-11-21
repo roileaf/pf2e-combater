@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.7.0]
+
+### Added
+
+- **PF2e HUD integration: Intel in its combat tracker.** Players get the Intel (brain) button on PF2e HUD's tracker rows, next to target, ping and pan, for creatures with revealed intel. The GM gets the quick Intel editor in HUD's Ctrl row: hold Ctrl and click the brain to edit a creature's intel.
+- **PF2e HUD integration: Recall Knowledge.** A Recall Knowledge check rolled from PF2e HUD now runs through Combater's own Recall Knowledge: the roller picks what to recall, then the GM gets the same intel window, with attempt counting, the lockout after a failure, false information on a critical failure and Dubious Knowledge.
+- **Exploit Vulnerability feeds Intel.** An Exploit Vulnerability check, from the character sheet, PF2e HUD or PF2e Exploit Vulnerability, records what it learns. The GM picks the outcome against the standard DC for the creature's level, with the likely outcome suggested (with PF2e Exploit Vulnerability, its own roll decides). A success reveals the creature's highest weakness, a critical success all its weaknesses, resistances and immunities, and the roller is shown what they learned. The GM isn't asked when there's nothing new to reveal.
+- **Intel window: request banner and free-text details.** The GM's intel window shows what the player asked to recall, and each creature has a details note the GM can write and reveal.
+
+### Fixed
+
+- **Companions' squares count as taken.** Animal companions, familiars, eidolons and other creatures off the encounter tracker were invisible to movement, so a Stride or Auto-fill could end on their square. They now block landing squares like any ally.
+
 ## [2.6.26]
 
 ### Fixed
