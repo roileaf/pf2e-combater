@@ -499,9 +499,17 @@ try {
   remoteAttempts = {};
   const successResult = await adjudicateRecallKnowledgeRequest(
     { ...payload, outcome: "success" },
-    { openIntel: async (selectedTarget) => {
+    { openIntel: async (selectedTarget, options) => {
       openedIntel += 1;
       assert.equal(selectedTarget, remoteTarget);
+      assert.deepEqual(options.request, {
+        actorName: "Remote Hero",
+        question: "weaknesses",
+        questionLabel: "Weaknesses",
+        categories: ["weaknesses"],
+        outcome: "success",
+        attempt: 1,
+      }, "the GM's intel window learns what the player asked");
       return true;
     } },
   );
@@ -530,6 +538,8 @@ try {
   assert.equal(criticalFailureResult.completed, true);
   assert.equal(Object.hasOwn(criticalFailureResult, "falseInformationDelivered"), false);
   assert.equal(criticalFailureIntelOptions.preselectIdentity, false);
+  assert.equal(criticalFailureIntelOptions.request.outcome, "criticalfailure");
+  assert.deepEqual(criticalFailureIntelOptions.request.categories, ["weaknesses"]);
   assert.deepEqual(criticalFailureIntelOptions.falseInformationContext, {
     actorUuid: remoteActor.uuid,
     actorName: "Remote Hero",
@@ -558,7 +568,7 @@ try {
   assert.equal(openedView.entries.length, 1);
   assert.equal(openedView.entries[0].actor, remoteTarget, "Intel window should contain only recalled target");
   assert.deepEqual(openedView.entries[0].values.identity, ["identity"], "successful Recall Knowledge should preselect basic identity");
-  assert.deepEqual(openedView.entries[0].available.identity, ["Hidden Undead (Undead)"]);
+  assert.deepEqual(openedView.entries[0].available.identity, ["Hidden Undead"]);
   assert.equal(openedOptions.mode, "edit");
   assert.deepEqual(remoteTargetFlags.intelLedger.identity, ["identity"]);
   assert.deepEqual(remoteTargetFlags.intelLedger.traits, ["undead"]);

@@ -257,6 +257,11 @@ function contextEnemies(context) {
   return context?.enemies ?? context?.battlefield?.enemies ?? [];
 }
 
+// Off-tracker creatures (animal companions, familiars...) that still fill their squares.
+function contextBystanders(context) {
+  return context?.bystanders ?? context?.battlefield?.bystanders ?? [];
+}
+
 // A swarm can share a space with other creatures (and attacks the ones it's on top of).
 function moverIsSwarm(context) {
   const actor = context?.actor?.document ?? context?.token?.document?.actor ?? context?.token?.actor ?? null;
@@ -267,7 +272,7 @@ function moverIsSwarm(context) {
 function centerOccupiedByOtherToken(context, center, footprint, gridSize) {
   if (moverIsSwarm(context)) return false;
   const candidatePlacement = movementPlacementForCenter(center, footprint, gridSize);
-  const others = [...contextAllies(context), ...contextEnemies(context)];
+  const others = [...contextAllies(context), ...contextEnemies(context), ...contextBystanders(context)];
   return others.some((other) => {
     if (sameEntity(other, context?.allowedOverlapTarget)) return false;
     const otherCenter = point(other);

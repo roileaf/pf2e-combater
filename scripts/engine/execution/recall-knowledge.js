@@ -223,9 +223,16 @@ function gmWhisperRecipients() {
     .filter(Boolean);
 }
 
+// PF2e HUD's Recall Knowledge posts the same shape of card (one secret d20, every skill's total), so
+// the GM adjudicates it exactly like Combater's own roll.
+export function isPf2eHudRecallKnowledgeMessage(message) {
+  return message?.flags?.["pf2e-hud"]?.action === "recall-knowledge";
+}
+
 export function isRecallKnowledgeMatrixMessage(message) {
   return message?.flags?.[MODULE_ID]?.recallKnowledgeRoll === true
-    || String(message?.flavor ?? "").includes("pf2e-combater-rk-roll");
+    || String(message?.flavor ?? "").includes("pf2e-combater-rk-roll")
+    || isPf2eHudRecallKnowledgeMessage(message);
 }
 
 export async function rollRecallKnowledge({ actor, target, question = "notable" } = {}) {

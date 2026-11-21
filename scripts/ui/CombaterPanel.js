@@ -117,8 +117,7 @@ import {
 import {
   intelLedgerView,
   intelTargetMatchesKey,
-  normalizeIntelFalseInformation,
-  writeIntelFlags,
+  saveIntelDecision,
 } from "../rules/intel-ledger.js";
 import { readCombatContext } from "../state/combat-context.js";
 import { forgetLearnedPreference, learnedPreferenceView, setPlanPreferenceFeedback } from "../state/preference-profile.js";
@@ -662,16 +661,10 @@ class CombaterPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!decision) return;
 
     try {
-      for (const entry of decision) {
-        await writeIntelFlags(entry.actor, {
-          ledger: entry.value,
-          revealMode: entry.revealMode,
-          falseInformation: normalizeIntelFalseInformation(entry.falseInformation),
-        });
-      }
+      const notices = await saveIntelDecision(decision);
       this._pinnedPlanId = null;
       this._pinnedFillPlanId = null;
-      globalThis.ui?.notifications?.info?.(t("Intel.Saved", "Intel ledger updated."));
+      for (const notice of notices) globalThis.ui?.notifications?.info?.(notice);
       await this.refresh("intel-update");
     } catch (error) {
       console.warn(`${MODULE_ID} | Failed to update Recall Knowledge intel`, error);

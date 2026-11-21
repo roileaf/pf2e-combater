@@ -4,9 +4,8 @@ import { t } from "../i18n.js";
 import {
   intelCategoryLabel,
   intelLedgerView,
-  normalizeIntelFalseInformation,
   readIntelLedger,
-  writeIntelFlags,
+  saveIntelDecision,
 } from "../rules/intel-ledger.js";
 import {
   RECALL_KNOWLEDGE_QUESTIONS,
@@ -35,7 +34,7 @@ function dialogApi() {
   return globalThis.foundry?.applications?.api?.DialogV2 ?? null;
 }
 
-async function buttonChoice({ title, content, choices, contentIsHtml = false, classes = [], icon = null, width = null, render = null }) {
+export async function buttonChoice({ title, content, choices, contentIsHtml = false, classes = [], icon = null, width = null, render = null }) {
   const dialog = dialogApi();
   if (typeof dialog?.wait !== "function") return null;
   const options = {
@@ -123,14 +122,7 @@ function requesterCanUseActor(actor, requesterId) {
 async function saveRecallKnowledgeIntel(decision) {
   if (!Array.isArray(decision)) return false;
   try {
-    for (const entry of decision) {
-      await writeIntelFlags(entry.actor, {
-        ledger: entry.value,
-        revealMode: entry.revealMode,
-        falseInformation: normalizeIntelFalseInformation(entry.falseInformation),
-      });
-    }
-    globalThis.ui?.notifications?.info?.(t("Intel.Saved", "Intel ledger updated."));
+    for (const notice of await saveIntelDecision(decision)) globalThis.ui?.notifications?.info?.(notice);
     globalThis.ui?.combat?.render?.(true);
     return true;
   } catch (error) {
@@ -200,10 +192,25 @@ export async function resetRecallKnowledgeAttemptsForTarget(target, { actors = n
   }
 }
 
+// What the player asked, for the GM's intel window: the question's categories are highlighted there.
+export function recallKnowledgeIntelRequest({ actor = null, payload = {}, outcome = null } = {}) {
+  const question = recallKnowledgeQuestion(payload.question);
+  if (!question) return null;
+  return {
+    actorName: String(actor?.name ?? payload.actorName ?? ""),
+    question: question.id,
+    questionLabel: question.label,
+    categories: [...question.categories],
+    outcome: normalizeRecallKnowledgeOutcome(outcome),
+    attempt: Math.max(1, Number(payload.attempt) || 1),
+  };
+}
+
 export async function openRecallKnowledgeIntelWindow(target, {
   openWindow = null,
   preselectIdentity = true,
   falseInformationContext = null,
+  request = null,
 } = {}) {
   if (globalThis.game?.user?.isGM !== true || !target) return false;
   const baseView = intelLedgerView({
@@ -212,6 +219,7 @@ export async function openRecallKnowledgeIntelWindow(target, {
   });
   const view = {
     ...baseView,
+    ...(request ? { request } : {}),
     entries: (baseView.entries ?? []).map((entry) => {
       const existingFalseInformation = entry.falseInformation ?? [];
       const revealCategory = falseInformationContext?.category ?? null;
@@ -234,12 +242,21 @@ export async function openRecallKnowledgeIntelWindow(target, {
       ] : existingFalseInformation;
       const identityId = entry.availableFacts?.identity?.[0]?.id;
       const falseInformationRevealCategory = falseInformationContext?.category ?? null;
-      if (!identityId || !preselectIdentity) return { ...entry, falseInformation, falseInformationRevealCategory };
+      const requestedCategories = request?.categories ?? [];
+      if (!identityId || !preselectIdentity) {
+        return { ...entry, falseInformation, falseInformationRevealCategory, requestedCategories };
+      }
       const current = entry.values?.identity;
       const identity = current === true || (Array.isArray(current) && current.length)
         ? current
         : [identityId];
-      return { ...entry, falseInformation, falseInformationRevealCategory, values: { ...entry.values, identity } };
+      return {
+        ...entry,
+        falseInformation,
+        falseInformationRevealCategory,
+        requestedCategories,
+        values: { ...entry.values, identity },
+      };
     }),
   };
   if (!view.visible || !view.entries?.length) return false;
@@ -621,8 +638,10 @@ export async function adjudicateRecallKnowledgeRequest(payload = {}, {
     }
     return { completed: true, revealed: 0, dubiousKnowledge };
   }
+  const request = recallKnowledgeIntelRequest({ actor, payload, outcome });
   if (outcome === "criticalfailure") {
     await openIntel(target, {
+      request,
       preselectIdentity: false,
       falseInformationContext: {
         actorUuid: actor.uuid,
@@ -635,7 +654,7 @@ export async function adjudicateRecallKnowledgeRequest(payload = {}, {
     return { completed: true, revealed: 0 };
   }
 
-  await openIntel(target);
+  await openIntel(target, { request });
   return { completed: true, revealed: 0 };
 }
 

@@ -41,7 +41,7 @@ import {
   openPanelForCurrentCombatant,
   togglePanelForCurrentCombatant,
 } from "./ui/CombaterPanel.js";
-import { registerCombatTrackerIntel } from "./ui/combat-tracker-intel.js";
+import { refreshCombatTrackerIntel, registerCombatTrackerIntel } from "./ui/combat-tracker-intel.js";
 import { registerCombatTrackerActions } from "./ui/combat-tracker-actions.js";
 import { autoFillOnTurnStart } from "./ui/panel/turn-start-auto-fill.js";
 import { cancelDestinationPicker } from "./ui/destination-picker.js";
@@ -55,6 +55,7 @@ import { applyAidEffect } from "./engine/execution/prepare-to-aid.js";
 import { registerObservedIntelHooks } from "./rules/observed-intel.js";
 import { registerSpellstrikeHooks } from "./rules/spellstrike-state.js";
 import { initCommandererIntegration } from "./integrations/commanderer.js";
+import { registerPf2eHudKnowledgeHooks, showKnowledgeReveal } from "./integrations/pf2e-hud-knowledge.js";
 import { initAnimaterIntegration } from "./integrations/animater.js";
 import { isPlannableActor, isPlannableCombatant } from "./rules/actor-eligibility.js";
 import { respondLiveEngineMatrixPing, runLiveEngineMatrix } from "./runtime/live-engine-matrix.js";
@@ -383,6 +384,7 @@ Hooks.once("init", () => {
   registerCombatTrackerIntel();
   registerCombatTrackerActions();
   registerRecallKnowledgeChatHooks();
+  registerPf2eHudKnowledgeHooks();
   registerObservedIntelHooks();
   registerSpellstrikeHooks();
 
@@ -483,6 +485,7 @@ Hooks.once("socketlib.ready", () => {
   socket.register("receiveSharedDraft", receiveSharedDraft);
   socket.register("liveEngineMatrixPing", respondLiveEngineMatrixPing);
   socket.register("turnControl", handleTurnControl);
+  socket.register("showKnowledgeReveal", showKnowledgeReveal);
   setSocket(socket);
 });
 
@@ -733,7 +736,7 @@ Hooks.on("updateActor", (actor, changes) => {
   const sharedDraftEcho = isSharedDraftPlanEcho(changes);
   if (sharedDraftEcho && consumeSharedDraftPlanRefreshSuppression(actor)) return;
   scheduleDocumentRefresh(actor, sharedDraftEcho ? "shared-draft-sync" : "actor-update");
-  if (actorUpdateChangesIntelLedger(changes)) ui?.combat?.render?.(true);
+  if (actorUpdateChangesIntelLedger(changes)) refreshCombatTrackerIntel();
 });
 
 Hooks.on("createItem", (item) => {

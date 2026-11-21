@@ -2125,6 +2125,54 @@
   outline: none;
 }
 
+/* GM quick Intel editor: amber, so it reads as the GM's tool next to the players' green button. */
+.pf2e-combater-combatant-intel-gm {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 4px;
+  padding: 0;
+  border: 1px solid rgb(227 162 79 / 55%);
+  border-radius: 4px;
+  background: rgb(46 36 20 / 86%);
+  color: #f0c96f;
+  font-size: 11px;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+}
+.pf2e-combater-combatant-intel-gm:hover,
+.pf2e-combater-combatant-intel-gm:focus-visible {
+  border-color: #f0c96f;
+  background: rgb(70 52 24 / 92%);
+  color: #ffe2a8;
+  outline: none;
+}
+/* In PF2e HUD's alternate row (`.controls.alt`), which HUD shows while its modifier key is held. */
+#pf2e-hud-tracker .combatant .details .controls.alt .pf2e-combater-combatant-intel-gm-hud {
+  float: left;
+  width: 20px;
+  height: 18px;
+  min-height: 0;
+  margin: 0 0 0 2px;
+  padding: 0;
+  font-size: 0.75em;
+  pointer-events: auto;
+}
+
+/* PF2e HUD tracker: its row controls are floated icon links, so float alongside them. */
+#pf2e-hud-tracker .combatant .details .controls .pf2e-combater-combatant-intel-hud {
+  float: left;
+  width: 20px;
+  height: 18px;
+  min-height: 0;
+  margin: 0 0 0 2px;
+  padding: 0;
+  font-size: 0.75em;
+  pointer-events: auto;
+}
+
 .pf2e-combater.pf2e-combater-tactic-window,
 .pf2e-combater.pf2e-combater-intel-window,
 .pf2e-combater.pf2e-combater-turn-intent-window,
@@ -5455,6 +5503,58 @@
 .pf2e-combater-intel-window .combater-intel-category-list .combater-intel-category-mark .fa-plus { visibility: hidden; }
 .pf2e-combater-intel-window .combater-intel-category-list .combater-intel-category.is-known .combater-intel-category-mark { border-color: #4f9c70; background: #24402f; }
 .pf2e-combater-intel-window .combater-intel-category-list .combater-intel-category-text strong { font-size: 13px; }
+/* Recall Knowledge request: what the player asked, and the rows that answer it. */
+.pf2e-combater-intel-window .combater-intel-request {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid #8a6d32;
+  border-left: 3px solid #e3a24f;
+  border-radius: 8px;
+  background: #262119;
+}
+.pf2e-combater-intel-window .combater-intel-request > i { color: #f0c96f; font-size: 16px; }
+.pf2e-combater-intel-window .combater-intel-request-text { display: grid; flex: 1; gap: 1px; min-width: 0; }
+.pf2e-combater-intel-window .combater-intel-request-text strong { color: #ffd08a; font-size: 14px; }
+.pf2e-combater-intel-window .combater-intel-request-text span { color: #b9a473; font-size: 11px; }
+.pf2e-combater-intel-window .combater-intel-request-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.pf2e-combater-intel-window .combater-intel-request-chip { padding: 1px 8px; border: 1px solid #3a414b; border-radius: 999px; background: #22262c; color: #c7d0db; font-size: 11px; white-space: nowrap; }
+.pf2e-combater-intel-window .combater-intel-request-chip.rk-degree-criticalsuccess { border-color: #2e5a40; background: #16281e; color: #8fe0b0; }
+.pf2e-combater-intel-window .combater-intel-request-chip.rk-degree-success { border-color: #2f5a4a; background: #172622; color: #a9e6c4; }
+.pf2e-combater-intel-window .combater-intel-request-chip.rk-degree-failure { border-color: #7a4f22; background: #2e2116; color: #f1b06c; }
+.pf2e-combater-intel-window .combater-intel-request-chip.rk-degree-criticalfailure { border-color: #5a2a2a; background: #2a1717; color: #e08a84; }
+.pf2e-combater-intel-window .combater-intel-category-list .combater-intel-category.is-requested { box-shadow: inset 3px 0 0 #e3a24f; background: #262119; }
+.pf2e-combater-intel-window .combater-intel-category-list .combater-intel-category.is-requested.is-known { background: #25281d; }
+.pf2e-combater-intel-window .combater-intel-category.is-requested .combater-intel-category-text { display: grid; gap: 1px; }
+.pf2e-combater-intel-window .combater-intel-requested-tag { color: #f0c96f; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.pf2e-combater-intel-window .combater-intel-requested-tag i { font-size: 9px; }
+
+/* Details: the GM's free-text notes, revealed to players with their own tick. */
+.pf2e-combater-intel-window .combater-intel-category-list .combater-intel-details { align-items: start; }
+.pf2e-combater-intel-window .combater-intel-category-list .combater-intel-details .combater-intel-category-head { padding-top: 5px; }
+.pf2e-combater-intel-window .combater-intel-details .combater-intel-category-text { display: grid; gap: 1px; }
+.pf2e-combater-intel-window .combater-intel-details .combater-intel-category-text small { color: #8d9aab; font-size: 10px; line-height: 1.2; }
+.pf2e-combater-intel-window .combater-intel-details.is-known .combater-intel-category-text small { color: #8fd3aa; }
+.pf2e-combater-intel-window .combater-intel-details-text {
+  grid-column: 2 / -1;
+  width: 100%;
+  min-height: 64px;
+  margin: 0;
+  padding: 6px 9px;
+  border: 1px solid var(--combater-line);
+  border-radius: 6px;
+  background: #15171b;
+  color: #e3e8ee;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+}
+.pf2e-combater-intel-window .combater-intel-details-text::placeholder { color: #6f7a88; font-style: italic; }
+.pf2e-combater-intel-window .combater-intel-details-text:focus { border-color: #4f9c70; outline: none; box-shadow: 0 0 0 1px rgb(79 156 112 / 40%); }
+.pf2e-combater-intel-window .combater-intel-details-note { margin: 0; color: #dfe6ee; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 .pf2e-combater-intel-window .combater-intel-category-list .combater-intel-facts { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; }
 .pf2e-combater-intel-window .combater-intel-category-list .combater-intel-fact.is-none span[data-intel-fact-label] { font-style: italic; }
 .pf2e-combater-intel-window .combater-intel-category-list .combater-intel-add-false {
@@ -6067,6 +6167,27 @@
 .pf2e-combater-rk-outcome-dialog footer button.rk-outcome.rk-degree-criticalfailure { color: #e08a84; }
 .pf2e-combater-rk-outcome-dialog footer button.rk-outcome.is-suggested { border-color: #e3a24f; background: #3a2a15; color: #ffd08a; box-shadow: 0 0 0 1px rgb(227 162 79 / 35%); }
 .pf2e-combater-rk-outcome-dialog footer button[data-action="cancel"] { height: 34px; border: 1px solid #3a414b; border-radius: 7px; background: transparent; color: #aab7c6; }
+.pf2e-combater-rk-outcome-dialog footer button { min-width: 0; padding: 0 8px; font-size: 13px; white-space: nowrap; }
+.pf2e-combater-rk-outcome-dialog footer.form-footer { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
+
+/* ---- Exploit Vulnerability outcome: what each degree does for this creature ---- */
+.pf2e-combater-ev-verdict .ev-outcomes { display: grid; gap: 5px; }
+.pf2e-combater-ev-verdict .ev-outcome { display: grid; grid-template-columns: 128px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid #343a43; border-left: 3px solid #4b5361; border-radius: 7px; background: #1f2227; }
+.pf2e-combater-ev-verdict .ev-outcome-degree { font-weight: 700; white-space: nowrap; }
+.pf2e-combater-ev-verdict .ev-outcome-degree i { font-size: 11px; }
+.pf2e-combater-ev-verdict .ev-outcome-effect { display: flex; align-items: center; gap: 7px; min-width: 0; color: #c7d0db; }
+.pf2e-combater-ev-verdict .ev-outcome-effect i { flex: none; width: 14px; color: #8d9aab; font-size: 11px; text-align: center; }
+.pf2e-combater-ev-verdict .ev-outcome.rk-degree-criticalsuccess { border-left-color: #3f9c66; }
+.pf2e-combater-ev-verdict .ev-outcome.rk-degree-criticalsuccess .ev-outcome-degree { color: #8fe0b0; }
+.pf2e-combater-ev-verdict .ev-outcome.rk-degree-success { border-left-color: #3f8a6c; }
+.pf2e-combater-ev-verdict .ev-outcome.rk-degree-success .ev-outcome-degree { color: #a9e6c4; }
+.pf2e-combater-ev-verdict .ev-outcome.rk-degree-failure { border-left-color: #b8752f; }
+.pf2e-combater-ev-verdict .ev-outcome.rk-degree-failure .ev-outcome-degree { color: #f1b06c; }
+.pf2e-combater-ev-verdict .ev-outcome.rk-degree-criticalfailure { border-left-color: #a84a44; }
+.pf2e-combater-ev-verdict .ev-outcome.rk-degree-criticalfailure .ev-outcome-degree { color: #e08a84; }
+.pf2e-combater-ev-verdict .ev-outcome.is-suggested { border-color: #8a6d32; background: #262119; box-shadow: 0 0 0 1px rgb(227 162 79 / 25%); }
+.pf2e-combater-ev-verdict .ev-outcome.is-known .ev-outcome-effect { color: #8d9aab; text-decoration: line-through; text-decoration-color: rgb(141 154 171 / 60%); }
+.pf2e-combater-ev-verdict .ev-known-tag { padding: 0 6px; border-radius: 4px; background: #2a2e35; color: #aab7c6; font-size: 10px; font-weight: 700; white-space: nowrap; }
 
 /* Recall Knowledge question: one card per question, with what it reveals. */
 .pf2e-combater-rk-question .rk-question-head { display: flex; align-items: center; gap: 10px; margin: 2px 0 4px; }

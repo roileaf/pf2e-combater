@@ -20049,7 +20049,7 @@ try {
     ["animal"],
     "revealed creature category should be usable without exposing other hidden traits",
   );
-  assert.deepEqual(playerKnownIdentityIntelView.entries[0].revealed.identity, ["Giant Centipede (Animal)"]);
+  assert.deepEqual(playerKnownIdentityIntelView.entries[0].revealed.identity, ["Giant Centipede"], "identity shows just the name");
   centipedeActor.flags["pf2e-combater"].intelLedger = normalizeIntelLedger({
     saves: true,
     perception: true,

@@ -3,6 +3,7 @@ import { t } from "../i18n.js";
 import {
   INTEL_REVEAL_MODES,
   NONE_FACT_ID,
+  normalizeIntelDetails,
   normalizeIntelFalseInformation,
   normalizeIntelLedger,
   normalizeIntelRevealMode,
@@ -20,6 +21,53 @@ function inputName(index, categoryId) {
 
 function revealModeInputName(index) {
   return `intel.${index}.revealMode`;
+}
+
+const REQUEST_OUTCOME_LABELS = {
+  criticalsuccess: () => t("Intel.RequestCriticalSuccess", "Critical Success"),
+  success: () => t("Intel.RequestSuccess", "Success"),
+  failure: () => t("Intel.RequestFailure", "Failure"),
+  criticalfailure: () => t("Intel.RequestCriticalFailure", "Critical Failure"),
+};
+
+// The Recall Knowledge question the GM is answering: who asked what, and how the check went.
+export function requestModel(request) {
+  if (!request?.questionLabel) return null;
+  const outcome = REQUEST_OUTCOME_LABELS[request.outcome] ? request.outcome : null;
+  return {
+    title: request.actorName
+      ? t("Intel.RequestAsked", "{name} asked about {question}", { name: request.actorName, question: request.questionLabel })
+      : t("Intel.RequestAskedAnon", "Asked about {question}", { question: request.questionLabel }),
+    outcome,
+    outcomeLabel: outcome ? REQUEST_OUTCOME_LABELS[outcome]() : "",
+    attemptLabel: t("RecallKnowledge.Attempt", "Attempt {number}", { number: request.attempt ?? 1 }),
+    hint: outcome === "criticalfailure"
+      ? t("Intel.RequestHintFalse", "Give false information in the highlighted rows.")
+      : t("Intel.RequestHint", "The highlighted rows answer the question."),
+  };
+}
+
+// The GM's free-text notes: editable with their own reveal tick; players see them once revealed.
+export function detailsModel(entry, index, { editable = false } = {}) {
+  const details = normalizeIntelDetails(entry?.details);
+  const revealed = details.revealed;
+  return {
+    text: details.text,
+    revealed,
+    hasText: Boolean(details.text),
+    visible: editable || (revealed && Boolean(details.text)),
+    // New notes are shown to players unless the GM unticks them.
+    autoReveal: !details.text,
+    inputName: `intel.${index}.details`,
+    label: t("Intel.DetailsLabel", "Details"),
+    placeholder: t("Intel.DetailsPlaceholder", "Notes for the players: lore, behaviour, rumours, anything the checks don't cover."),
+    toggleLabel: revealed
+      ? t("Intel.DetailsHide", "Hide these notes from players")
+      : t("Intel.DetailsReveal", "Reveal these notes to players"),
+    statusLabel: revealed
+      ? t("Intel.DetailsShown", "Shown to players")
+      : t("Intel.DetailsHidden", "Hidden from players"),
+  };
 }
 
 function factCountLabel(count) {
@@ -186,8 +234,11 @@ function categoryModel(entry, category, index, { editable = false } = {}) {
   const falseValueKind = ["saves", "perception"].includes(category.id)
     ? "dc"
     : (["weaknesses", "resistances", "skills", "strikes"].includes(category.id) ? "amount" : "none");
+  const requested = editable && (entry.requestedCategories ?? []).includes(category.id);
   return {
     ...category,
+    requested,
+    requestedLabel: t("Intel.RequestedTag", "Asked"),
     checked: selectedCount > 0,
     inputName: inputName(index, category.id),
     values,
@@ -294,6 +345,7 @@ function entryModel(entry, categories, index, { canResetAttempts = false } = {})
       checked: option.id === revealMode,
     })),
     categories: categoryModels,
+    details: detailsModel(entry, index, { editable }),
     categoryColumns: [
       categoryModels.filter((_category, categoryIndex) => categoryIndex % 2 === 0),
       categoryModels.filter((_category, categoryIndex) => categoryIndex % 2 === 1),
@@ -328,6 +380,7 @@ function windowContext(view, mode, { canResetAttempts = false } = {}) {
   return {
     editable,
     entries,
+    request: editable ? requestModel(view?.request) : null,
     hasEntries: entries.length > 0,
     // One NPC: its Reveal all / Reset attempts sit in the window footer.
     singleEntry: entries.length === 1 ? entries[0] : null,
@@ -462,8 +515,16 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
           revealed: recordElement.dataset.intelFalseRevealed === "true",
         };
       }));
+      const detailsRow = this.element.querySelector(`[data-intel-entry-index="${index}"] [data-intel-details]`);
+      const details = detailsRow
+        ? normalizeIntelDetails({
+          text: detailsRow.querySelector("[data-intel-details-text]")?.value ?? "",
+          revealed: detailsRow.querySelector("[data-intel-details-revealed]")?.checked === true,
+        })
+        : undefined;
       return {
         actor: entry.actor,
+        ...(details ? { details } : {}),
         falseInformation,
         revealMode: normalizeIntelRevealMode(Array.from(form?.elements ?? [])
           .find((element) => element?.name === revealModeInputName(index) && element.checked === true)?.value),
@@ -544,11 +605,41 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     const button = this.element?.querySelector("[data-intel-save]");
     const label = button?.querySelector("[data-intel-save-label]");
     if (!label) return;
-    const changes = Array.from(this.element.querySelectorAll("[data-intel-fact] input[type='checkbox']"))
+    const factChanges = Array.from(this.element.querySelectorAll("[data-intel-fact] input[type='checkbox']"))
       .filter((input) => input.checked !== input.defaultChecked).length;
+    const detailChanges = Array.from(this.element.querySelectorAll("[data-intel-details]"))
+      .filter((row) => {
+        const text = row.querySelector("[data-intel-details-text]");
+        const revealed = row.querySelector("[data-intel-details-revealed]");
+        return (text && text.value !== text.defaultValue) || (revealed && revealed.checked !== revealed.defaultChecked);
+      }).length;
+    const changes = factChanges + detailChanges;
     label.textContent = changes > 0
       ? String(button.dataset.saveChangesLabel ?? "").replace("{count}", changes)
       : button.dataset.saveLabel;
+  }
+
+  _syncDetailsState(row) {
+    const input = row?.querySelector("[data-intel-details-revealed]");
+    if (!input) return;
+    const revealed = input.checked === true;
+    row.classList.toggle("is-known", revealed);
+    const icon = row.querySelector(".combater-intel-category-mark i");
+    icon?.classList.toggle("fa-check", revealed);
+    icon?.classList.toggle("fa-plus", !revealed);
+    const button = row.querySelector("[data-intel-details-toggle]");
+    const label = revealed
+      ? t("Intel.DetailsHide", "Hide these notes from players")
+      : t("Intel.DetailsReveal", "Reveal these notes to players");
+    button?.setAttribute("aria-label", label);
+    if (button) button.dataset.tooltip = label;
+    const status = row.querySelector("[data-intel-details-status]");
+    if (status) {
+      status.textContent = revealed
+        ? t("Intel.DetailsShown", "Shown to players")
+        : t("Intel.DetailsHidden", "Hidden from players");
+    }
+    this._syncSaveLabel();
   }
 
   _syncRevealModeLabels(entry) {
@@ -743,6 +834,24 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._syncFactState(input.closest("[data-intel-fact]"));
         this._syncCategoryState(input.closest("[data-intel-category]"));
         this._syncEntryState(input.closest("[data-intel-entry]"));
+      });
+    }
+    for (const row of this.element.querySelectorAll("[data-intel-details]")) {
+      const input = row.querySelector("[data-intel-details-revealed]");
+      const text = row.querySelector("[data-intel-details-text]");
+      row.querySelector("[data-intel-details-toggle]")?.addEventListener("click", () => {
+        if (!input) return;
+        input.checked = !input.checked;
+        row.dataset.intelDetailsAuto = "false";
+        this._syncDetailsState(row);
+      });
+      text?.addEventListener("input", () => {
+        if (input && row.dataset.intelDetailsAuto === "true" && text.value.trim()) {
+          input.checked = true;
+          row.dataset.intelDetailsAuto = "false";
+          this._syncDetailsState(row);
+        }
+        this._syncSaveLabel();
       });
     }
     for (const input of this.element.querySelectorAll("[data-intel-reveal-mode]")) {

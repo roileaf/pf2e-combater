@@ -1340,6 +1340,7 @@ function computeMovementPreview(context, step) {
       targets: toSceneCombatants(rawContext.battlefield?.targets ?? []),
       enemies: toSceneCombatants(rawContext.battlefield?.enemies ?? []),
       allies: toSceneCombatants(rawContext.battlefield?.allies ?? []),
+      bystanders: toSceneCombatants(rawContext.battlefield?.bystanders ?? []),
     },
   };
   // pixelContext / pixelScale: canvas-space data for checks made on the real grid (flanking).

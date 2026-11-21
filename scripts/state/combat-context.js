@@ -85,6 +85,15 @@ function tokenSummary(token, { combatant = null } = {}) {
   };
 }
 
+const SQUARE_OCCUPYING_ACTOR_TYPES = new Set(["character", "npc", "familiar"]);
+
+// A living creature takes up its squares; loot piles, hazards and the dead don't block a Stride.
+function occupiesSquares(actor) {
+  if (!actor || !SQUARE_OCCUPYING_ACTOR_TYPES.has(actor.type)) return false;
+  const hp = Number(actor.system?.attributes?.hp?.value);
+  return !(Number.isFinite(hp) && hp <= 0);
+}
+
 function tokenActor(token) {
   return token?.actor ?? token?.document?.actor ?? null;
 }
@@ -781,6 +790,16 @@ export function readCombatContext(refreshSource = "manual", options = {}) {
   const allies = allyTokens.map((token) => tokenEntry(token, activeToken, { canSeeDefenses, combatant: combatantForToken(token) }));
   const enemies = enemyTokens.map((token) => tokenEntry(token, activeToken, { canSeeDefenses, combatant: combatantForToken(token) }));
 
+  // Creatures off the encounter tracker (animal companions, familiars, eidolons, another player's
+  // minion) still stand in their squares: movement must not end on them.
+  const rosterTokens = new Set([activeToken, ...allyTokens, ...enemyTokens].filter(Boolean));
+  const bystanders = tokens
+    .filter((token) => !rosterTokens.has(token) && !tokenMatchesIdentity(token, activeToken))
+    .filter((token) => occupiesSquares(tokenActor(token)))
+    .map((token) => tokenSummary(token))
+    .filter((entry) => entry?.center)
+    .map(({ document: _document, ...entry }) => entry);
+
   const userTargets = Array.from(game?.user?.targets ?? []);
   const matchedTargetTokens = enemyTokens.filter((token) =>
     userTargets.some((target) => tokenMatchesTarget(token, target)),
@@ -824,6 +843,7 @@ export function readCombatContext(refreshSource = "manual", options = {}) {
       allies,
       enemies,
       targets,
+      bystanders,
     },
     minions,
     eidolons,

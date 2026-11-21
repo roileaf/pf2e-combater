@@ -1,5 +1,18 @@
 <div class="combater-intel-shell {{#if editable}}is-editable{{else}}is-readonly{{/if}}">
   <p class="combater-intel-help">{{help}}</p>
+  {{#with request}}
+    <div class="combater-intel-request">
+      <i class="fa-solid fa-brain" aria-hidden="true"></i>
+      <div class="combater-intel-request-text">
+        <strong>{{title}}</strong>
+        <span>{{hint}}</span>
+      </div>
+      <span class="combater-intel-request-chips">
+        {{#if outcome}}<span class="combater-intel-request-chip rk-degree-{{outcome}}">{{outcomeLabel}}</span>{{/if}}
+        <span class="combater-intel-request-chip">{{attemptLabel}}</span>
+      </span>
+    </div>
+  {{/with}}
 
   {{#if hasEntries}}
     <form class="combater-intel-body" data-intel-form>
@@ -38,7 +51,7 @@
               <div class="combater-intel-editor">
                 <div class="combater-intel-category-list">
                   {{#each categories}}
-                    <section class="combater-intel-category {{#if checked}}is-known{{/if}}" data-intel-category="{{id}}">
+                    <section class="combater-intel-category {{#if checked}}is-known{{/if}} {{#if requested}}is-requested{{/if}}" data-intel-category="{{id}}">
                       <header class="combater-intel-category-head">
                         <button
                           type="button"
@@ -51,6 +64,7 @@
                         </button>
                         <span class="combater-intel-category-text">
                           <strong>{{label}}</strong>
+                          {{#if requested}}<small class="combater-intel-requested-tag"><i class="fa-solid fa-brain"></i> {{requestedLabel}}</small>{{/if}}
                         </span>
                       </header>
                       <div class="combater-intel-facts" data-intel-false-list>
@@ -135,6 +149,21 @@
                       </template>
                     </section>
                   {{/each}}
+                  {{#with details}}
+                    <section class="combater-intel-category combater-intel-details {{#if revealed}}is-known{{/if}}" data-intel-details data-intel-details-auto="{{autoReveal}}">
+                      <header class="combater-intel-category-head">
+                        <button type="button" class="combater-intel-category-mark" data-intel-details-toggle data-tooltip="{{toggleLabel}}" aria-label="{{toggleLabel}}">
+                          <i class="fa-solid {{#if revealed}}fa-check{{else}}fa-plus{{/if}}"></i>
+                        </button>
+                        <input type="checkbox" name="{{inputName}}.revealed" data-intel-details-revealed {{#if revealed}}checked{{/if}} hidden>
+                        <span class="combater-intel-category-text">
+                          <strong>{{label}}</strong>
+                          <small data-intel-details-status>{{statusLabel}}</small>
+                        </span>
+                      </header>
+                      <textarea class="combater-intel-details-text" name="{{inputName}}" rows="3" maxlength="4000" placeholder="{{placeholder}}" data-intel-details-text>{{text}}</textarea>
+                    </section>
+                  {{/with}}
                 </div>
                 {{#unless @root.singleEntry}}
                 <div class="combater-intel-entry-tools">
@@ -185,6 +214,12 @@
                   </section>
                   {{/if}}
                 {{/each}}
+                {{#if details.visible}}
+                  <section class="combater-intel-revealed-section combater-intel-details-revealed">
+                    <h4>{{details.label}}</h4>
+                    <p class="combater-intel-details-note">{{details.text}}</p>
+                  </section>
+                {{/if}}
               </div>
             {{/if}}
           </article>

@@ -105,6 +105,17 @@ export async function requestLiveEngineMatrixPing(args = {}) {
   }
 }
 
+// GM → the player who rolled: show what a knowledge check revealed (fire-and-forget).
+export async function requestShowKnowledgeReveal(userId, args = {}) {
+  if (!socket || !userId) return false;
+  try {
+    await socket.executeAsUser("showKnowledgeReveal", userId, args);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
 export function shareDraftPlan(payload) {
   if (!socket) return false;
   try {

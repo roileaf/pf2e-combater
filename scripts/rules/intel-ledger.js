@@ -5,6 +5,9 @@ import { t } from "../i18n.js";
 export const INTEL_LEDGER_FLAG = "intelLedger";
 export const INTEL_REVEAL_MODE_FLAG = "intelRevealMode";
 export const INTEL_FALSE_INFORMATION_FLAG = "intelFalseInformation";
+// GM-written notes about the creature; players read them once the GM reveals them.
+export const INTEL_DETAILS_FLAG = "intelDetails";
+const INTEL_DETAILS_MAX_LENGTH = 4000;
 export const INTEL_REVEAL_MODES = {
   exact: "exact",
   band: "band",
@@ -191,6 +194,7 @@ export async function writeIntelFlags(actor, values = {}) {
     ledger: INTEL_LEDGER_FLAG,
     revealMode: INTEL_REVEAL_MODE_FLAG,
     falseInformation: INTEL_FALSE_INFORMATION_FLAG,
+    details: INTEL_DETAILS_FLAG,
   };
   for (const [name, key] of Object.entries(keys)) {
     if (values[name] !== undefined) await base.setFlag(MODULE_ID, key, values[name]);
@@ -240,6 +244,18 @@ export function normalizeIntelFalseInformation(value) {
 
 export function readIntelFalseInformation(actorOrTarget) {
   return normalizeIntelFalseInformation(readFalseInformationFlag(actorOrTarget));
+}
+
+export function normalizeIntelDetails(value) {
+  const source = typeof value === "string" ? { text: value, revealed: true } : (value ?? {});
+  const text = String(source.text ?? "").replace(/\r\n?/g, "\n").trim().slice(0, INTEL_DETAILS_MAX_LENGTH);
+  return { text, revealed: Boolean(text) && source.revealed === true };
+}
+
+export function readIntelDetails(actorOrTarget) {
+  if (actorOrTarget?.intelDetails !== undefined) return normalizeIntelDetails(actorOrTarget.intelDetails);
+  const actor = targetActor(actorOrTarget) ?? actorOrTarget;
+  return normalizeIntelDetails(readFlag(actor, INTEL_DETAILS_FLAG));
 }
 
 // Shared by saveFactLabel/defenseLabel/falseInformationDisplayLabel below, which each used to
@@ -545,13 +561,9 @@ function identityFacts(enemy) {
   const actor = targetActor(enemy);
   const name = String(enemy?.identityName ?? actor?.name ?? "").trim();
   if (!name) return [];
-  const category = intelIdentityTrait(enemy);
-  // Recall Knowledge on a creature's identity tells you how dangerous it is: its level comes with it.
-  const level = Number(actor?.level ?? actor?.system?.details?.level?.value ?? enemy?.level);
-  const levelLabel = Number.isFinite(level) ? t("Intel.LevelShort", "Level {level}", { level }) : "";
-  const details = [category ? titleCase(category) : "", levelLabel].filter(Boolean).join(", ");
-  const label = details ? `${name} (${details})` : name;
-  return [fact("identity", label, { exactLabel: label, bandLabel: label })];
+  // Just the name. Knowing the identity still unlocks its creature category for planning
+  // (combat-context reads intelIdentityTrait), but the label doesn't spell it out.
+  return [fact("identity", name, { exactLabel: name, bandLabel: name })];
 }
 
 function defenseFacts(enemy, category, { showValue = true, revealMode = INTEL_REVEAL_MODES.exact } = {}) {
@@ -732,6 +744,74 @@ function targetName(target, actor, isGM, values) {
     ?? t("Intel.UnknownTarget", "Unknown target");
 }
 
+function factIdSet(facts) {
+  return new Set(facts.map((entry) => entry.id));
+}
+
+// What a save changes, in words: facts newly revealed or hidden per category, and the GM's notes.
+// `next` holds the values about to be written (any of ledger, details).
+export function describeIntelChanges(actor, next = {}) {
+  const enemy = { actor };
+  const availableFacts = availableIntelFacts(enemy, { revealMode: INTEL_REVEAL_MODES.exact });
+  const changes = [];
+  if (next.ledger !== undefined) {
+    const before = revealedIntelFacts(availableFacts, readIntelLedger(actor));
+    const after = revealedIntelFacts(availableFacts, normalizeIntelLedger(next.ledger));
+    for (const { id, label } of INTEL_LEDGER_CATEGORIES) {
+      const beforeIds = factIdSet(before[id]);
+      const afterIds = factIdSet(after[id]);
+      const added = after[id].filter((entry) => !beforeIds.has(entry.id)).map((entry) => entry.exactLabel ?? entry.label);
+      const removed = before[id].filter((entry) => !afterIds.has(entry.id)).map((entry) => entry.exactLabel ?? entry.label);
+      const category = label;
+      if (added.length) changes.push({ kind: "revealed", category: id, text: `${category}: ${added.join(", ")}` });
+      if (removed.length) changes.push({ kind: "hidden", category: id, text: `${category}: ${removed.join(", ")}` });
+    }
+  }
+  if (next.details !== undefined) {
+    const before = readIntelDetails(actor);
+    const after = normalizeIntelDetails(next.details);
+    if (after.revealed && (!before.revealed || before.text !== after.text)) {
+      changes.push({ kind: "revealed", category: "details", text: t("Intel.DetailsLabel", "Details") });
+    } else if (before.revealed && !after.revealed) {
+      changes.push({ kind: "hidden", category: "details", text: t("Intel.DetailsLabel", "Details") });
+    } else if (before.text !== after.text) {
+      changes.push({ kind: "edited", category: "details", text: t("Intel.DetailsNotesEdited", "GM notes edited") });
+    }
+  }
+  return changes;
+}
+
+// "Blue Dragon: revealed Weaknesses: None; Immunities: Electricity · hid Traits: Evil".
+export function intelChangeNotice(name, changes) {
+  const list = Array.isArray(changes) ? changes : [];
+  const target = String(name ?? "") || t("Intel.UnknownTarget", "Unknown target");
+  if (!list.length) return t("Intel.SavedNoChanges", "{name}: intel saved, nothing changed.", { name: target });
+  const group = (kind) => list.filter((change) => change.kind === kind).map((change) => change.text).join("; ");
+  const parts = [
+    group("revealed") ? t("Intel.SavedRevealed", "revealed {facts}", { facts: group("revealed") }) : "",
+    group("hidden") ? t("Intel.SavedHidden", "hid {facts}", { facts: group("hidden") }) : "",
+    group("edited"),
+  ].filter(Boolean);
+  return t("Intel.SavedChanges", "{name}: {changes}", { name: target, changes: parts.join(" · ") });
+}
+
+// Writes the intel window's decision and returns one notice per creature saying what changed.
+export async function saveIntelDecision(decision) {
+  const notices = [];
+  for (const entry of Array.isArray(decision) ? decision : []) {
+    const values = {
+      ledger: entry.value,
+      revealMode: entry.revealMode,
+      falseInformation: normalizeIntelFalseInformation(entry.falseInformation),
+      ...(entry.details !== undefined ? { details: normalizeIntelDetails(entry.details) } : {}),
+    };
+    const changes = describeIntelChanges(entry.actor, values);
+    await writeIntelFlags(entry.actor, values);
+    notices.push(intelChangeNotice(entry.actor?.name, changes));
+  }
+  return notices;
+}
+
 export function intelLedgerView(context) {
   const enemies = (context?.intelTargets ?? context?.battlefield?.enemies ?? context?.enemies ?? [])
     .filter(isNpcIntelTarget);
@@ -748,6 +828,9 @@ export function intelLedgerView(context) {
     const revealedFacts = revealedIntelFacts(availableFacts, values);
     const revealed = revealedIntelDetails(availableFacts, values);
     const falseInformation = readIntelFalseInformation(actor);
+    const storedDetails = readIntelDetails(enemy?.intelDetails !== undefined ? enemy : actor);
+    // Players never receive notes the GM hasn't revealed.
+    const details = isGM || storedDetails.revealed ? storedDetails : normalizeIntelDetails(null);
     const playerRevealed = isGM ? revealed : Object.fromEntries(
       INTEL_LEDGER_CATEGORIES.map(({ id }) => [
         id,
@@ -772,7 +855,10 @@ export function intelLedgerView(context) {
       revealed: playerRevealed,
       revealedFacts,
       ...(viewerIsGM ? { falseInformation } : {}),
-      hasRevealed: revealedCount(revealed) > 0 || falseInformation.some((record) => record.revealed === true),
+      details,
+      hasRevealed: revealedCount(revealed) > 0
+        || falseInformation.some((record) => record.revealed === true)
+        || storedDetails.revealed,
     };
   }).filter((entry) => entry.actor || entry.hasRevealed);
   const learnedCount = entries.reduce((count, entry) => count

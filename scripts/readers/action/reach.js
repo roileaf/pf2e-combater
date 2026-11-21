@@ -110,6 +110,7 @@ function occupantsFingerprint(context) {
   const occupants = [
     ...(context?.allies ?? context?.battlefield?.allies ?? []),
     ...(context?.enemies ?? context?.battlefield?.enemies ?? []),
+    ...(context?.bystanders ?? context?.battlefield?.bystanders ?? []),
   ];
   return occupants.map((entry) => {
     const center = centerPoint(entry);

@@ -464,7 +464,8 @@
       "StaleMany": "{count} steps can't be done any more.",
       "StaleRemoveOne": "Remove it",
       "StaleRemoveMany": "Remove them",
-      "StaleRefill": "Auto-fill again"
+      "StaleRefill": "Auto-fill again",
+      "MinimalIdleExploring": "Out of combat · {name}"
     },
     "Summon": {
       "Choose": "Choose summoned creature and plan placement",
@@ -1265,7 +1266,8 @@
       "WeakFoesSaveSlots": "Weak foes: save the high-rank slot.",
       "NoEidolonOnBoard": "No eidolon on the board to take {spell}.",
       "NoVisibleCover": "No cover Auto-fill can see (prone or a tower shield).",
-      "TowerShieldCover": "Taking cover behind a raised tower shield: +4 AC."
+      "TowerShieldCover": "Taking cover behind a raised tower shield: +4 AC.",
+      "NobodyBadlyHurt": "Nobody is badly hurt yet."
     },
     "Reject": {
       "Duplicate": "Duplicate detected action replaced by preferred source.",
@@ -1612,7 +1614,28 @@
       "NoDescription": "No description.",
       "Ranged": "ranged",
       "NothingKnownYet": "Nothing known about this creature yet.",
-      "LevelShort": "Level {level}"
+      "LevelShort": "Level {level}",
+      "DetailsLabel": "Details",
+      "DetailsNotesEdited": "GM notes edited",
+      "SavedNoChanges": "{name}: intel saved, nothing changed.",
+      "SavedRevealed": "revealed {facts}",
+      "SavedHidden": "hid {facts}",
+      "SavedChanges": "{name}: {changes}",
+      "DetailsPlaceholder": "Notes for the players: lore, behaviour, rumours, anything the checks don't cover.",
+      "DetailsHide": "Hide these notes from players",
+      "DetailsReveal": "Reveal these notes to players",
+      "DetailsShown": "Shown to players",
+      "DetailsHidden": "Hidden from players",
+      "RequestCriticalSuccess": "Critical Success",
+      "RequestSuccess": "Success",
+      "RequestFailure": "Failure",
+      "RequestCriticalFailure": "Critical Failure",
+      "RequestAsked": "{name} asked about {question}",
+      "RequestAskedAnon": "Asked about {question}",
+      "RequestHintFalse": "Give false information in the highlighted rows.",
+      "RequestHint": "The highlighted rows answer the question.",
+      "RequestedTag": "Asked",
+      "GmQuickEdit": "Edit Intel for this creature"
     },
     "MinionPlan": {
       "Minion": "Companion",
@@ -1701,7 +1724,20 @@
       "HelpShort": "Gear swaps that suit the current battlefield.",
       "Empty": "Current held gear already fits visible battlefield conditions.",
       "SwapUnavailable": "Swap Items is no longer available.",
-      "ItemsChanged": "Loadout changed; refresh advisor recommendations."
+      "ItemsChanged": "Loadout changed; refresh advisor recommendations.",
+      "Reason": {
+        "UnreachableToShield": "{held} cannot reach {target}; {draw} trades unusable offense for a defensive option.",
+        "Reach": "{draw} can reach {target}; {held} cannot.",
+        "ReadyAttack": "{draw} readies an attack against {target}.",
+        "AvoidImmunity": "Switch damage type to avoid {target}'s known immunity.",
+        "AvoidResistance": "{draw} loses less damage to {target}'s known resistance.",
+        "Damage": "Higher expected weapon damage ({draw} vs {held}).",
+        "Reload": "Lower reload cost preserves later actions.",
+        "ShieldThreat": "A nearby enemy makes a readied shield valuable.",
+        "ShieldLowHp": "Low HP increases defensive loadout value.",
+        "General": "Better fit for current battlefield conditions."
+      },
+      "Summary": "Put away {held} -> draw {draw}"
     },
     "EffectClock": {
       "ActiveLabel": "Clock {count}",
@@ -1783,7 +1819,14 @@
       "GmHint": "The GM decides which check applies; the outcome is only suggested.",
       "QuestionTarget": "This creature",
       "QuestionAttempt": "Attempt {attempt} · what are you trying to recall?",
-      "QuestionKnown": "Already known: {categories}"
+      "QuestionKnown": "Already known: {categories}",
+      "Title": "Recall Knowledge",
+      "Secret": "Secret",
+      "Concentrate": "Concentrate",
+      "NativeUnavailable": "Foundry Recall Knowledge roll is unavailable.",
+      "DieUnavailable": "Recall Knowledge d20 result is unavailable.",
+      "ManualUndo": "Recall Knowledge attempt state and revealed Intel must be undone manually by the GM.",
+      "Resolved": "Recall Knowledge rolled; GM adjudication completed."
     },
     "RecordTurn": {
       "TopIsRight": "Auto-fill got it right",
@@ -1842,6 +1885,28 @@
       "RulingEnds": "Ends it outright, like jumping into a lake",
       "Resolve": "Resolve",
       "EndsButton": "Ends it"
+    },
+    "ExploitVulnerability": {
+      "CriticalSuccess": "Critical Success",
+      "Success": "Success",
+      "Failure": "Failure",
+      "CriticalFailure": "Critical Failure",
+      "OutcomeTitle": "Exploit Vulnerability Outcome",
+      "RevealAll": "Reveals all weaknesses, resistances and immunities",
+      "RevealHighest": "Reveals its highest weakness: {weakness}",
+      "RevealNone": "Reveals that it has no weaknesses",
+      "FailureEffect": "Personal antithesis only; nothing revealed",
+      "CriticalFailureEffect": "Off-guard until their next turn; nothing revealed",
+      "AlreadyKnown": "Already known",
+      "Title": "Exploit Vulnerability",
+      "EsotericLore": "Esoteric Lore",
+      "Result": "Esoteric Lore result",
+      "StandardDc": "Standard DC",
+      "ForLevel": "level {level}",
+      "Outcomes": "Outcomes",
+      "SuggestLine": "Esoteric Lore {total} vs DC {dc}",
+      "GmHint": "The GM decides the outcome; the suggestion only compares the total with the DC.",
+      "PlusDetails": "{text}, plus your Details notes"
     }
   }
 }
