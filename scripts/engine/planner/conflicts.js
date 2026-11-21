@@ -18,6 +18,7 @@ import { footprintPathDistanceFeet, movementFootprintForToken } from "../../rule
 import { contextActorDocument } from "../actor-context.js";
 import { commanderTacticState } from "../../integrations/commanderer.js";
 import { isConfluxSpell } from "../../rules/spellstrike-state.js";
+import { isRaiseAShieldStep, raisesShield } from "../action/raises-shield.js";
 
 export const BASIC_MOVE_SLUGS = new Set(["crawl", "step", "stride"]);
 
@@ -46,7 +47,13 @@ function requiresProneForCover(step) {
 function towerCoverWithoutRaisedShield(context, candidate, steps) {
   if (candidate?.slug !== "take-cover" || candidate?.activityProfile?.towerShieldCover !== true) return false;
   if (context?.profile?.combatState?.raisedShieldActive === true) return false;
-  return !steps.some((step) => step?.slug === "raise-a-shield" || step?.action?.slug === "raise-a-shield");
+  return !steps.some(raisesShield);
+}
+
+// Shields of the Spirit already Raises your Shield: a plain Raise a Shield alongside it is wasted.
+function redundantRaiseShield(candidate, steps) {
+  if (isRaiseAShieldStep(candidate)) return steps.some(raisesShield);
+  return raisesShield(candidate) && steps.some(isRaiseAShieldStep);
 }
 
 // Take Cover's bonus ends when you leave your space or use an attack action, so nothing after it
@@ -277,6 +284,7 @@ function normalizeRuneSlug(value) {
 
 export function hasPlanConflict(context, candidate, steps, attackPathAvailable = false) {
   if (towerCoverWithoutRaisedShield(context, candidate, steps)) return true;
+  if (redundantRaiseShield(candidate, steps)) return true;
   if (steps.some((step) => step?.slug === "take-cover") && breaksTakenCover(candidate)) return true;
   if (candidate?.variantGroup && steps.some((step) => step?.variantGroup === candidate.variantGroup)) {
     return true;

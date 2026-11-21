@@ -67,6 +67,7 @@ await import("./self-test/area-cube.test.js");
 await import("./self-test/flank-approach.test.js");
 await import("./self-test/downed-target.test.js");
 await import("./self-test/own-grab.test.js");
+await import("./self-test/raises-shield.test.js");
 await import("./self-test/turn-start-auto-fill.test.js");
 await import("./self-test/runtime.test.js");
 await import("./self-test/browser-summons.test.js");

@@ -2,6 +2,7 @@ import { slugify } from "./action/text.js";
 import { normalizedActionFacts } from "./action/facts.js";
 import { reservePlanResource } from "./planner/resource-budget.js";
 import { footprintPathDistanceFeet } from "../rules/token-geometry.js";
+import { raisesShield } from "./action/raises-shield.js";
 
 const ESCAPE_REMOVED_CONDITIONS = ["grabbed", "grappled", "immobilised", "immobilized", "restrained"];
 const RAISE_SHIELD_SLUGS = new Set(["raise-a-shield"]);
@@ -364,7 +365,7 @@ function stepPosition(step) {
 }
 
 function grantsRaisedShield(step) {
-  return stepSlugCandidates(step).some((slug) => RAISE_SHIELD_SLUGS.has(slug));
+  return stepSlugCandidates(step).some((slug) => RAISE_SHIELD_SLUGS.has(slug)) || raisesShield(step);
 }
 
 function grantsShieldSpell(step) {
