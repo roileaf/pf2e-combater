@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.26]
+
+### Fixed
+
+- **Auto-fill no longer adds Raise a Shield after Shields of the Spirit.** Shields of the Spirit already Raises your Shield, but auto-fill didn't know that and planned a wasted Raise a Shield alongside it. Combater now treats any action whose text says "You Raise your Shield" (or "You Raise a Shield") as raising it: auto-fill won't pair it with Raise a Shield in either order, and it counts as a raised shield for anything that needs one (such as Take Cover behind a tower shield).
+
 ## [2.6.25]
 
 ### Fixed
