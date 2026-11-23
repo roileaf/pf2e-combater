@@ -53,7 +53,7 @@ What changed in each release: [CHANGELOG.md](CHANGELOG.md).
 
 ## Works with
 
-PF2e HUD, PF2e Hazarder, PF2e Commanderer, PF2e Summons Assistant, Bestiary Tracking, PF2e Exploit Vulnerability, PF2e Reaction Checker, Sundry, PF2e Guarder, Animater, PF2e Avoid Notice and PF2e Visioner. All optional. Details in [Integrations](https://github.com/roileaf/pf2e-combater/wiki/Integrations).
+PF2e HUD, PF2e Hazarder, PF2e Commanderer, PF2e Summons Assistant, PF2e Exploit Vulnerability, PF2e Reaction Checker, Sundry, PF2e Guarder, Animater, PF2e Avoid Notice and PF2e Visioner. All optional. Details in [Integrations](https://github.com/roileaf/pf2e-combater/wiki/Integrations).
 
 ## Feedback
 
