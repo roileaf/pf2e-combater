@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.2]
+
+### Fixed
+
+- **The bar no longer says "Waiting for a combatant" beside a live plan.** With the Action tracker component off there are no action glyphs, and the bar fell back to its idle line even on a creature's turn. In combat it now reads "Planning · <name>" for the creature whose plan is shown.
+- **Component setting names stay on one line.** "Component: Turn planner and executioner" wrapped over two lines in the module settings.
+
 ## [2.10.1]
 
 ### Fixed
