@@ -71,7 +71,9 @@ export function minimalHiddenParts() {
     ...(componentEnabled("intel") ? [] : ["intel"]),
   ]);
   return MINIMAL_PARTS.filter((part) => componentOff.has(part) || shown[part] === false
-    || (shown[part] === undefined && MINIMAL_PARTS_OFF_BY_DEFAULT.has(part)));
+    // Opt-in parts stay off until chosen, except Intel on the tracker-only bar: with no planner
+    // there is no Plan setup menu to reach it from, so it shows unless the user turned it off.
+    || (shown[part] === undefined && MINIMAL_PARTS_OFF_BY_DEFAULT.has(part) && !(part === "intel" && trackerOnlyMode())));
 }
 
 // Combater's three parts, each a world setting the GM can switch off:

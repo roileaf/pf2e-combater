@@ -19,6 +19,9 @@ try {
   world({ componentPlanner: false });
   assert.equal(trackerOnlyMode(), true);
   assert.equal(panelComponentsEnabled(), true, "the window still has the tracker to show");
+  assert.ok(!minimalHiddenParts().includes("intel"), "the tracker bar shows its Intel button without being asked");
+  world({ componentPlanner: false, minimalParts: { intel: false } });
+  assert.ok(minimalHiddenParts().includes("intel"), "unless the user switched that part off");
   world({ componentPlanner: false, panelMode: "full" });
   assert.equal(trackerOnlyMode(), true, "a user's own Full planner choice can't bring a switched-off planner back");
 

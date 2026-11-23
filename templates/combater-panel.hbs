@@ -622,6 +622,12 @@
         {{/each}}
       </ol>
     {{/if}}
+    {{#if (and trackerOnly intelLedger.visible)}}
+      {{!-- No planner, so no Plan setup menu: the tracker bar carries Intel itself. --}}
+      <span class="combater-minimal-tools" role="group">
+        <button type="button" class="combater-minimal-tool is-intel" data-configure-intel data-tooltip="{{intelLedger.tooltip}}" aria-label="{{localize "PF2E_COMBATER.Panel.IntelAria"}}"><i class="fa-solid fa-brain"></i></button>
+      </span>
+    {{/if}}
     {{#if actionTracker.visible}}
       <section class="combater-action-tracker {{#if actionTracker.forecast}}is-forecast{{else}}is-current{{/if}}" aria-label="{{actionTracker.label}}"{{#if expanded}} data-tooltip="{{actionTracker.hint}}"{{/if}} aria-live="polite">
         <span class="combater-tracker-pips{{#if actionTracker.glyphControls}} is-editable{{/if}}" aria-hidden="true"{{#if actionTracker.glyphControls}} data-tracker-pips data-tooltip="{{actionTracker.pipsHint}}"{{/if}}>{{#each actionTracker.pips}}<span class="combater-pip {{#if quickened}}is-quickened{{/if}} {{#if spent}}is-spent{{/if}}" data-pip="{{slot}}"><span class="action-glyph">1</span>{{#if owner}}<span class="combater-pip-owner">{{owner}}</span>{{/if}}</span>{{/each}}</span>
