@@ -884,7 +884,9 @@
       "RecoveryNotRemoved": "The flat check succeeded, but the persistent {damage} couldn't be removed; an active GM is needed.",
       "RecoveryOncePerRound": "{ally} already had assisted recovery this round.",
       "RecoveryEndedOutright": "The persistent {damage} ends (GM's ruling).",
-      "RecoveryNotRemovedOutright": "The persistent {damage} couldn't be removed; an active GM is needed."
+      "RecoveryNotRemovedOutright": "The persistent {damage} couldn't be removed; an active GM is needed.",
+      "HazardDisableRolled": "Disable roll sent to Hazarder.",
+      "HazardDisableFailed": "The disable roll didn't happen (cancelled, or Hazarder is unavailable)."
     },
     "ActReason": {
       "ReactionCanPunishA": "Reaction can punish a provoking enemy.",
@@ -1267,7 +1269,13 @@
       "NoEidolonOnBoard": "No eidolon on the board to take {spell}.",
       "NoVisibleCover": "No cover Auto-fill can see (prone or a tower shield).",
       "TowerShieldCover": "Taking cover behind a raised tower shield: +4 AC.",
-      "NobodyBadlyHurt": "Nobody is badly hurt yet."
+      "NobodyBadlyHurt": "Nobody is badly hurt yet.",
+      "HazardActive": "{hazard} is active.",
+      "HazardArmed": "{hazard} hasn't gone off yet.",
+      "HazardDcUnknown": "Disable DC unknown; odds assumed even.",
+      "HazardDisableChance": "About {percent}% to succeed.",
+      "HazardOneMore": "One more success disables it.",
+      "HazardSuccessesLeft": "{count} successes still needed."
     },
     "Reject": {
       "Duplicate": "Duplicate detected action replaced by preferred source.",
@@ -1907,6 +1915,10 @@
       "SuggestLine": "Esoteric Lore {total} vs DC {dc}",
       "GmHint": "The GM decides the outcome; the suggestion only compares the total with the DC.",
       "PlusDetails": "{text}, plus your Details notes"
+    },
+    "Hazard": {
+      "DisableName": "Disable {hazard}: {option}",
+      "OutOfReach": "{hazard} is {distance} ft away; move within {reach} ft to disable it."
     }
   }
 }

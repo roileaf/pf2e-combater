@@ -1,3 +1,4 @@
+import { hazardDisableTactic } from "./hazard.js";
 import { battlefieldPressure } from "../../rules/battlefield-analysis.js";
 import { targetHasMarkState } from "../../rules/combat-state.js";
 import { planMinionSubturn } from "../../rules/minion-planner.js";
@@ -398,6 +399,7 @@ const SLUG_TACTICS = {
   "act-together": actTogetherTactic,
   "administer-first-aid": administerFirstAidTactic,
   stabilize: stabilizeTactic,
+  "disable-hazard": hazardDisableTactic,
 };
 
 export function suggestedTargetFor(context, action, role, preferredTarget = firstContextTarget(context)) {
@@ -405,6 +407,8 @@ export function suggestedTargetFor(context, action, role, preferredTarget = firs
   const needsTargetableEnemy = requiresTargetableEnemy(action, role);
 
   if (isSelfCenteredAreaAction(action)) return null;
+  // A hazard disable names its hazard in the step; it never targets a creature.
+  if (action.hazardDisable) return null;
 
   // Boost Eidolon, Lifelink Surge, Evolution Surge...: only the summoner's eidolon can take them.
   if (isEidolonOnlySpell(action)) {

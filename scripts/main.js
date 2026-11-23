@@ -55,6 +55,7 @@ import { applyAidEffect } from "./engine/execution/prepare-to-aid.js";
 import { registerObservedIntelHooks } from "./rules/observed-intel.js";
 import { registerSpellstrikeHooks } from "./rules/spellstrike-state.js";
 import { initCommandererIntegration } from "./integrations/commanderer.js";
+import { tokenUpdateChangesHazarderState } from "./integrations/hazarder.js";
 import { registerPf2eHudKnowledgeHooks, showKnowledgeReveal } from "./integrations/pf2e-hud-knowledge.js";
 import { initAnimaterIntegration } from "./integrations/animater.js";
 import { isPlannableActor, isPlannableCombatant } from "./rules/actor-eligibility.js";
@@ -692,6 +693,8 @@ Hooks.on("preUpdateToken", (token, changed) => {
 Hooks.on("updateToken", (token, changed, options) => {
   const movementSpent = markMovementActionSpent(token, { changed, options });
   if (tokenUpdateChangesTacticOverride(changed)) scheduleRefresh("tactic-update");
+  // A Hazarder hazard's progress or status moved: its disable steps change.
+  if (tokenUpdateChangesHazarderState(changed)) scheduleRefresh("hazard-update");
   if (!tokenUpdateAffectsCombatGeometry(changed) && !("_movementHistory" in changed)) return;
   scheduleRefresh(movementSpent ? "token-movement" : "token-update");
 });

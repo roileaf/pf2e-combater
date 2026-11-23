@@ -35,6 +35,7 @@ import { attachRevertOp, executionPatch } from "../execution/results.js";
 import { executionAction, executionReadinessForStep } from "../execution/state.js";
 import { t } from "../../i18n.js";
 import { preparePlannedSummon, validateSummonPlan } from "../../integrations/summons-assistant.js";
+import { HAZARD_DISABLE_EXECUTABLE, rollHazardDisable } from "../../integrations/hazarder.js";
 import { beginTrackedExecution, recordTrackedExecution } from "../../state/action-tracker.js";
 
 export { canvasTokenById, currentTargetSelection, plannedTargetSelection, setTokenTargets, targetTokenId, tokenId } from "../execution/targets.js";
@@ -132,6 +133,12 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
     result = await executeTeleport({ actor, context, step, action: resolvedAction, event, choices, patch });
   } else if (requiresDestinationForAction(resolvedAction)) {
     result = await executeMovement({ context, step, action: resolvedAction, choices });
+  } else if (resolvedAction?.executable === HAZARD_DISABLE_EXECUTABLE) {
+    // Hazarder rolls it and applies the result to the hazard on the active GM's client.
+    const roll = await rollHazardDisable(resolvedAction, actor, { event });
+    result = roll
+      ? { status: "done", patch: executionPatch(patch, "done", { result: t("Exec.HazardDisableRolled", "Disable roll sent to Hazarder.") }) }
+      : { status: "failed", patch: executionPatch(patch, "failed", { error: t("Exec.HazardDisableFailed", "The disable roll didn't happen (cancelled, or Hazarder is unavailable).") }), error: t("Exec.HazardDisableFailed", "The disable roll didn't happen (cancelled, or Hazarder is unavailable).") };
   } else if (resolvedAction?.executable === "recharge-spellstrike") {
     await setSpellstrikeExpended(actor, false);
     result = { status: "done", patch: executionPatch({}, "done", { result: t("Exec.SpellstrikeRecharged", "Spellstrike recharged.") }) };

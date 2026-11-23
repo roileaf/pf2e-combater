@@ -1,3 +1,4 @@
+import { readHazardDisableActions } from "../../integrations/hazarder.js";
 import { findCustomAction } from "../../catalog/custom-actions.js";
 import { collectionValues, systemValue, traitSlugs } from "../../foundry-data.js";
 import { parseActionText as parseActionTextValue, slugify as slugifyText } from "../../engine/action/text.js";
@@ -131,6 +132,7 @@ export function readActionSources(context, spells = []) {
     ...generatedActivities,
     ...readShieldSpellBlockActions(actor, context),
     ...itemActions,
+    ...readHazardDisableActions(actor, context),
   ];
 }
 
