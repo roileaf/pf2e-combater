@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.10.3]
+
+### Added
+
+- **Learn weaknesses, resistances and immunities when they apply (new setting, off by default).** During combat, when damage applied to an enemy is changed by one of its weaknesses, resistances or immunities, that one is recorded in the party's Intel for the creature, value included. A resistance the attack ignored is not learned. It works on its own, with or without "Learn Intel from what the party sees".
+
+### Changed
+
+- **Intel lists a creature's Strikes by name only.** The attack bonus ("Claw +12") is gone from the Strikes category, for the GM, for players, and for false Strike facts. Reach and ranged notes stay.
+
 ## [2.10.2]
 
 ### Fixed
