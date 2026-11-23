@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.10.1]
+
+### Fixed
+
+- **The tracker bar has its Intel button.** With the planner off (the Planner component, or Tracker only mode) there is no Plan setup menu, so Intel couldn't be reached from the bar at all. The bar now shows the brain button whenever there is Intel to open, without having to turn the part on in Customize minimal bar; switching that part off still hides it.
+
 ## [2.10.0]
 
 ### Added
