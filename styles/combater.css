@@ -6731,3 +6731,9 @@
 .pf2e-combater-intel-window .combater-intel-who-table td.is-false { color: #e08a84; }
 .pf2e-combater-intel-window .combater-intel-who-false { padding: 0 4px; border-radius: 4px; background: #3a2422; color: #e08a84; font-size: 10px; }
 .pf2e-combater-intel-window .combater-intel-who-empty { margin: 0; padding: 0 10px 8px; color: #8d9aab; }
+
+/* Known creatures journal: filter by name. */
+.pf2e-combater-intel-window .combater-intel-search { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 4px 10px; border: 1px solid #343a43; border-radius: 8px; background: #1f2227; color: #8d9aab; }
+.pf2e-combater-intel-window .combater-intel-search input { flex: 1; min-width: 0; height: 26px; border: 0; background: transparent; color: #e3e8ee; box-shadow: none; }
+.pf2e-combater-intel-window .combater-intel-search small { flex: none; white-space: nowrap; }
+.pf2e-combater-intel-window [data-intel-entry][hidden] { display: none; }

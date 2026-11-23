@@ -1068,3 +1068,29 @@ export function intelLedgerView(context) {
       : t("Intel.PlayerTooltip", "View Recall Knowledge facts the GM has revealed."),
   };
 }
+
+function hasAnyIntelFlag(actor) {
+  const flags = actor?.flags?.[MODULE_ID];
+  if (flags) {
+    return [INTEL_LEDGER_FLAG, INTEL_CHARACTER_LEDGERS_FLAG, INTEL_FALSE_INFORMATION_FLAG, INTEL_DETAILS_FLAG].some((key) => flags[key] != null);
+  }
+  return [INTEL_LEDGER_FLAG, INTEL_CHARACTER_LEDGERS_FLAG, INTEL_FALSE_INFORMATION_FLAG, INTEL_DETAILS_FLAG]
+    .some((key) => rawFlag(actor, key) != null);
+}
+
+// Every creature the viewer knows something about, on any scene or none, in or out of combat: the
+// "Known creatures" journal. A player sees the party's intel plus their own characters'; the GM
+// sees everything anyone learned. Read-only.
+export function knownCreaturesView({ actors = null, user = globalThis.game?.user } = {}) {
+  const isGM = user?.isGM === true;
+  const all = actors ?? globalThis.game?.actors?.contents ?? Array.from(globalThis.game?.actors ?? []);
+  const intelTargets = all
+    .filter((actor) => isNpcIntelTarget({ actor }) && hasAnyIntelFlag(actor))
+    // A player sees the creature's name only once its identity is known (targetName falls back).
+    .map((actor) => ({ actor, id: actor.id, uuid: actor.uuid, name: isGM ? actor.name : t("Intel.UnknownCreature", "Unknown creature") }));
+  const view = intelLedgerView({ isGM: false, intelKnowerIds: isGM ? null : viewerIntelKnowerIds(user), intelTargets });
+  const entries = view.entries
+    .filter((entry) => entry.hasRevealed && (isGM || Object.values(entry.revealed ?? {}).some((values) => values.length) || entry.details?.revealed))
+    .toSorted((left, right) => String(left.name).localeCompare(String(right.name)));
+  return { ...view, entries, visible: true, editable: false, journal: true };
+}

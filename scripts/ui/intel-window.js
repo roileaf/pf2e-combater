@@ -8,6 +8,7 @@ import {
   normalizeIntelLedger,
   normalizeIntelRevealMode,
   PARTY_INTEL_AUDIENCE,
+  knownCreaturesView,
 } from "../rules/intel-ledger.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -532,6 +533,11 @@ function windowContext(view, mode, { canResetAttempts = false } = {}) {
     entries,
     request: editable ? requestModel(view?.request) : null,
     audience: audienceModel(view, editable),
+    // The Known creatures journal: many creatures, so a name filter.
+    search: view?.journal === true && entries.length > 1
+      ? { placeholder: t("Intel.JournalSearch", "Search known creatures"), countLabel: t("Intel.JournalCount", "{count} creatures", { count: entries.length }) }
+      : null,
+    journal: view?.journal === true,
     hasEntries: entries.length > 0,
     // One NPC: its Reveal all / Reset attempts sit in the window footer.
     singleEntry: entries.length === 1 ? entries[0] : null,
@@ -546,7 +552,9 @@ function windowContext(view, mode, { canResetAttempts = false } = {}) {
     saveLabel: t("Intel.Save", "Save intel"),
     saveChangesLabel: t("Intel.SaveChanges", "Save · {count} changes"),
     noRevealedData: t("Intel.NoRevealedData", "No Recall Knowledge facts have been revealed yet."),
-    noTargetsLabel: t("Intel.NoTargets", "No NPC targets available."),
+    noTargetsLabel: view?.journal === true
+      ? t("Intel.JournalEmpty", "Nothing is known about any creature yet.")
+      : t("Intel.NoTargets", "No NPC targets available."),
   };
 }
 
@@ -586,8 +594,10 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   constructor(view, options = {}) {
-    const { mode, onSave, onResetAttempts, viewProvider, ...appOptions } = options;
+    const { mode, onSave, onResetAttempts, viewProvider, title, ...appOptions } = options;
     super({ id: randomId(`${MODULE_ID}-intel`), ...appOptions });
+    this._title = typeof title === "string" && title ? title : null;
+    this._search = "";
     this._view = view ?? {};
     this._mode = mode ?? (view?.editable === true ? "edit" : "view");
     this._onSave = typeof onSave === "function" ? onSave : null;
@@ -599,6 +609,7 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   get title() {
+    if (this._title) return this._title;
     return this._mode === "edit"
       ? t("Intel.ConfigureTitle", "Recall Knowledge Intel")
       : t("Intel.ViewTitle", "Known Intel");
@@ -844,6 +855,15 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  // Journal filter by creature name; kept across live refreshes.
+  _applySearch() {
+    const query = this._search.trim().toLowerCase();
+    for (const entry of this.element.querySelectorAll("[data-intel-entry]")) {
+      const name = String(entry.querySelector("h3")?.textContent ?? "").toLowerCase();
+      entry.hidden = Boolean(query) && !name.includes(query);
+    }
+  }
+
   // The share button only means something while a "Known by" fact is still unticked.
   _syncShareButton() {
     const button = this.element?.querySelector("[data-intel-share-known]");
@@ -991,6 +1011,15 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
     this.element.querySelector("[data-intel-close]")?.addEventListener("click", () => this.close());
+    const search = this.element.querySelector("[data-intel-search]");
+    if (search) {
+      search.value = this._search;
+      search.addEventListener("input", () => {
+        this._search = search.value;
+        this._applySearch();
+      });
+      this._applySearch();
+    }
     for (const card of this.element.querySelectorAll("[data-intel-audience-card]")) {
       card.addEventListener("click", () => this._changeAudience(card.dataset.intelAudienceCard));
     }
@@ -1072,4 +1101,20 @@ export async function openIntelWindow(view, options = {}) {
   const window = new IntelWindow(view, options);
   await window.render({ force: true });
   return window;
+}
+
+// One journal window at a time: every creature the viewer knows something about.
+let knownCreaturesWindow = null;
+export async function openKnownCreaturesWindow({ viewProvider } = {}) {
+  if (knownCreaturesWindow?.rendered) {
+    knownCreaturesWindow.bringToFront?.();
+    return knownCreaturesWindow;
+  }
+  const provider = typeof viewProvider === "function" ? viewProvider : () => knownCreaturesView();
+  knownCreaturesWindow = await openIntelWindow(provider(), {
+    mode: "view",
+    viewProvider: provider,
+    title: t("Intel.JournalTitle", "Known creatures"),
+  });
+  return knownCreaturesWindow;
 }

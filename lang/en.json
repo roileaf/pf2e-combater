@@ -1304,7 +1304,9 @@
     },
     "Keybind": {
       "ToggleName": "Toggle PF2e Combater",
-      "ToggleHint": "Open or close the PF2e Combater tactical advisor panel."
+      "ToggleHint": "Open or close the PF2e Combater tactical advisor panel.",
+      "KnownCreaturesName": "Open Known creatures",
+      "KnownCreaturesHint": "Open the journal of everything your characters know about creatures."
     },
     "ClassTactic": {
       "LabelAction": "{label} action",
@@ -1667,7 +1669,13 @@
       "GridTitle": "Who knows what",
       "GridCount": "{count} known facts",
       "GridEmpty": "Nobody knows anything about this creature yet.",
-      "GridFalseTag": "false"
+      "GridFalseTag": "false",
+      "UnknownCreature": "Unknown creature",
+      "JournalSearch": "Search known creatures",
+      "JournalCount": "{count} creatures",
+      "JournalEmpty": "Nothing is known about any creature yet.",
+      "JournalTitle": "Known creatures",
+      "JournalToolGm": "Intel: the selected creature, or all known creatures"
     },
     "MinionPlan": {
       "Minion": "Companion",

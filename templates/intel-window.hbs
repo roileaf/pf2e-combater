@@ -33,6 +33,13 @@
     </section>
   {{/with}}
 
+  {{#with search}}
+    <label class="combater-intel-search">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input type="search" data-intel-search placeholder="{{placeholder}}" aria-label="{{placeholder}}">
+      <small>{{countLabel}}</small>
+    </label>
+  {{/with}}
   {{#if hasEntries}}
     <form class="combater-intel-body" data-intel-form>
       <div class="combater-intel-grid">

@@ -5,6 +5,7 @@ import {
   PARTY_INTEL_AUDIENCE,
   falseInformationKnownBy,
   intelLedgerView,
+  knownCreaturesView,
   readCharacterIntelLedgers,
   readKnownIntelLedger,
   saveIntelDecision,
@@ -195,6 +196,35 @@ assert.deepEqual(intelAudienceIds({}), ["party"]);
   assert.equal(rows.mindless, undefined, "facts nobody knows are left out");
   assert.equal(rows["Cold 5"], undefined, "a prepared, unrevealed falsehood isn't anyone's belief yet");
   assert.equal(knowledgeGridModel(entry, categories, [{ id: "party", isParty: true }]).columns.length, 1, "characters holding intel still get a column");
+}
+
+// --- Known creatures journal: everything a viewer knows, with no combat or scene needed ----------------
+{
+  const previousGame = globalThis.game;
+  const ezren = { id: "ezren", type: "character", name: "Ezren", testUserPermission: (user) => user.id === "p1" };
+  const kyra = { id: "kyra", type: "character", name: "Kyra", testUserPermission: (user) => user.id === "p2" };
+  const named = (name, flags) => ({ ...creature(flags), id: name, uuid: `Actor.${name}`, name });
+  const guard = named("Skeleton Guard", { [INTEL_LEDGER_FLAG]: { identity: true, traits: ["undead"] } });
+  const wraith = named("Wraith", { [INTEL_CHARACTER_LEDGERS_FLAG]: { ezren: { name: "Ezren", ledger: { traits: ["undead"] } } } });
+  const stranger = named("Never Met", {});
+  const actors = [wraith, guard, stranger, ezren];
+  try {
+    const journal = (user) => {
+      globalThis.game = { user, actors: { contents: [ezren, kyra], get: () => null }, i18n: { localize: (key) => key } };
+      return knownCreaturesView({ actors, user });
+    };
+    const p1 = journal({ id: "p1", isGM: false });
+    assert.equal(p1.journal, true);
+    assert.equal(p1.editable, false, "read-only");
+    assert.deepEqual(p1.entries.map((entry) => entry.name), ["Skeleton Guard", "Unknown creature"], "Ezren's player: the party's creature by name, and one only Ezren knows (identity unknown)");
+    const p2 = journal({ id: "p2", isGM: false });
+    assert.deepEqual(p2.entries.map((entry) => entry.name), ["Skeleton Guard"], "Kyra's player doesn't see what only Ezren learned");
+    const gm = journal({ id: "gm", isGM: true });
+    assert.deepEqual(gm.entries.map((entry) => entry.name), ["Skeleton Guard", "Wraith"], "the GM sees every creature anyone knows, never one nobody met");
+    assert.deepEqual(gm.entries[1].revealed.traits, ["Undead"]);
+  } finally {
+    globalThis.game = previousGame;
+  }
 }
 
 // --- Minimal bar: the Intel shortcut is opt-in ------------------------------------------------------------

@@ -42,6 +42,9 @@ import {
   togglePanelForCurrentCombatant,
 } from "./ui/CombaterPanel.js";
 import { refreshCombatTrackerIntel, registerCombatTrackerIntel } from "./ui/combat-tracker-intel.js";
+import { openKnownCreaturesWindow } from "./ui/intel-window.js";
+import { openRecallKnowledgeIntelWindow } from "./ui/recall-knowledge.js";
+import { isNpcIntelTarget } from "./rules/intel-ledger.js";
 import { registerCombatTrackerActions } from "./ui/combat-tracker-actions.js";
 import { autoFillOnTurnStart } from "./ui/panel/turn-start-auto-fill.js";
 import { cancelDestinationPicker } from "./ui/destination-picker.js";
@@ -389,6 +392,17 @@ Hooks.once("init", () => {
   registerObservedIntelHooks();
   registerSpellstrikeHooks();
 
+  game.keybindings.register(MODULE_ID, "knownCreatures", {
+    name: t("Keybind.KnownCreaturesName", "Open Known creatures"),
+    hint: t("Keybind.KnownCreaturesHint", "Open the journal of everything your characters know about creatures."),
+    editable: [{ key: "KeyK", modifiers: ["Alt", "Shift"] }],
+    onDown: () => {
+      if (!playerAccessAllowed()) return false;
+      openIntelForSelection().catch((error) => console.warn(`${MODULE_ID} | Known creatures failed`, error));
+      return true;
+    },
+  });
+
   game.keybindings.register(MODULE_ID, "togglePanel", {
     name: t("Keybind.ToggleName", "Toggle PF2e Combater"),
     hint: t("Keybind.ToggleHint", "Open or close the PF2e Combater tactical advisor panel."),
@@ -443,6 +457,31 @@ function panelSceneControlTool() {
   };
 }
 
+// The brain button and its keybinding: with a creature selected, the GM gets that creature's intel
+// editor; otherwise (and for players) the Known creatures journal.
+async function openIntelForSelection() {
+  if (game.user?.isGM === true) {
+    const actor = (canvas?.tokens?.controlled ?? []).map((token) => token?.actor).find((entry) => isNpcIntelTarget({ actor: entry }));
+    if (actor && await openRecallKnowledgeIntelWindow(actor, { preselectIdentity: false })) return;
+  }
+  await openKnownCreaturesWindow();
+}
+
+// The Known creatures journal: everything your characters know, in or out of combat.
+function knownCreaturesSceneControlTool() {
+  return {
+    name: `${MODULE_ID}-known-creatures`,
+    title: game.user?.isGM === true
+      ? t("Intel.JournalToolGm", "Intel: the selected creature, or all known creatures")
+      : t("Intel.JournalTitle", "Known creatures"),
+    icon: "fa-solid fa-brain",
+    button: true,
+    onChange: () => {
+      openIntelForSelection().catch((error) => console.warn(`${MODULE_ID} | Known creatures failed`, error));
+    },
+  };
+}
+
 function currentTokenControl() {
   const controls = ui?.controls?.controls;
   const groups = Array.isArray(controls) ? controls : Object.values(controls ?? {});
@@ -456,6 +495,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
   if (!tokenControl?.tools) return;
 
   addTool(tokenControl.tools, panelSceneControlTool());
+  addTool(tokenControl.tools, knownCreaturesSceneControlTool());
 });
 
 // GM-side handler for a player's shared draft plan (runs on each GM via socketlib.executeForAllGMs).
@@ -495,8 +535,13 @@ Hooks.once("socketlib.ready", () => {
 Hooks.on("pf2e-combater.playerAccessChanged", () => {
   const tokenControl = currentTokenControl();
   if (tokenControl?.tools) {
-    if (playerAccessAllowed()) addTool(tokenControl.tools, panelSceneControlTool());
-    else removeTool(tokenControl.tools, `${MODULE_ID}-toggle-panel`);
+    if (playerAccessAllowed()) {
+      addTool(tokenControl.tools, panelSceneControlTool());
+      addTool(tokenControl.tools, knownCreaturesSceneControlTool());
+    } else {
+      removeTool(tokenControl.tools, `${MODULE_ID}-toggle-panel`);
+      removeTool(tokenControl.tools, `${MODULE_ID}-known-creatures`);
+    }
   }
   refreshSceneControls();
   ui?.combat?.render?.(true);
