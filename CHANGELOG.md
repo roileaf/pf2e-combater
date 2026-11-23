@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.10.0]
+
+### Added
+
+- **Components: switch Combater's three parts on and off.** Three new world settings, all on by default:
+  - **Component: Action tracker.** Off: no action or reaction glyphs, End turn / Delay / Ready, upcoming turns, tracker glyphs in the combat tracker, or readied and reaction markers on tokens. The planner still knows how many actions are left.
+  - **Component: Turn planner and executioner.** Off: everyone, the GM included, gets the tracker bar only. With the tracker off as well, the Combater window and its toolbar button are gone.
+  - **Component: Intel tracker.** Off: no brain buttons, Known creatures, Recall Knowledge or Exploit Vulnerability flows, and nothing is learned from what the party sees. Recall Knowledge is rolled from the sheet, and players plan with no knowledge of enemy stats. Stored Intel is kept for when you turn it back on.
+  Changes apply to every open client at once. *Combater mode* still lets each player choose Tracker only for themselves.
+
 ## [2.9.4]
 
 ### Added
