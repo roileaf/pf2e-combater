@@ -1,6 +1,7 @@
 import { MODULE_ID } from "../constants.js";
 import { entityKey } from "../foundry-data.js";
 import { t } from "../i18n.js";
+import { defaultIntelRevealMode } from "../settings.js";
 
 export const INTEL_LEDGER_FLAG = "intelLedger";
 export const INTEL_REVEAL_MODE_FLAG = "intelRevealMode";
@@ -425,8 +426,10 @@ export function normalizeIntelRevealMode(value) {
   return value === INTEL_REVEAL_MODES.band ? INTEL_REVEAL_MODES.band : INTEL_REVEAL_MODES.exact;
 }
 
+// The creature's own reveal style, or the world default when the GM never chose one for it.
 export function readIntelRevealMode(actorOrTarget) {
-  return normalizeIntelRevealMode(readRevealModeFlag(actorOrTarget));
+  const own = readRevealModeFlag(actorOrTarget);
+  return normalizeIntelRevealMode(own === null || own === undefined || own === "" ? defaultIntelRevealMode() : own);
 }
 
 // False facts the planning character believes about this creature (a critical Recall Knowledge

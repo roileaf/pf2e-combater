@@ -23,6 +23,7 @@ const SETTINGS = {
   enrageBarbariansAtCombatStart: "enrageBarbariansAtCombatStart",
   learnObservedIntel: "learnObservedIntel",
   falseIntelSteersPlans: "falseIntelSteersPlans",
+  defaultIntelRevealMode: "defaultIntelRevealMode",
   reactionsBeforeFirstTurn: "reactionsBeforeFirstTurn",
   combatTrackerActions: "combatTrackerActions",
   autoFillOnTurnStart: "autoFillOnTurnStart",
@@ -42,6 +43,11 @@ export function combatTrackerActions() {
 // Off: a creature gets its reaction only once its first turn of the encounter starts.
 export function reactionsBeforeFirstTurn() {
   return settingOrDefault(SETTINGS.reactionsBeforeFirstTurn, true) !== false;
+}
+
+// The reveal style of a creature whose Intel the GM hasn't set one for: "exact" or "band".
+export function defaultIntelRevealMode() {
+  return settingOrDefault(SETTINGS.defaultIntelRevealMode, "exact") === "band" ? "band" : "exact";
 }
 
 // On: a false fact a character believes steers that player's Auto-fill as if it were true. Off: it
@@ -300,6 +306,19 @@ export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu }
     type: Boolean,
     default: false,
   });
+  game.settings.register(MODULE_ID, SETTINGS.defaultIntelRevealMode, {
+    name: "PF2E_COMBATER.Settings.DefaultIntelRevealMode.Name",
+    hint: "PF2E_COMBATER.Settings.DefaultIntelRevealMode.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      exact: "PF2E_COMBATER.Settings.DefaultIntelRevealMode.Exact",
+      band: "PF2E_COMBATER.Settings.DefaultIntelRevealMode.Band",
+    },
+    default: "exact",
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.falseIntelSteersPlans, {
     name: "PF2E_COMBATER.Settings.FalseIntelSteersPlans.Name",
     hint: "PF2E_COMBATER.Settings.FalseIntelSteersPlans.Hint",

@@ -6,6 +6,7 @@ import {
   falseInformationKnownBy,
   intelLedgerView,
   knownCreaturesView,
+  readIntelRevealMode,
   readCharacterIntelLedgers,
   readKnownIntelLedger,
   saveIntelDecision,
@@ -222,6 +223,23 @@ assert.deepEqual(intelAudienceIds({}), ["party"]);
     const gm = journal({ id: "gm", isGM: true });
     assert.deepEqual(gm.entries.map((entry) => entry.name), ["Skeleton Guard", "Wraith"], "the GM sees every creature anyone knows, never one nobody met");
     assert.deepEqual(gm.entries[1].revealed.traits, ["Undead"]);
+  } finally {
+    globalThis.game = previousGame;
+  }
+}
+
+// --- World default reveal style: bands for every creature the GM hasn't set one for -----------------
+{
+  const previousGame = globalThis.game;
+  try {
+    const fresh = creature({});
+    const chosen = creature({ intelRevealMode: "exact" });
+    globalThis.game = { settings: { get: () => undefined } };
+    assert.equal(readIntelRevealMode(fresh), "exact", "exact unless the GM says otherwise");
+    globalThis.game = { settings: { get: (_m, key) => (key === "defaultIntelRevealMode" ? "band" : undefined) } };
+    assert.equal(readIntelRevealMode(fresh), "band", "the world default applies to a creature with no style of its own");
+    assert.equal(readIntelRevealMode(chosen), "exact", "a creature's own choice wins");
+    assert.equal(readIntelRevealMode({ intelRevealMode: "band" }), "band");
   } finally {
     globalThis.game = previousGame;
   }

@@ -293,6 +293,12 @@
       "FalseIntelSteersPlans": {
         "Name": "False information steers player Auto-fill",
         "Hint": "On: a false fact a character believes (a critical Recall Knowledge failure, or one you revealed) is treated as true by that player's Auto-fill, best target and scoring, so a false fire weakness makes fire attractive. Off: players still see the false fact, but their plans only use real facts."
+      },
+      "DefaultIntelRevealMode": {
+        "Name": "Default Intel reveal style",
+        "Hint": "How revealed numbers are shown to players for creatures you haven't set a style for: exact DCs and amounts, or Low / Mid / High bands. You can still switch any creature in its Intel editor; saving the editor keeps that creature's own choice.",
+        "Exact": "Exact DCs",
+        "Band": "Bands (Low / Mid / High)"
       }
     },
     "Preflight": {
