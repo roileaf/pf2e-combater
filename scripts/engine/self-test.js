@@ -74,6 +74,7 @@ await import("./self-test/own-grab.test.js");
 await import("./self-test/raises-shield.test.js");
 await import("./self-test/companion-occupancy.test.js");
 await import("./self-test/hazarder.test.js");
+await import("./self-test/workbench-mystifier.test.js");
 await import("./self-test/character-intel.test.js");
 await import("./self-test/auto-fill-access.test.js");
 await import("./self-test/false-intel-planning.test.js");

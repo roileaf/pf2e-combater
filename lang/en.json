@@ -287,6 +287,10 @@
         "Name": "Learn weaknesses, resistances and immunities when they apply",
         "Hint": "During combat, when damage applied to an enemy is changed by one of its weaknesses, resistances or immunities, record that one in the party's Intel for the creature. A resistance the attack ignored is not learned."
       },
+      "UnmystifyOnIdentity": {
+        "Name": "Un-mystify tokens when Identity is revealed",
+        "Hint": "Needs PF2e Workbench's NPC mystifier. When the GM reveals a creature's Identity to the whole party in Intel, un-mystify that creature's tokens on the scene the GM is viewing. Revealing it to a single character leaves them mystified."
+      },
       "PlayerAutoFillWhen": {
         "Name": "Auto-fill for players",
         "Hint": "When players may use Auto-fill on their turn. \"Last action only\" turns it into a third-action suggester: players plan their first two actions themselves, and Auto-fill appears once one action is left. The GM always has Auto-fill.",

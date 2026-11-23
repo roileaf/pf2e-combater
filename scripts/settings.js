@@ -23,6 +23,7 @@ const SETTINGS = {
   enrageBarbariansAtCombatStart: "enrageBarbariansAtCombatStart",
   learnObservedIntel: "learnObservedIntel",
   learnAppliedDefenses: "learnAppliedDefenses",
+  unmystifyOnIdentity: "unmystifyOnIdentity",
   falseIntelSteersPlans: "falseIntelSteersPlans",
   defaultIntelRevealMode: "defaultIntelRevealMode",
   componentTracker: "componentTracker",
@@ -378,6 +379,14 @@ export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu }
   game.settings.register(MODULE_ID, SETTINGS.learnAppliedDefenses, {
     name: "PF2E_COMBATER.Settings.LearnAppliedDefenses.Name",
     hint: "PF2E_COMBATER.Settings.LearnAppliedDefenses.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+  game.settings.register(MODULE_ID, SETTINGS.unmystifyOnIdentity, {
+    name: "PF2E_COMBATER.Settings.UnmystifyOnIdentity.Name",
+    hint: "PF2E_COMBATER.Settings.UnmystifyOnIdentity.Hint",
     scope: "world",
     config: true,
     type: Boolean,

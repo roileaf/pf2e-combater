@@ -59,6 +59,7 @@ import { registerObservedIntelHooks } from "./rules/observed-intel.js";
 import { registerSpellstrikeHooks } from "./rules/spellstrike-state.js";
 import { initCommandererIntegration } from "./integrations/commanderer.js";
 import { tokenUpdateChangesHazarderState } from "./integrations/hazarder.js";
+import { registerWorkbenchMystifierHooks } from "./integrations/workbench-mystifier.js";
 import { registerPf2eHudKnowledgeHooks, showKnowledgeReveal } from "./integrations/pf2e-hud-knowledge.js";
 import { initAnimaterIntegration } from "./integrations/animater.js";
 import { isPlannableActor, isPlannableCombatant } from "./rules/actor-eligibility.js";
@@ -390,6 +391,7 @@ Hooks.once("init", () => {
   registerRecallKnowledgeChatHooks();
   registerPf2eHudKnowledgeHooks();
   registerObservedIntelHooks();
+  registerWorkbenchMystifierHooks();
   registerSpellstrikeHooks();
 
   game.keybindings.register(MODULE_ID, "knownCreatures", {
