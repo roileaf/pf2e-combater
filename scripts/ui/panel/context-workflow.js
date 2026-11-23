@@ -1,5 +1,5 @@
 import { autoFillAllowed } from "./auto-fill-access.js";
-import { SETTINGS, minimalHiddenParts, settingOrDefault } from "../../settings.js";
+import { SETTINGS, componentEnabled, minimalHiddenParts, settingOrDefault } from "../../settings.js";
 import { canUndoPanelDraftClear } from "./draft-workflow.js";
 import { collectionValues } from "../../foundry-data.js";
 import { buildActionBuilderModel, projectContextForDraftDestination } from "../../engine/action/builder/index.js";
@@ -109,6 +109,7 @@ function activeNpcIntelTarget(context) {
 }
 
 export function panelIntelLedgerView(context) {
+  if (!componentEnabled("intel")) return { visible: false, editable: false, entries: [], categories: [] };
   const target = activeNpcIntelTarget(context);
   if (target) {
     return intelLedgerView({
@@ -200,7 +201,8 @@ export function viewPanelContext(panel, context) {
     label: t("Panel.UndoClear", "Undo clear"),
     tooltip: t("Panel.UndoClearTooltip", "Put back the steps you just cleared."),
   } : null;
-  const tracker = actionTrackerView(context);
+  // Tracker component off: no glyphs (the planner still shows its own "N actions" summary).
+  const tracker = componentEnabled("tracker") ? actionTrackerView(context) : { visible: false, pips: [] };
   if (tracker.visible) {
     let normalIndex = 0;
     tracker.pips = tracker.pips.map((pip) => {

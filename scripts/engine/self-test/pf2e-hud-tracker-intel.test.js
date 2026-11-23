@@ -89,7 +89,7 @@ try {
     combat,
     user: { id: "player", isGM: false },
     modules: { get: (id) => (id in moduleActive ? { active: moduleActive[id] } : undefined) },
-    settings: { get: () => false },
+    settings: { get: (_module, key) => String(key).startsWith("component") },
     i18n: { localize: (key) => key, has: () => false, format: (key) => key },
   };
   globalThis.ui = { combat: { viewed: combat, render: () => {} } };

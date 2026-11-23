@@ -2,7 +2,7 @@ import { MODULE_ID } from "../constants.js";
 import { collectionValues } from "../foundry-data.js";
 import { t } from "../i18n.js";
 import { intelLedgerView, isNpcIntelTarget } from "../rules/intel-ledger.js";
-import { playerAccessAllowed } from "../settings.js";
+import { componentEnabled, playerAccessAllowed } from "../settings.js";
 import { openIntelWindow } from "./intel-window.js";
 import { openRecallKnowledgeIntelWindow } from "./recall-knowledge.js";
 
@@ -239,7 +239,13 @@ function decorateGmTrackerRows(root, combat, buttonOptions = {}) {
   }
 }
 
+function clearIntelButtons(app, html) {
+  const root = rootElement(html) ?? rootElement(app?.element);
+  for (const button of root?.querySelectorAll?.(`.${BUTTON_CLASS}, .${GM_BUTTON_CLASS}`) ?? []) button.remove();
+}
+
 function decorateCombatTracker(app, html) {
+  if (!componentEnabled("intel")) return clearIntelButtons(app, html);
   if (globalThis.game?.user?.isGM === true) {
     const root = rootElement(html) ?? rootElement(app?.element);
     if (root) decorateGmTrackerRows(root, app?.viewed ?? app?.combat ?? globalThis.game?.combat ?? null);
@@ -254,6 +260,7 @@ function decorateCombatTracker(app, html) {
 
 // PF2e HUD's TrackerPF2eHUD (ApplicationV2, id "pf2e-hud-tracker") mirrors ui.combat.viewed in its own DOM.
 function decoratePf2eHudTracker(app, html) {
+  if (!componentEnabled("intel")) return clearIntelButtons(app, html);
   if (globalThis.game?.user?.isGM === true) {
     const root = rootElement(html) ?? rootElement(app?.element);
     if (!root) return;

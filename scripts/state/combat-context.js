@@ -7,7 +7,7 @@ import { movementFootprintCentersForToken } from "../rules/token-geometry.js";
 import { isPlannableActor } from "../rules/actor-eligibility.js";
 import { summonIdentity } from "../rules/summoned-creatures.js";
 import { awaitingFirstTurn, reactionBlock } from "../rules/reaction-block.js";
-import { falseIntelSteersPlans, reactionsBeforeFirstTurn } from "../settings.js";
+import { componentEnabled, falseIntelSteersPlans, reactionsBeforeFirstTurn } from "../settings.js";
 import {
   INTEL_REVEAL_MODES,
   bandedIntelDefenseEntry,
@@ -18,6 +18,7 @@ import {
   intelFactId,
   intelIdentityTrait,
   intelTraitFactId,
+  normalizeIntelLedger,
   believedFalseFacts,
   falseInformationKnownBy,
   withBelievedDefenses,
@@ -460,9 +461,13 @@ function tokenEntry(token, originToken, { canSeeDefenses = false, combatant = nu
   const actor = tokenActor(token);
   // What the acting character knows about this creature: the party's intel plus its own.
   const knowerIds = [intelKnowerId(tokenActor(originToken))].filter(Boolean);
-  const intelLedger = readKnownIntelLedger(actor, knowerIds);
+  // Intel component off: nothing is known about enemies, so players plan on their own numbers alone.
+  const intelOn = componentEnabled("intel");
+  const intelLedger = intelOn ? readKnownIntelLedger(actor, knowerIds) : normalizeIntelLedger(null);
   const intelRevealMode = readIntelRevealMode(actor);
-  const intelFalseInformation = readIntelFalseInformation(actor).filter((record) => falseInformationKnownBy(record, knowerIds));
+  const intelFalseInformation = intelOn
+    ? readIntelFalseInformation(actor).filter((record) => falseInformationKnownBy(record, knowerIds))
+    : [];
   // What the planner believes (world setting): the shown falsehoods, or none.
   const plannedFalseInformation = falseIntelSteersPlans() ? intelFalseInformation : [];
   const intelTarget = intelTargetForActor(actor, intelLedger, intelRevealMode);

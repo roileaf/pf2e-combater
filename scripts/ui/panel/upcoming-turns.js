@@ -1,5 +1,5 @@
 import { t } from "../../i18n.js";
-import { SETTINGS, settingOrDefault } from "../../settings.js";
+import { SETTINGS, componentEnabled, settingOrDefault } from "../../settings.js";
 import { turnCombatantName } from "../../state/turn-controls.js";
 
 // Token disposition as a style key. Secret stays secret: players see it as neutral.
@@ -19,7 +19,7 @@ export function upcomingTurnLimit(panel) {
 
 export function upcomingTurnsView(combat = globalThis.game?.combat, user = globalThis.game?.user, { limit = 2 } = {}) {
   const turns = combat?.turns ?? [];
-  if (!settingOrDefault(SETTINGS.showTurnNavigation, true) || !combat?.started || !turns.length) return { visible: false, entries: [] };
+  if (!componentEnabled("tracker") || !settingOrDefault(SETTINGS.showTurnNavigation, true) || !combat?.started || !turns.length) return { visible: false, entries: [] };
   const current = combat.turn ?? -1;
   const entries = [];
   // One circuit includes the current creature's next-round turn in small

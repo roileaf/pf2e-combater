@@ -46,7 +46,7 @@ import {
   resolveRecallKnowledgeRequest,
 } from "../ui/recall-knowledge.js";
 import { requestRecallKnowledgeResolution, requestShowKnowledgeReveal } from "../socket.js";
-import { playerAccessAllowed } from "../settings.js";
+import { componentEnabled, playerAccessAllowed } from "../settings.js";
 
 const HUD_MODULE = "pf2e-hud";
 export const KNOWLEDGE_TARGET_FLAG = "knowledgeTarget";
@@ -553,10 +553,12 @@ let hooksRegistered = false;
 export function registerPf2eHudKnowledgeHooks({ hooks = globalThis.Hooks, active = true } = {}) {
   if (hooksRegistered || !active || typeof hooks?.on !== "function") return false;
   hooks.on("preCreateChatMessage", (message, _data, _options, userId) => {
+    if (!componentEnabled("intel")) return;
     if (userId && userId !== globalThis.game?.user?.id) return;
     stampKnowledgeTarget(message);
   });
   hooks.on("createChatMessage", (message) => {
+    if (!componentEnabled("intel")) return;
     if (isPf2eHudRecallKnowledgeMessage(message)) {
       handlePf2eHudRecallKnowledge(message).catch((error) => {
         globalThis.console?.warn?.(`${MODULE_ID} | PF2e HUD Recall Knowledge failed`, error);

@@ -1,3 +1,4 @@
+import { componentEnabled } from "../../settings.js";
 import { readHazardDisableActions } from "../../integrations/hazarder.js";
 import { findCustomAction } from "../../catalog/custom-actions.js";
 import { collectionValues, systemValue, traitSlugs } from "../../foundry-data.js";
@@ -119,8 +120,12 @@ export function readActionSources(context, spells = []) {
   // spread in at their original, later position.
   const generatedActivities = readGeneratedActivities(actor, context);
   const itemActions = readActorItemActions(actor, context);
+  // Recall Knowledge runs through the Intel component's GM flow; without it, roll it from the sheet.
+  const genericActions = componentEnabled("intel")
+    ? readGenericActions(context)
+    : readGenericActions(context).filter((action) => action?.slug !== "recall-knowledge");
   return [
-    ...readGenericActions(context),
+    ...genericActions,
     ...readStandStrideActivities(context),
     ...generatedStrikes,
     ...readElementalBlastActions(actor, context),

@@ -94,7 +94,7 @@ try {
     combat,
     user: { id: "gm", isGM: true },
     modules: { get: (id) => (id === "pf2e-hud" ? { active: true } : undefined) },
-    settings: { get: () => false },
+    settings: { get: (_module, key) => String(key).startsWith("component") },
     i18n: { localize: (key) => key, has: () => false, format: (key) => key },
   };
   globalThis.ui = { combat: { viewed: combat, render: () => {} } };

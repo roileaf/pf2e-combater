@@ -77,6 +77,7 @@ await import("./self-test/hazarder.test.js");
 await import("./self-test/character-intel.test.js");
 await import("./self-test/auto-fill-access.test.js");
 await import("./self-test/false-intel-planning.test.js");
+await import("./self-test/components.test.js");
 await import("./self-test/turn-start-auto-fill.test.js");
 await import("./self-test/runtime.test.js");
 await import("./self-test/browser-summons.test.js");

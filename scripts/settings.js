@@ -24,6 +24,9 @@ const SETTINGS = {
   learnObservedIntel: "learnObservedIntel",
   falseIntelSteersPlans: "falseIntelSteersPlans",
   defaultIntelRevealMode: "defaultIntelRevealMode",
+  componentTracker: "componentTracker",
+  componentPlanner: "componentPlanner",
+  componentIntel: "componentIntel",
   reactionsBeforeFirstTurn: "reactionsBeforeFirstTurn",
   combatTrackerActions: "combatTrackerActions",
   autoFillOnTurnStart: "autoFillOnTurnStart",
@@ -37,7 +40,7 @@ export function runBrowserPicks() {
 
 // Show each creature's actions and reaction in Foundry's and PF2e HUD's combat trackers.
 export function combatTrackerActions() {
-  return settingOrDefault(SETTINGS.combatTrackerActions, false) === true;
+  return componentEnabled("tracker") && settingOrDefault(SETTINGS.combatTrackerActions, false) === true;
 }
 
 // Off: a creature gets its reaction only once its first turn of the encounter starts.
@@ -63,11 +66,44 @@ const MINIMAL_PARTS_OFF_BY_DEFAULT = new Set(["intel"]);
 
 export function minimalHiddenParts() {
   const shown = settingOrDefault(SETTINGS.minimalParts, {}) ?? {};
-  return MINIMAL_PARTS.filter((part) => shown[part] === false
+  const componentOff = new Set([
+    ...(componentEnabled("tracker") ? [] : ["tracker", "readied", "delay", "upcoming", "turn"]),
+    ...(componentEnabled("intel") ? [] : ["intel"]),
+  ]);
+  return MINIMAL_PARTS.filter((part) => componentOff.has(part) || shown[part] === false
     || (shown[part] === undefined && MINIMAL_PARTS_OFF_BY_DEFAULT.has(part)));
 }
 
+// Combater's three parts, each a world setting the GM can switch off:
+// tracker (action and reaction glyphs, turn controls, token markers), planner (Auto-fill, Browse,
+// plans, canvas previews) and intel (brain buttons, Known creatures, Recall Knowledge, what the
+// planner may know about enemies).
+const COMPONENT_SETTINGS = { tracker: SETTINGS.componentTracker, planner: SETTINGS.componentPlanner, intel: SETTINGS.componentIntel };
+
+export function componentEnabled(name) {
+  const key = COMPONENT_SETTINGS[name];
+  return key ? settingOrDefault(key, true) !== false : true;
+}
+
+// The Combater window has something to show: the tracker, the planner, or both.
+export function panelComponentsEnabled() {
+  return componentEnabled("tracker") || componentEnabled("planner");
+}
+
 export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu } = {}) {
+  for (const [name, key] of Object.entries(COMPONENT_SETTINGS)) {
+    const label = name[0].toUpperCase() + name.slice(1);
+    game.settings.register(MODULE_ID, key, {
+      name: `PF2E_COMBATER.Settings.Component${label}.Name`,
+      hint: `PF2E_COMBATER.Settings.Component${label}.Hint`,
+      scope: "world",
+      config: true,
+      type: Boolean,
+      default: true,
+      onChange: () => Hooks.callAll("pf2e-combater.componentsChanged"),
+    });
+  }
+
   game.settings.register(MODULE_ID, SETTINGS.autoOpen, {
     name: "PF2E_COMBATER.Settings.AutoOpen.Name",
     hint: "PF2E_COMBATER.Settings.AutoOpen.Hint",
@@ -412,6 +448,8 @@ export function playerAccessAllowed() {
 
 // The user's own choice wins; otherwise players get the GM's default and the GM gets the planner.
 export function trackerOnlyMode() {
+  // The planner component is off for the whole world: only the tracker bar is left.
+  if (!componentEnabled("planner")) return true;
   const own = settingOrDefault(SETTINGS.panelMode, "default");
   if (own === "tracker" || own === "full") return own === "tracker";
   return game.user?.isGM !== true && settingOrDefault(SETTINGS.playerPanelMode, "full") === "tracker";

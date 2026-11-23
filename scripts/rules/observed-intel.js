@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../constants.js";
-import { SETTINGS, settingOrDefault } from "../settings.js";
+import { SETTINGS, componentEnabled, settingOrDefault } from "../settings.js";
 import { INTEL_LEDGER_FLAG, intelAbilityFactId, intelActor, intelFactId, readIntelLedger, writeIntelFlags } from "./intel-ledger.js";
 
 // What the party sees an enemy do, it knows: a Strike it makes, a reaction it takes (Reactive Strike),
@@ -52,7 +52,7 @@ export function registerObservedIntelHooks() {
   Hooks.on("createChatMessage", (message) => {
     // One writer: the active GM's client.
     if (game.user?.isActiveGM !== true) return;
-    if (!settingOrDefault(SETTINGS.learnObservedIntel, true)) return;
+    if (!componentEnabled("intel") || !settingOrDefault(SETTINGS.learnObservedIntel, true)) return;
     const combat = combatForMessage(message);
     if (!combat) return;
     const observed = observedIntelFact(message);

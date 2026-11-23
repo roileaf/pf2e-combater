@@ -299,6 +299,18 @@
         "Hint": "How revealed numbers are shown to players for creatures you haven't set a style for: exact DCs and amounts, or Low / Mid / High bands. You can still switch any creature in its Intel editor; saving the editor keeps that creature's own choice.",
         "Exact": "Exact DCs",
         "Band": "Bands (Low / Mid / High)"
+      },
+      "ComponentTracker": {
+        "Name": "Component: Action tracker",
+        "Hint": "Action and reaction glyphs, End turn / Delay / Ready, upcoming turns, and the readied and reaction markers on tokens. Off: none of them are shown, for anyone. The planner still knows how many actions are left."
+      },
+      "ComponentPlanner": {
+        "Name": "Component: Turn planner and executioner",
+        "Hint": "Auto-fill, the action browser, plans and canvas previews. Off: everyone gets the tracker bar only. With the tracker off as well, the Combater window doesn't open."
+      },
+      "ComponentIntel": {
+        "Name": "Component: Intel tracker",
+        "Hint": "Brain buttons, Known creatures, Combater's Recall Knowledge and Exploit Vulnerability flows, and Intel learned from what the party sees. Off: none of it runs, Recall Knowledge is rolled from the sheet, and players plan without any knowledge of enemy stats. Stored Intel is kept."
       }
     },
     "Preflight": {

@@ -1,5 +1,5 @@
 import { t, pf2eActionName } from "../../i18n.js";
-import { SETTINGS, settingOrDefault } from "../../settings.js";
+import { SETTINGS, componentEnabled, settingOrDefault } from "../../settings.js";
 import { isSocketReady } from "../../socket.js";
 import {
   attacksThisTurn, delayedTurn, delayTargets, delayUnavailableReason, ownsTurn,
@@ -16,7 +16,7 @@ import { usePf2eAction } from "../../engine/execution/system-action.js";
 import { GENERIC_ACTIONS } from "../../catalog/generic-actions.js";
 
 export function turnControlsView(context, combat = globalThis.game?.combat, user = globalThis.game?.user) {
-  if (!settingOrDefault(SETTINGS.showTurnNavigation, true)) return { visible: false };
+  if (!componentEnabled("tracker") || !settingOrDefault(SETTINGS.showTurnNavigation, true)) return { visible: false };
   if (!context || !combat?.started || context.combat?.id !== combat.id) return { visible: false };
   const active = combat.combatant;
   const ownCurrent = context.combatant?.id === active?.id && ownsTurn(active, user);

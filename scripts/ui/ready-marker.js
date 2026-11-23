@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../constants.js";
-import { SETTINGS, settingOrDefault } from "../settings.js";
+import { SETTINGS, componentEnabled, settingOrDefault } from "../settings.js";
 import { REACTION_CHECKER_ID, REACTION_USED_EFFECT_SLUG, reactionUsed, readiedAction } from "../state/turn-controls.js";
 
 // Canvas markers for turn state: a readied action (dashed amber ring plus a
@@ -116,7 +116,8 @@ export function syncReadyMarker(token) {
   if (!token || token.destroyed || token.isPreview || token._original) return;
   const combatant = combatantForToken(token);
   if (!combatant && !token[READY_KEY] && !token[REACTION_KEY]) return;
-  const visible = markerVisibleTo(token);
+  // Readied rings and reaction badges belong to the action tracker component.
+  const visible = componentEnabled("tracker") && markerVisibleTo(token);
   syncMarker(token, READY_KEY, Boolean(combatant && readiedAction(combatant)) && visible, drawReadyMarker);
   const showReaction = settingOrDefault(SETTINGS.showReactionMarker, true) !== false;
   syncMarker(token, REACTION_KEY, showReaction && Boolean(combatant && reactionUsed(combatant)) && visible, drawReactionMarker);

@@ -1,6 +1,6 @@
 import { autoFillAllowed } from "./panel/auto-fill-access.js";
 import { MODULE_ID, STORAGE_KEYS } from "../constants.js";
-import { SETTINGS, playerAccessAllowed, settingOrDefault, trackerOnlyMode } from "../settings.js";
+import { SETTINGS, panelComponentsEnabled, playerAccessAllowed, settingOrDefault, trackerOnlyMode } from "../settings.js";
 import { projectContextForDraftDestination, SUSTAIN_A_SPELL_ACTION } from "../engine/action/builder/index.js";
 import { requiresDestinationForAction } from "../engine/action/requirements.js";
 import { buildCandidates } from "../engine/candidates.js";
@@ -1354,7 +1354,8 @@ class CombaterPanel extends HandlebarsApplicationMixin(ApplicationV2) {
 }
 
 export async function openPanelForCurrentCombatant(activePanel, refreshSource = "manual", options = {}) {
-  if (!playerAccessAllowed()) {
+  // Nothing to show with both the tracker and the planner components off.
+  if (!playerAccessAllowed() || !panelComponentsEnabled()) {
     await activePanel?.close?.();
     return null;
   }

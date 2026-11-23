@@ -5,7 +5,7 @@ import { registerActionTrackerHooks } from "./state/action-tracker.js";
 import { delayedTurn, handleTurnControl, registerTurnControlHooks } from "./state/turn-controls.js";
 import { registerReadyMarkerHooks } from "./ui/ready-marker.js";
 import { registerUpcomingTurnHooks } from "./ui/panel/upcoming-turns.js";
-import { migrateDeprecatedFlankingRule, migrateVisionerCombatSettings, playerAccessAllowed, registerSettings, setting, SETTINGS } from "./settings.js";
+import { componentEnabled, migrateDeprecatedFlankingRule, migrateVisionerCombatSettings, panelComponentsEnabled, playerAccessAllowed, registerSettings, setting, SETTINGS } from "./settings.js";
 import { applyCombatStartCharacterActions } from "./combat-start-character-actions.js";
 import { registerFlankingSizeRuleWrapper } from "./flanking/flanking-size-rule.js";
 import { registerFlankingHighlightOriginHooks } from "./flanking/flanking-highlight-origin.js";
@@ -397,7 +397,7 @@ Hooks.once("init", () => {
     hint: t("Keybind.KnownCreaturesHint", "Open the journal of everything your characters know about creatures."),
     editable: [{ key: "KeyK", modifiers: ["Alt", "Shift"] }],
     onDown: () => {
-      if (!playerAccessAllowed()) return false;
+      if (!playerAccessAllowed() || !componentEnabled("intel")) return false;
       openIntelForSelection().catch((error) => console.warn(`${MODULE_ID} | Known creatures failed`, error));
       return true;
     },
@@ -408,6 +408,7 @@ Hooks.once("init", () => {
     hint: t("Keybind.ToggleHint", "Open or close the PF2e Combater tactical advisor panel."),
     editable: [{ key: "KeyC", modifiers: ["Alt", "Shift"] }],
     onDown: async () => {
+      if (!panelComponentsEnabled()) return false;
       panelAutoOpened = false;
       activePanel = await togglePanelForCurrentCombatant(activePanel, "keybinding", {
         onClose: handlePanelClosed,
@@ -494,8 +495,31 @@ Hooks.on("getSceneControlButtons", (controls) => {
   const tokenControl = groups.find((control) => control?.name === "tokens" || control?.name === "token");
   if (!tokenControl?.tools) return;
 
-  addTool(tokenControl.tools, panelSceneControlTool());
-  addTool(tokenControl.tools, knownCreaturesSceneControlTool());
+  if (panelComponentsEnabled()) addTool(tokenControl.tools, panelSceneControlTool());
+  if (componentEnabled("intel")) addTool(tokenControl.tools, knownCreaturesSceneControlTool());
+});
+
+// The GM switched a component (tracker, planner, intel) on or off: tools, trackers, token markers and
+// the open window follow at once.
+Hooks.on("pf2e-combater.componentsChanged", () => {
+  const tokenControl = currentTokenControl();
+  if (tokenControl?.tools && playerAccessAllowed()) {
+    if (panelComponentsEnabled()) addTool(tokenControl.tools, panelSceneControlTool());
+    else removeTool(tokenControl.tools, `${MODULE_ID}-toggle-panel`);
+    if (componentEnabled("intel")) addTool(tokenControl.tools, knownCreaturesSceneControlTool());
+    else removeTool(tokenControl.tools, `${MODULE_ID}-known-creatures`);
+  }
+  refreshSceneControls();
+  ui?.controls?.render?.({ reset: true });
+  ui?.combat?.render?.(true);
+  refreshCombatTrackerIntel();
+  Hooks.callAll("pf2e-combater.reactionMarkerChanged");
+  if (!activePanel) return;
+  if (!panelComponentsEnabled()) {
+    closeActivePanel().catch((error) => console.warn(`${MODULE_ID} | Component-change close failed`, error));
+    return;
+  }
+  Hooks.callAll("pf2e-combater.panelModeChanged");
 });
 
 // GM-side handler for a player's shared draft plan (runs on each GM via socketlib.executeForAllGMs).
@@ -536,8 +560,8 @@ Hooks.on("pf2e-combater.playerAccessChanged", () => {
   const tokenControl = currentTokenControl();
   if (tokenControl?.tools) {
     if (playerAccessAllowed()) {
-      addTool(tokenControl.tools, panelSceneControlTool());
-      addTool(tokenControl.tools, knownCreaturesSceneControlTool());
+      if (panelComponentsEnabled()) addTool(tokenControl.tools, panelSceneControlTool());
+      if (componentEnabled("intel")) addTool(tokenControl.tools, knownCreaturesSceneControlTool());
     } else {
       removeTool(tokenControl.tools, `${MODULE_ID}-toggle-panel`);
       removeTool(tokenControl.tools, `${MODULE_ID}-known-creatures`);
@@ -572,7 +596,7 @@ Hooks.once("ready", async () => {
   initAnimaterIntegration(() => activePanel?.render?.({ force: true })?.catch?.((error) => console.warn(`${MODULE_ID} | Finisher refresh failed`, error)));
   pruneStaleSharedDrafts().catch((error) => console.warn(`${MODULE_ID} | Plan cleanup failed`, error));
   await sweepExpiredAreaTemplates();
-  if (!setting(SETTINGS.autoOpen)) return;
+  if (!setting(SETTINGS.autoOpen) || !panelComponentsEnabled()) return;
   if (!game.combat?.started) return;
   if (skipAutoOpenForTurn(game.combat)) return;
   await openCurrent("ready");
@@ -718,6 +742,7 @@ Hooks.on("updateCombat", async (combat, changed, options = {}) => {
     return;
   }
   if (!setting(SETTINGS.autoOpen) && !activePanel) return;
+  if (!panelComponentsEnabled() && !activePanel) return;
   if (autoOpenSuppressed && !activePanel) return;
   // The window follows the selected token (GM and players), so a turn change just refreshes the
   // open panel rather than jumping to the new active combatant. Only open fresh (to the selected
