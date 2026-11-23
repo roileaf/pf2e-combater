@@ -19,7 +19,7 @@ import {
 } from "../../ui/recall-knowledge.js";
 import { canUseIntelFact, intelLedgerView, normalizeIntelFalseInformation } from "../../rules/intel-ledger.js";
 import { reactiveStrikeKnown } from "../scoring/rk-warnings.js";
-import { combatForMessage, observedIntelFact, recordObservedIntel } from "../../rules/observed-intel.js";
+import { combatForMessage, observedDefenseFacts, observedIntelFact, recordObservedIntel } from "../../rules/observed-intel.js";
 import { isConfluxSpell, spellstrikeEvent, spellstrikeExpended } from "../../rules/spellstrike-state.js";
 import { hasPlanConflict } from "../planner/conflicts.js";
 import { playerVisibleMeleeReach } from "../../state/combat-context.js";
@@ -709,7 +709,7 @@ try {
   assert.deepEqual(facts.skills.map((fact) => [fact.label, fact.value]), [["Athletics +15", 15], ["Stealth +12", 12]], "trained skills only, with modifiers");
   assert.deepEqual(facts.languages.map((fact) => fact.id), ["common", "goblin"]);
   assert.deepEqual(facts.senses.map((fact) => fact.label), ["Darkvision"]);
-  assert.deepEqual(facts.strikes.map((fact) => [fact.label, fact.value, fact.uuid]), [["Glaive +17 (reach 10 ft)", 17, "Item.glaive"]]);
+  assert.deepEqual(facts.strikes.map((fact) => [fact.label, fact.value, fact.uuid]), [["Glaive (reach 10 ft)", undefined, "Item.glaive"]], "a Strike shows its name and reach, never its attack bonus");
   assert.deepEqual(facts.actions.map((fact) => [fact.id, fact.uuid]), [["reactive-strike", "Item.rs"]]);
   assert.deepEqual(facts.passives.map((fact) => fact.id), ["formation"]);
   assert.ok(facts.saves === undefined || Array.isArray(facts.saves));
@@ -763,6 +763,41 @@ try {
   assert.equal(await recordObservedIntel(actor, "actions", "reactive-strike"), true);
   assert.equal(await recordObservedIntel(actor, "actions", "reactive-strike"), false, "already known: no second write");
   assert.deepEqual(flags["pf2e-combater.intelLedger"].actions, ["reactive-strike"]);
+}
+
+// A weakness, resistance or immunity that changed applied damage is learned from PF2e's damage-taken
+// card, which lists them by label in an HTML-escaped data attribute.
+{
+  const npc = {
+    type: "npc",
+    attributes: {
+      resistances: [{ type: "piercing", value: 5, label: "Piercing 5", typeLabel: "Piercing", applicationLabel: "Piercing" }, { type: "fire", value: 10, typeLabel: "Fire" }],
+      weaknesses: [{ type: "cold-iron", value: 5, typeLabel: "Cold Iron" }],
+      immunities: [{ type: "poison", typeLabel: "Poison", label: "Poison" }],
+    },
+  };
+  const card = (applications, extra = {}) => ({
+    actor: npc,
+    flags: { pf2e: { context: { type: "damage-taken" } } },
+    content: `<section class="damage-taken"><span class="iwr" data-visibility="gm" data-applications="${JSON.stringify(applications).replace(/&/g, "&amp;").replace(/"/g, "&quot;")}"></span></section>`,
+    ...extra,
+  });
+  assert.deepEqual(
+    observedDefenseFacts(card([{ category: "resistance", type: "Piercing", adjustment: -5, ignored: false }])),
+    [{ actor: npc, category: "resistances", factId: "piercing-5" }], "piercing 5 took 5 off: learned with its value");
+  assert.deepEqual(
+    observedDefenseFacts(card([
+      { category: "immunity", type: "Poison", adjustment: -7 },
+      { category: "weakness", type: "Cold Iron", adjustment: 5 },
+      { category: "weakness", type: "Cold Iron", adjustment: 5 },
+    ])).map((fact) => [fact.category, fact.factId]),
+    [["immunities", "poison"], ["weaknesses", "cold-iron-5"]], "each defense once; immunities carry no value");
+  assert.deepEqual(observedDefenseFacts(card([{ category: "resistance", type: "Fire", adjustment: 0, ignored: true }])), [], "an ignored resistance showed nothing");
+  assert.deepEqual(observedDefenseFacts(card([{ category: "unaffected", type: "vitality", adjustment: -4 }])), [], "unaffected isn't an Intel fact");
+  assert.deepEqual(observedDefenseFacts(card([{ category: "resistance", type: "Acid", adjustment: -3 }])), [], "a defense the sheet doesn't list is skipped");
+  assert.deepEqual(observedDefenseFacts(card([{ category: "resistance", type: "Piercing", adjustment: -5 }], { actor: { ...npc, type: "character" } })), [], "PCs aren't Intel targets");
+  assert.deepEqual(observedDefenseFacts({ actor: npc, flags: { pf2e: { context: { type: "damage-taken" } } }, content: "<section class=\"damage-taken\"></section>" }), [], "plain damage: nothing applied");
+  assert.deepEqual(observedDefenseFacts({ ...card([{ category: "resistance", type: "Piercing", adjustment: -5 }]), flags: {} }), [], "only damage-taken cards");
 }
 
 // Spellstrike: spent when used, recharged by Recharge Spellstrike or a conflux spell; a plan can't

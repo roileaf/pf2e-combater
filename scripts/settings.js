@@ -22,6 +22,7 @@ const SETTINGS = {
   raisePcShieldsWhenDefending: "raisePcShieldsWhenDefending",
   enrageBarbariansAtCombatStart: "enrageBarbariansAtCombatStart",
   learnObservedIntel: "learnObservedIntel",
+  learnAppliedDefenses: "learnAppliedDefenses",
   falseIntelSteersPlans: "falseIntelSteersPlans",
   defaultIntelRevealMode: "defaultIntelRevealMode",
   componentTracker: "componentTracker",
@@ -373,6 +374,14 @@ export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu }
     config: true,
     type: Boolean,
     default: true,
+  });
+  game.settings.register(MODULE_ID, SETTINGS.learnAppliedDefenses, {
+    name: "PF2E_COMBATER.Settings.LearnAppliedDefenses.Name",
+    hint: "PF2E_COMBATER.Settings.LearnAppliedDefenses.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
   });
   game.settings.register(MODULE_ID, SETTINGS.reactionsBeforeFirstTurn, {
     name: "PF2E_COMBATER.Settings.ReactionsBeforeFirstTurn.Name",

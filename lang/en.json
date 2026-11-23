@@ -283,6 +283,10 @@
         "Name": "Learn Intel from what the party sees",
         "Hint": "During combat, when an enemy uses a Strike, reaction or ability in plain view, record it in the party's Intel for that creature, as if they had learned it. Abilities posted only to the GM are not learned."
       },
+      "LearnAppliedDefenses": {
+        "Name": "Learn weaknesses, resistances and immunities when they apply",
+        "Hint": "During combat, when damage applied to an enemy is changed by one of its weaknesses, resistances or immunities, record that one in the party's Intel for the creature. A resistance the attack ignored is not learned."
+      },
       "PlayerAutoFillWhen": {
         "Name": "Auto-fill for players",
         "Hint": "When players may use Auto-fill on their turn. \"Last action only\" turns it into a third-action suggester: players plan their first two actions themselves, and Auto-fill appears once one action is left. The GM always has Auto-fill.",

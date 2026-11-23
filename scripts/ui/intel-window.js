@@ -316,7 +316,7 @@ function categoryModel(entry, category, index, { editable = false } = {}) {
   }
   const falseValueKind = ["saves", "perception"].includes(category.id)
     ? "dc"
-    : (["weaknesses", "resistances", "skills", "strikes"].includes(category.id) ? "amount" : "none");
+    : (["weaknesses", "resistances", "skills"].includes(category.id) ? "amount" : "none");
   const requested = editable && (entry.requestedCategories ?? []).includes(category.id);
   return {
     ...category,

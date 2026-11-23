@@ -227,7 +227,7 @@ export function normalizeIntelFalseInformation(value) {
     if (factId) {
       if (category === "saves" || category === "perception") label = `${factLabel || titleCase(factId)}${valueNumber === null ? "" : ` DC ${valueNumber}`}`;
       else if (category === "weaknesses" || category === "resistances") label = `${factLabel || titleCase(factId)}${valueNumber === null ? "" : ` ${valueNumber}`}`;
-      else if (category === "skills" || category === "strikes") label = `${factLabel || titleCase(factId)}${valueNumber === null ? "" : ` +${valueNumber}`}`;
+      else if (category === "skills") label = `${factLabel || titleCase(factId)}${valueNumber === null ? "" : ` +${valueNumber}`}`;
       else label = factLabel || titleCase(factId) || text;
     } else if (!label) label = text;
     return [{
@@ -806,13 +806,13 @@ function strikeFacts(enemy) {
   return items.flatMap((item) => {
     const name = String(item?.name ?? "").trim();
     if (!name) return [];
-    const bonus = Number(item?.system?.bonus?.value);
     const traits = Array.isArray(item?.system?.traits?.value) ? item.system.traits.value : [];
     const reach = traits.map((trait) => /^reach-(\d+)$/.exec(trait)?.[1]).find(Boolean);
     const ranged = item?.isMelee === false || traits.some((trait) => /^(range|thrown|volley)/.test(trait));
     const note = reach ? ` (reach ${reach} ft)` : ranged ? ` (${t("Intel.Ranged", "ranged")})` : "";
-    const label = `${name}${Number.isFinite(bonus) ? ` ${signed(bonus)}` : ""}${note}`;
-    return [fact(name, label, { exactLabel: label, bandLabel: `${name}${note}`, ...(Number.isFinite(bonus) ? { value: bonus } : {}), ...(item?.uuid ? { uuid: item.uuid } : {}) })];
+    // Name only: the attack bonus isn't something a Strike in plain view gives away.
+    const label = `${name}${note}`;
+    return [fact(name, label, { exactLabel: label, bandLabel: label, ...(item?.uuid ? { uuid: item.uuid } : {}) })];
   });
 }
 
