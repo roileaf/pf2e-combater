@@ -496,7 +496,8 @@
       "StaleRemoveOne": "Remove it",
       "StaleRemoveMany": "Remove them",
       "StaleRefill": "Auto-fill again",
-      "MinimalIdleExploring": "Out of combat · {name}"
+      "MinimalIdleExploring": "Out of combat · {name}",
+      "MinimalIdlePlanning": "Planning · {name}"
     },
     "Summon": {
       "Choose": "Choose summoned creature and plan placement",

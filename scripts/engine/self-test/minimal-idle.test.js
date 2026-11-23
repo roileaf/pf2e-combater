@@ -6,4 +6,6 @@ import { minimalIdleLabel } from "../../ui/panel/context-workflow.js";
 assert.equal(minimalIdleLabel({ actor: { name: "Silva" } }, null), "Out of combat · Silva", "a selected creature out of combat is named");
 assert.equal(minimalIdleLabel(null, null), "No active encounter", "nothing selected and no encounter");
 assert.equal(minimalIdleLabel({ actor: { name: "Silva" } }, { started: true }), "Waiting for a combatant");
+// Action tracker component off: the bar has no glyphs, so in combat it names whose plan is shown.
+assert.equal(minimalIdleLabel({ actor: { name: "Silva" }, combatant: { id: "c1" } }, { started: true }), "Planning · Silva");
 console.log("Minimal idle label tests passed.");

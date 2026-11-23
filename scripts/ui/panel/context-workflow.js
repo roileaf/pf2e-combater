@@ -169,8 +169,10 @@ function planWhyView(plan, cycle, position) {
 // The minimal bar's line when there is nothing to track. Out of combat Combater still plans for the
 // selected creature, so say that rather than "No active encounter" next to its plan tools.
 export function minimalIdleLabel(context, combat = globalThis.game?.combat) {
-  if (combat?.started) return t("Panel.MinimalIdleWaiting", "Waiting for a combatant");
   const name = context?.actor?.name;
+  // Tracker component off: no glyphs to name whose plan this is, so the line does it.
+  if (combat?.started && context?.combatant && name) return t("Panel.MinimalIdlePlanning", "Planning · {name}", { name });
+  if (combat?.started) return t("Panel.MinimalIdleWaiting", "Waiting for a combatant");
   return name
     ? t("Panel.MinimalIdleExploring", "Out of combat · {name}", { name })
     : t("Panel.MinimalIdle", "No active encounter");

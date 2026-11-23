@@ -6737,3 +6737,12 @@
 .pf2e-combater-intel-window .combater-intel-search input { flex: 1; min-width: 0; height: 26px; border: 0; background: transparent; color: #e3e8ee; box-shadow: none; }
 .pf2e-combater-intel-window .combater-intel-search small { flex: none; white-space: nowrap; }
 .pf2e-combater-intel-window [data-intel-entry][hidden] { display: none; }
+
+/* Module settings: a component's name stays on one line (Foundry gives the label a third of the row). */
+.form-group:has(> .form-fields [name^="pf2e-combater.component"]) > label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+.form-group:has(> .form-fields [name^="pf2e-combater.component"]) > .form-fields {
+  flex: 0 0 auto;
+}
