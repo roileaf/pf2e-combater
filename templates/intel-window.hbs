@@ -13,6 +13,25 @@
       </span>
     </div>
   {{/with}}
+  {{#with audience}}
+    <section class="combater-intel-audience">
+      <header class="combater-intel-audience-head">
+        <span class="combater-intel-audience-label"><i class="fa-solid fa-user-group" aria-hidden="true"></i> {{label}}</span>
+        <button type="button" class="combater-intel-share-known" data-intel-share-known data-tooltip="{{shareHint}}"><i class="fa-solid fa-share-nodes" aria-hidden="true"></i> {{shareLabel}}</button>
+      </header>
+      <div class="combater-intel-audience-cards" role="group" aria-label="{{label}}">
+        {{#each options}}
+          <button type="button" class="combater-intel-audience-card {{#if selected}}is-selected{{/if}} {{#if isParty}}is-party{{/if}}" data-intel-audience-card="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}"{{#if countLabel}} data-tooltip="{{countLabel}}"{{/if}}>
+            {{#if isParty}}<span class="combater-intel-audience-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span>{{else}}{{#if img}}<img src="{{img}}" alt="">{{else}}<span class="combater-intel-audience-icon"><i class="fa-solid fa-user" aria-hidden="true"></i></span>{{/if}}{{/if}}
+            <span class="combater-intel-audience-name">{{label}}</span>
+            {{#if count}}<span class="combater-intel-audience-count">{{count}}</span>{{/if}}
+            {{#if selected}}<i class="fa-solid fa-check combater-intel-audience-check" aria-hidden="true"></i>{{/if}}
+          </button>
+        {{/each}}
+      </div>
+      <small class="combater-intel-audience-hint">{{hint}}</small>
+    </section>
+  {{/with}}
 
   {{#if hasEntries}}
     <form class="combater-intel-body" data-intel-form>
@@ -47,6 +66,45 @@
               {{/if}}
             </header>
 
+            {{#if knowledgeGrid}}
+              {{#with knowledgeGrid}}
+                <details class="combater-intel-who">
+                  <summary><i class="fa-solid fa-table-cells" aria-hidden="true"></i> <strong>{{title}}</strong> <span class="combater-intel-who-count">{{countLabel}}</span><i class="fa-solid fa-chevron-down combater-intel-who-chevron" aria-hidden="true"></i></summary>
+                  {{#if hasRows}}
+                    <div class="combater-intel-who-scroll">
+                      <table class="combater-intel-who-table">
+                        <thead>
+                          <tr>
+                            <th></th>
+                            {{#each columns}}
+                              <th scope="col" data-tooltip="{{label}}">
+                                {{#if img}}<img src="{{img}}" alt="">{{/if}}<span class="combater-intel-who-name">{{label}}</span>
+                              </th>
+                            {{/each}}
+                          </tr>
+                        </thead>
+                        {{#each groups}}
+                          <tbody>
+                            <tr class="combater-intel-who-group"><th colspan="{{../colspan}}" scope="rowgroup">{{label}}</th></tr>
+                            {{#each rows}}
+                              <tr class="{{#if isFalse}}is-false{{/if}}">
+                                <th scope="row">{{label}}{{#if isFalse}} <span class="combater-intel-who-false">{{../../falseTag}}</span>{{/if}}</th>
+                                {{#each cells}}
+                                  <td class="is-{{kind}}">{{#if kind}}<i class="fa-solid {{icon}}" data-tooltip="{{label}}" aria-label="{{label}}"></i>{{/if}}</td>
+                                {{/each}}
+                              </tr>
+                            {{/each}}
+                          </tbody>
+                        {{/each}}
+                      </table>
+                    </div>
+                  {{else}}
+                    <p class="combater-intel-who-empty">{{emptyLabel}}</p>
+                  {{/if}}
+                </details>
+              {{/with}}
+            {{/if}}
+
             {{#if ../editable}}
               <div class="combater-intel-editor">
                 <div class="combater-intel-category-list">
@@ -69,8 +127,8 @@
                       </header>
                       <div class="combater-intel-facts" data-intel-false-list>
                         {{#each facts}}
-                          <label class="combater-intel-fact {{#if checked}}is-known{{/if}} {{#if isNone}}is-none{{/if}}" data-intel-fact>
-                            <input type="checkbox" name="{{inputName}}" value="{{id}}" {{#if checked}}checked{{/if}}>
+                          <label class="combater-intel-fact {{#if checked}}is-known{{/if}} {{#if isNone}}is-none{{/if}} {{#if locked}}is-party-known{{/if}} {{#if partial}}is-partial{{/if}}" data-intel-fact {{#if locked}}data-tooltip="{{lockedLabel}}"{{else}}{{#if partial}}data-tooltip="{{knownByLabel}}"{{/if}}{{/if}}>
+                            <input type="checkbox" name="{{inputName}}" value="{{id}}" data-intel-known="{{#if known}}true{{else}}false{{/if}}" {{#if checked}}checked{{/if}} {{#if locked}}disabled{{/if}}>
                             <span class="combater-intel-fact-mark">
                               <i class="fa-solid {{#if checked}}fa-check{{else}}fa-plus{{/if}}"></i>
                             </span>

@@ -9,6 +9,7 @@ function partLabels() {
     autofill: [t("MinimalParts.AutoFill", "Auto-fill"), t("MinimalParts.AutoFillHint", "Fill the turn with the best plan; right-click for why this plan.")],
     browse: [t("MinimalParts.Browse", "Browse"), t("MinimalParts.BrowseHint", "Open the action browser to add steps.")],
     setup: [t("MinimalParts.Setup", "Plan setup"), t("MinimalParts.SetupHint", "Tactic, intel, resources, turn intent and loadout.")],
+    intel: [t("MinimalParts.Intel", "Intel"), t("MinimalParts.IntelHint", "A button straight to what your character knows about the enemies (the GM edits it there).")],
     cycle: [t("MinimalParts.Cycle", "Plan choice"), t("MinimalParts.CycleHint", "Step through Auto-fill's plans.")],
     plan: [t("MinimalParts.Plan", "Plan steps"), t("MinimalParts.PlanHint", "Your planned steps; click one to run it or make the choice it needs, right-click for its options.")],
     tracker: [t("MinimalParts.Tracker", "Action tracker"), t("MinimalParts.TrackerHint", "Action and reaction glyphs, and condition icons.")],

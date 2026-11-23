@@ -166,7 +166,9 @@
       "Upcoming": "Upcoming turns",
       "UpcomingHint": "Who acts next.",
       "Turn": "End turn",
-      "TurnHint": "End turn, with Delay and Ready in its menu."
+      "TurnHint": "End turn, with Delay and Ready in its menu.",
+      "Intel": "Intel",
+      "IntelHint": "A button straight to what your character knows about the enemies (the GM edits it there)."
     },
     "Settings": {
       "RunBrowserPicks": {
@@ -1643,7 +1645,29 @@
       "RequestHintFalse": "Give false information in the highlighted rows.",
       "RequestHint": "The highlighted rows answer the question.",
       "RequestedTag": "Asked",
-      "GmQuickEdit": "Edit Intel for this creature"
+      "GmQuickEdit": "Edit Intel for this creature",
+      "AudienceParty": "Whole party",
+      "SavedForCharacter": "{name} (known to {character})",
+      "KnownOnlyBy": "Only {names}",
+      "AudienceLabel": "Known to",
+      "AudiencePartyHint": "Every player sees what you tick.",
+      "AudienceCharacterHint": "Only {name} learns what you tick; facts the whole party knows are locked.",
+      "KnownToParty": "The whole party knows this",
+      "SavedLearned": "{characters} learned {facts}",
+      "SavedForgot": "{characters} no longer know {facts}",
+      "AudienceOwnFacts": "{count} facts only they know",
+      "ShareAllWithParty": "Share everything any character knows",
+      "ShareWithSelected": "Give them everything any character knows",
+      "ShareHint": "Ticks every fact marked \"Known by\"; save to apply.",
+      "KnownByNames": "Known by {names}",
+      "AudienceCharactersHint": "Only {names} learn what you tick; facts the whole party knows are locked.",
+      "GridParty": "Whole party knows",
+      "GridOwn": "Knows it",
+      "GridFalse": "Believes this false fact",
+      "GridTitle": "Who knows what",
+      "GridCount": "{count} known facts",
+      "GridEmpty": "Nobody knows anything about this creature yet.",
+      "GridFalseTag": "false"
     },
     "MinionPlan": {
       "Minion": "Companion",

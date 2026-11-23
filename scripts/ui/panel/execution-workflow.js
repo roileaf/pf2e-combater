@@ -187,6 +187,7 @@ export async function resolvePanelRecallKnowledge(panel, step, action) {
   const question = await promptRecallKnowledgeQuestion({
     targetName: target.name ?? target.token?.name ?? "",
     targetActor,
+    rollerActor: actor,
     attempt: (Number(attemptState.attempts) || 0) + 1,
   });
   if (!question) return;

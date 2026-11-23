@@ -1022,6 +1022,7 @@
 .pf2e-combater .combater-shell.is-minimal.hide-plan .combater-minimal-tool.is-clear,
 .pf2e-combater .combater-shell.is-minimal.hide-plan .combater-minimal-tool.is-undo-clear,
 .pf2e-combater .combater-shell.is-minimal.hide-setup .combater-minimal-setup,
+.pf2e-combater .combater-shell.is-minimal.hide-intel .combater-minimal-tool.is-intel,
 .pf2e-combater .combater-shell.is-minimal.hide-cycle .combater-minimal-cycle,
 .pf2e-combater .combater-shell.is-minimal.hide-plan .combater-minimal-plan,
 .pf2e-combater .combater-shell.is-minimal.hide-tracker .combater-action-tracker,
@@ -6679,3 +6680,54 @@
 .pf2e-combater-aid-card .combater-aid-head > i { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; background: color-mix(in srgb, #3f8a5f 18%, transparent); color: #3f8a5f; font-size: 16px; }
 .pf2e-combater-aid-card .combater-aid-head strong { display: block; font-size: 14px; }
 .pf2e-combater-aid-card .combater-aid-head span { display: block; font-size: 12px; opacity: 0.8; }
+
+/* Who learns the ticked facts: the whole party, or any characters (cards toggle). */
+.pf2e-combater-intel-window .combater-intel-audience { display: grid; gap: 6px; margin: 0 0 8px; padding: 8px 10px; border: 1px solid #343a43; border-radius: 8px; background: #1f2227; }
+.pf2e-combater-intel-window .combater-intel-audience-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pf2e-combater-intel-window .combater-intel-audience-label { font-weight: 700; color: #c7d0db; white-space: nowrap; }
+/* Matches the amber "Known by" facts it ticks; dims when there's nothing left to hand over. */
+.pf2e-combater-intel-window .combater-intel-share-known { flex: none; display: inline-flex; align-items: center; gap: 6px; width: auto; height: 26px; min-height: 0; margin: 0; padding: 0 10px; border: 1px solid #8a6d32; border-radius: 999px; background: #2e2617; color: #f0c96f; font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap; box-shadow: none; cursor: pointer; transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease; }
+.pf2e-combater-intel-window .combater-intel-share-known i { font-size: 11px; }
+.pf2e-combater-intel-window .combater-intel-share-known:hover:not(:disabled),
+.pf2e-combater-intel-window .combater-intel-share-known:focus-visible { border-color: #e3a24f; background: #463519; color: #ffe2a8; outline: none; }
+.pf2e-combater-intel-window .combater-intel-share-known:disabled { border-color: #3a414b; background: #262a31; color: #6f7a88; cursor: default; }
+.pf2e-combater-intel-window .combater-intel-audience-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 6px; }
+.pf2e-combater-intel-window .combater-intel-audience-card { position: relative; display: flex; align-items: center; gap: 6px; height: auto; min-height: 34px; margin: 0; padding: 4px 6px; border: 1px solid #3a414b; border-radius: 7px; background: #262a31; color: #c7d0db; font-size: 12px; line-height: 1.2; text-align: left; }
+.pf2e-combater-intel-window .combater-intel-audience-card:hover { border-color: #5a6575; }
+.pf2e-combater-intel-window .combater-intel-audience-card.is-selected { border-color: #4f9c70; background: #24402f; color: #e3f7ea; box-shadow: 0 0 0 1px rgb(79 156 112 / 35%); }
+.pf2e-combater-intel-window .combater-intel-audience-card img,
+.pf2e-combater-intel-window .combater-intel-audience-icon { flex: none; width: 24px; height: 24px; border: 0; border-radius: 50%; object-fit: cover; }
+.pf2e-combater-intel-window .combater-intel-audience-icon { display: inline-grid; place-items: center; background: #343a43; color: #aab7c6; }
+.pf2e-combater-intel-window .combater-intel-audience-name { flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: anywhere; }
+.pf2e-combater-intel-window .combater-intel-audience-count { flex: none; min-width: 16px; padding: 0 4px; border-radius: 8px; background: #3b4350; color: #dbe3ec; font-size: 10px; text-align: center; }
+.pf2e-combater-intel-window .combater-intel-audience-check { position: absolute; top: -5px; right: -5px; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: #4f9c70; color: #fff; font-size: 8px; }
+.pf2e-combater-intel-window .combater-intel-audience-hint { color: #8d9aab; }
+/* Known by some characters but not this audience: ticking it hands it over. */
+.pf2e-combater-intel-window .combater-intel-fact.is-partial:not(.is-known) { border-style: dashed; border-color: #8a6d32; color: #f0c96f; }
+/* Known to the whole party: ticked and locked while a character is the audience. */
+.pf2e-combater-intel-window .combater-intel-fact.is-party-known { opacity: 0.6; cursor: default; }
+.pf2e-combater-intel-window .combater-intel-fact.is-party-known input { pointer-events: none; }
+
+/* Who knows what: characters across, known facts down. */
+.pf2e-combater-intel-window .combater-intel-who { margin: 0 0 8px; border: 1px solid #343a43; border-radius: 8px; background: #1f2227; }
+.pf2e-combater-intel-window .combater-intel-who > summary { display: flex; align-items: center; gap: 6px; padding: 6px 10px; color: #c7d0db; cursor: pointer; list-style: none; }
+.pf2e-combater-intel-window .combater-intel-who > summary::-webkit-details-marker { display: none; }
+.pf2e-combater-intel-window .combater-intel-who-chevron { margin-left: auto; font-size: 10px; color: #8d9aab; transition: transform 0.12s ease; }
+.pf2e-combater-intel-window .combater-intel-who[open] .combater-intel-who-chevron { transform: rotate(180deg); }
+.pf2e-combater-intel-window .combater-intel-who-count { color: #8d9aab; font-size: 11px; }
+.pf2e-combater-intel-window .combater-intel-who-scroll { max-height: 260px; overflow: auto; padding: 0 8px 8px; }
+.pf2e-combater-intel-window .combater-intel-who-table { width: 100%; margin: 0; border-collapse: collapse; border: 0; background: transparent; font-size: 12px; }
+.pf2e-combater-intel-window .combater-intel-who-table th,
+.pf2e-combater-intel-window .combater-intel-who-table td { padding: 3px 4px; border: 0; border-bottom: 1px solid #2a2f37; background: transparent; color: #c7d0db; text-align: center; }
+.pf2e-combater-intel-window .combater-intel-who-table thead th { position: sticky; top: 0; z-index: 1; background: #1f2227; }
+.pf2e-combater-intel-window .combater-intel-who-table thead img { width: 26px; height: 26px; border: 0; border-radius: 50%; object-fit: cover; }
+.pf2e-combater-intel-window .combater-intel-who-table thead th { vertical-align: bottom; }
+.pf2e-combater-intel-window .combater-intel-who-table thead img { display: block; margin: 0 auto 2px; }
+.pf2e-combater-intel-window .combater-intel-who-name { display: block; max-width: 64px; margin: 0 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #aab7c6; font-size: 10px; font-weight: 600; }
+.pf2e-combater-intel-window .combater-intel-who-table tbody th[scope="row"] { max-width: 200px; text-align: left; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf2e-combater-intel-window .combater-intel-who-group th { padding-top: 6px; color: #8d9aab; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-align: left; text-transform: uppercase; }
+.pf2e-combater-intel-window .combater-intel-who-table td.is-party { color: #6f8fb0; }
+.pf2e-combater-intel-window .combater-intel-who-table td.is-own { color: #6fd69a; }
+.pf2e-combater-intel-window .combater-intel-who-table td.is-false { color: #e08a84; }
+.pf2e-combater-intel-window .combater-intel-who-false { padding: 0 4px; border-radius: 4px; background: #3a2422; color: #e08a84; font-size: 10px; }
+.pf2e-combater-intel-window .combater-intel-who-empty { margin: 0; padding: 0 10px 8px; color: #8d9aab; }

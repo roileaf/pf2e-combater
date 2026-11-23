@@ -504,6 +504,7 @@ try {
       assert.equal(selectedTarget, remoteTarget);
       assert.deepEqual(options.request, {
         actorName: "Remote Hero",
+        actorId: remoteActor.id ?? "",
         question: "weaknesses",
         questionLabel: "Weaknesses",
         categories: ["weaknesses"],
@@ -542,6 +543,7 @@ try {
   assert.deepEqual(criticalFailureIntelOptions.request.categories, ["weaknesses"]);
   assert.deepEqual(criticalFailureIntelOptions.falseInformationContext, {
     actorUuid: remoteActor.uuid,
+    actorId: remoteActor.id,
     actorName: "Remote Hero",
     category: "weaknesses",
     question: "weaknesses",

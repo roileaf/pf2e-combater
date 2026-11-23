@@ -18,9 +18,12 @@ import {
   intelFactId,
   intelIdentityTrait,
   intelTraitFactId,
+  falseInformationKnownBy,
+  intelKnowerId,
   readIntelFalseInformation,
   readIntelLedger,
   readIntelRevealMode,
+  readKnownIntelLedger,
 } from "../rules/intel-ledger.js";
 
 const ATTACK_HIDDEN_DETECTION_STATES = new Set(["undetected", "unnoticed"]);
@@ -430,9 +433,11 @@ export function playerVisibleMeleeReach(actor, intelLedger) {
 
 function tokenEntry(token, originToken, { canSeeDefenses = false, combatant = null } = {}) {
   const actor = tokenActor(token);
-  const intelLedger = readIntelLedger(actor);
+  // What the acting character knows about this creature: the party's intel plus its own.
+  const knowerIds = [intelKnowerId(tokenActor(originToken))].filter(Boolean);
+  const intelLedger = readKnownIntelLedger(actor, knowerIds);
   const intelRevealMode = readIntelRevealMode(actor);
-  const intelFalseInformation = readIntelFalseInformation(actor);
+  const intelFalseInformation = readIntelFalseInformation(actor).filter((record) => falseInformationKnownBy(record, knowerIds));
   const intelTarget = intelTargetForActor(actor, intelLedger, intelRevealMode);
   const conditions = readConditions(actor);
   const effects = readEffects(actor, { includeHidden: canSeeDefenses });

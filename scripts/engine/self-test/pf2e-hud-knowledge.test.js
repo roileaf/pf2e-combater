@@ -221,7 +221,9 @@ assert.equal(exploitVulnerabilitySuggestedOutcome(messageWith({ pf2e: { context:
     promptOutcome: async () => ({ id: "success" }),
   });
   assert.equal(result.notice, "Ogre Warrior: revealed Weaknesses: Fire 5", "the notice says what was learned");
-  assert.deepEqual(store.intelLedger.weaknesses, ["fire-5"]);
+  // The thaumaturge learned it; the rest of the party doesn't know until the GM shares it.
+  assert.equal(store.intelLedger, undefined, "the party's intel is untouched");
+  assert.deepEqual(store.intelCharacterLedgers.thaum.ledger.weaknesses, ["fire-5"], "filed under the roller");
 }
 
 // --- PF2e Exploit Vulnerability already settled the degree: no second dialog ------------------

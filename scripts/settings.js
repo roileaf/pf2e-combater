@@ -43,11 +43,14 @@ export function reactionsBeforeFirstTurn() {
 }
 
 // Parts of the minimal bar a user can switch off (Customize minimal bar).
-export const MINIMAL_PARTS = ["autofill", "browse", "setup", "cycle", "plan", "tracker", "readied", "delay", "upcoming", "turn"];
+export const MINIMAL_PARTS = ["autofill", "browse", "setup", "intel", "cycle", "plan", "tracker", "readied", "delay", "upcoming", "turn"];
+// Opt-in parts: off until the user turns them on (the Intel shortcut also sits in Plan setup).
+const MINIMAL_PARTS_OFF_BY_DEFAULT = new Set(["intel"]);
 
 export function minimalHiddenParts() {
   const shown = settingOrDefault(SETTINGS.minimalParts, {}) ?? {};
-  return MINIMAL_PARTS.filter((part) => shown[part] === false);
+  return MINIMAL_PARTS.filter((part) => shown[part] === false
+    || (shown[part] === undefined && MINIMAL_PARTS_OFF_BY_DEFAULT.has(part)));
 }
 
 export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu } = {}) {

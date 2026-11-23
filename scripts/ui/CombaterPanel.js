@@ -117,6 +117,7 @@ import {
 import {
   intelLedgerView,
   intelTargetMatchesKey,
+  intelAudienceOptions,
   saveIntelDecision,
 } from "../rules/intel-ledger.js";
 import { readCombatContext } from "../state/combat-context.js";
@@ -639,6 +640,8 @@ class CombaterPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     const viewProvider = () => panelIntelLedgerView(this._freshIntelContext() ?? this._context);
     const view = viewProvider();
     if (!view.visible) return;
+    // The GM files ticks under the whole party or chosen characters (the cards above the facts).
+    if (view.editable === true) view.audienceOptions = intelAudienceOptions(view.entries?.[0] ?? null);
 
     await openIntelWindow(view, {
       mode: view.editable === true ? "edit" : "view",

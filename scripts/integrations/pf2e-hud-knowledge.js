@@ -32,6 +32,11 @@ import {
   readIntelLedger,
   writeIntelFlags,
   INTEL_LEDGER_FLAG,
+  intelKnowerId,
+  mergeIntelLedgers,
+  readCharacterIntelLedgers,
+  readKnownIntelLedger,
+  subtractIntelLedger,
 } from "../rules/intel-ledger.js";
 import { recallKnowledgeAttemptState } from "../rules/recall-knowledge.js";
 import { isPf2eHudRecallKnowledgeMessage } from "../engine/execution/recall-knowledge.js";
@@ -181,6 +186,7 @@ export async function handlePf2eHudRecallKnowledge(message, {
   const question = await promptQuestion({
     targetName: stamped.name || target.name || "",
     targetActor: target,
+    rollerActor: actor,
     attempt: (Number(attemptState.attempts) || 0) + 1,
   });
   if (!question) return { completed: false, reason: "cancelled" };
@@ -401,15 +407,29 @@ function promptExploitVulnerabilityOutcome(details) {
 
 // Writes the update (ledger facts and/or revealed Details) and returns the notice saying what the
 // party learned.
-async function saveLedgerUpdate(target, update, { details = null } = {}) {
+// With a knower (the roller), the facts are filed under that character alone, as Recall Knowledge does.
+async function saveLedgerUpdate(target, update, { details = null, knowerId = "" } = {}) {
   const values = {};
-  if (update) {
+  let described = values;
+  let knowerIds;
+  if (update && knowerId) {
+    const party = readIntelLedger(target);
+    const known = readKnownIntelLedger(target, [knowerId]);
+    const characters = readCharacterIntelLedgers(target);
+    const own = subtractIntelLedger({ ...known, ...update }, party);
+    values.characterLedgers = { ...characters, [knowerId]: { name: characters[knowerId]?.name ?? "", ledger: own } };
+    described = { ledger: mergeIntelLedgers(party, own) };
+    knowerIds = [knowerId];
+  } else if (update) {
     const base = intelActor(target);
     const raw = base?.getFlag?.(MODULE_ID, INTEL_LEDGER_FLAG) ?? {};
     values.ledger = { ...raw, ...readIntelLedger(target), ...update };
   }
-  if (details) values.details = details;
-  const notice = intelChangeNotice(target?.name, describeIntelChanges(target, values));
+  if (details) {
+    values.details = details;
+    described = { ...described, details };
+  }
+  const notice = intelChangeNotice(target?.name, describeIntelChanges(target, described, { knowerIds }));
   await writeIntelFlags(target, values);
   return notice;
 }
@@ -480,7 +500,9 @@ export async function adjudicateExploitVulnerability(message, {
   const stamped = knowledgeTargetFromMessage(message);
   const target = stamped ? await fromUuid(stamped.actorUuid) : null;
   if (!target || !isNpcIntelTarget({ actor: target })) return null;
-  const ledger = readIntelLedger(target);
+  // What the roller already knows (the party's intel plus their own); what they learn stays theirs.
+  const knowerId = intelKnowerId(speakerActor(message));
+  const ledger = knowerId ? readKnownIntelLedger(target, [knowerId]) : readIntelLedger(target);
   // Nothing either success could add: don't interrupt the GM.
   if (!exploitVulnerabilityLedgerUpdate(ledger, "success", target)
     && !exploitVulnerabilityLedgerUpdate(ledger, "criticalsuccess", target)
@@ -506,7 +528,7 @@ export async function adjudicateExploitVulnerability(message, {
   if (!update && !details) return { completed: true, outcome, revealed: 0 };
   let notice;
   try {
-    notice = await saveUpdate(target, update, { details });
+    notice = await saveUpdate(target, update, { details, knowerId });
   } catch (error) {
     globalThis.console?.warn?.(`${MODULE_ID} | Failed to record Exploit Vulnerability intel`, error);
     notify("warn", t("Intel.SaveFailed", "Could not update intel ledger."));

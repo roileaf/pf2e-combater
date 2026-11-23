@@ -7,6 +7,7 @@ import {
   normalizeIntelFalseInformation,
   normalizeIntelLedger,
   normalizeIntelRevealMode,
+  PARTY_INTEL_AUDIENCE,
 } from "../rules/intel-ledger.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -180,13 +181,94 @@ function extremeMark(id, extremes) {
   return {};
 }
 
+function audienceName(id) {
+  return globalThis.game?.actors?.get?.(id)?.name ?? id;
+}
+
+// "Only Merisiel believes this" for a falsehood one character holds.
+function knownByLabel(record) {
+  const ids = Array.isArray(record?.knownBy) ? record.knownBy : [];
+  if (!ids.length) return "";
+  return t("Intel.KnownOnlyBy", "Only {names}", { names: ids.map(audienceName).join(", ") });
+}
+
+// Who the GM is filing ticks under: ["party"], or one or more characters.
+export function intelAudienceIds(view) {
+  const ids = Array.isArray(view?.intelAudiences) && view.intelAudiences.length
+    ? view.intelAudiences
+    : [view?.intelAudience ?? view?.entries?.[0]?.audience ?? PARTY_INTEL_AUDIENCE];
+  const clean = [...new Set(ids.map(String).filter(Boolean))];
+  return clean.includes(PARTY_INTEL_AUDIENCE) || !clean.length ? [PARTY_INTEL_AUDIENCE] : clean;
+}
+
+// Clicking a card: the whole party on its own, or characters toggled in and out (none left: party).
+export function nextIntelAudience(current, clicked) {
+  const id = String(clicked || PARTY_INTEL_AUDIENCE);
+  if (id === PARTY_INTEL_AUDIENCE) return [PARTY_INTEL_AUDIENCE];
+  const characters = current.filter((entry) => entry !== PARTY_INTEL_AUDIENCE);
+  const next = characters.includes(id) ? characters.filter((entry) => entry !== id) : [...characters, id];
+  return next.length ? next : [PARTY_INTEL_AUDIENCE];
+}
+
+function personalFactCount(ledger) {
+  return Object.values(ledger ?? {}).reduce((total, value) => total + (value === true ? 1 : (Array.isArray(value) ? value.length : 0)), 0);
+}
+
+function audienceModel(view, editable) {
+  const options = Array.isArray(view?.audienceOptions) ? view.audienceOptions : [];
+  if (!editable || options.length < 2) return null;
+  const selected = intelAudienceIds(view);
+  const ledgers = view?.entries?.[0]?.characterLedgers ?? {};
+  const names = selected.map((id) => options.find((option) => option.id === id)?.label ?? audienceName(id));
+  const party = selected.includes(PARTY_INTEL_AUDIENCE);
+  return {
+    label: t("Intel.AudienceLabel", "Known to"),
+    hint: party
+      ? t("Intel.AudiencePartyHint", "Every player sees what you tick.")
+      : names.length > 1
+        ? t("Intel.AudienceCharactersHint", "Only {names} learn what you tick; facts the whole party knows are locked.", { names: names.join(", ") })
+        : t("Intel.AudienceCharacterHint", "Only {name} learns what you tick; facts the whole party knows are locked.", { name: names[0] ?? "" }),
+    options: options.map((option) => {
+      const count = option.isParty ? 0 : personalFactCount(ledgers[option.id]?.ledger);
+      return {
+        ...option,
+        selected: selected.includes(option.id),
+        count,
+        countLabel: count ? t("Intel.AudienceOwnFacts", "{count} facts only they know", { count }) : "",
+      };
+    }),
+    shareLabel: party
+      ? t("Intel.ShareAllWithParty", "Share everything any character knows")
+      : t("Intel.ShareWithSelected", "Give them everything any character knows"),
+    shareHint: t("Intel.ShareHint", "Ticks every fact marked \"Known by\"; save to apply."),
+  };
+}
+
 function categoryModel(entry, category, index, { editable = false } = {}) {
   const values = editable
     ? entry.available?.[category.id] ?? entry.revealed?.[category.id] ?? []
     : entry.revealed?.[category.id] ?? [];
   const facts = categoryFacts(entry, category, { editable });
   const selectedIds = selectedFactIds(entry.values?.[category.id], facts);
-  const selectedCount = selectedIds.length;
+  // Who knows each fact: the party, and which characters. For the selected audience a fact is
+  // known (ticked), partly known ("Known by Ezren": ticking gives it to the audience), or, for
+  // characters, already the whole party's (ticked and locked).
+  const audiences = Array.isArray(entry.audiences) && entry.audiences.length ? entry.audiences : [entry.audience ?? PARTY_INTEL_AUDIENCE];
+  const forParty = audiences.includes(PARTY_INTEL_AUDIENCE);
+  const tracksKnowers = editable && entry.partyValues !== undefined;
+  const partyIds = tracksKnowers ? selectedFactIds(entry.partyValues?.[category.id], facts) : [];
+  const characterIds = tracksKnowers
+    ? Object.entries(entry.characterLedgers ?? {}).map(([id, value]) => [id, selectedFactIds(value?.ledger?.[category.id], facts)])
+    : [];
+  const factState = (id) => {
+    if (!tracksKnowers) return { known: selectedIds.includes(id), partial: false, locked: false, knowers: [] };
+    const inParty = partyIds.includes(id);
+    const knowers = characterIds.filter(([, ids]) => ids.includes(id)).map(([character]) => character);
+    const known = forParty ? inParty : (inParty || audiences.every((audience) => knowers.includes(audience)));
+    return { known, partial: !known && knowers.length > 0, locked: !forParty && inParty, knowers };
+  };
+  const checkedIds = tracksKnowers ? facts.filter((fact) => factState(fact.id).known || selectedIds.includes(fact.id)).map((fact) => fact.id) : selectedIds;
+  const selectedCount = checkedIds.length;
   const totalCount = facts.length;
   const falseOptions = falseFactOptions(category.id);
   const categoryFalseInformation = (Array.isArray(entry.falseInformation) ? entry.falseInformation : [])
@@ -249,7 +331,18 @@ function categoryModel(entry, category, index, { editable = false } = {}) {
       ...extremeMark(fact.id, extremes),
       infoLabel: t("Intel.AbilityDetails", "Show details"),
       inputName: inputName(index, category.id),
-      checked: selectedIds.includes(fact.id),
+      ...(() => {
+        const state = factState(fact.id);
+        return {
+          known: state.known,
+          // Ticked: already known, or pre-ticked for a Recall Knowledge result (still to save).
+          checked: state.known || selectedIds.includes(fact.id),
+          locked: state.locked,
+          partial: state.partial,
+          knownByLabel: state.partial ? t("Intel.KnownByNames", "Known by {names}", { names: state.knowers.map(audienceName).join(", ") }) : "",
+        };
+      })(),
+      lockedLabel: t("Intel.KnownToParty", "The whole party knows this"),
     })),
     selectedCount,
     totalCount,
@@ -281,6 +374,7 @@ function categoryModel(entry, category, index, { editable = false } = {}) {
           : t("Intel.RevealPreparedFalseInformation", "Reveal this prepared misinformation to players"),
         sourceLabel: [
           record.revealed === true ? t("Intel.FalseInformationRevealed", "Revealed to players") : t("Intel.FalseInformationPrepared", "Prepared; hidden from players"),
+          knownByLabel(record),
           record.sourceActorName,
           record.question,
           `Attempt ${record.attempt}`,
@@ -296,6 +390,60 @@ function categoryModel(entry, category, index, { editable = false } = {}) {
     addFalseShortLabel: t("Intel.AddFalseShort", "False fact"),
     addFalseConfirmLabel: t("Intel.AddFalseConfirm", "Add this false fact"),
     cancelFalseLabel: t("Dialog.Cancel", "Cancel"),
+  };
+}
+
+// Who knows what about this creature: party characters as columns, every fact anyone knows as a
+// row. A cell is "party" (everyone knows it), "own" (only some characters), or "false" (a falsehood
+// that character believes).
+export function knowledgeGridModel(entry, categories, audienceOptions = []) {
+  const columns = (Array.isArray(audienceOptions) ? audienceOptions : [])
+    .filter((option) => !option.isParty)
+    .map((option) => ({ id: option.id, label: option.label, img: option.img ?? "" }));
+  const ledgers = entry.characterLedgers ?? {};
+  for (const [id, value] of Object.entries(ledgers)) {
+    if (!columns.some((column) => column.id === id)) columns.push({ id, label: value?.name || audienceName(id), img: "" });
+  }
+  if (!columns.length) return null;
+  const marks = {
+    party: { icon: "fa-users", label: t("Intel.GridParty", "Whole party knows") },
+    own: { icon: "fa-check", label: t("Intel.GridOwn", "Knows it") },
+    false: { icon: "fa-triangle-exclamation", label: t("Intel.GridFalse", "Believes this false fact") },
+  };
+  const cell = (kind) => (kind ? { kind, ...marks[kind] } : { kind: "" });
+  const groups = [];
+  for (const category of categories) {
+    const facts = entry.availableFacts?.[category.id] ?? [];
+    const partyIds = selectedFactIds(entry.partyValues?.[category.id], facts);
+    const rows = facts.flatMap((fact) => {
+      const inParty = partyIds.includes(fact.id);
+      const knowers = columns.filter((column) => selectedFactIds(ledgers[column.id]?.ledger?.[category.id], facts).includes(fact.id));
+      if (!inParty && !knowers.length) return [];
+      return [{
+        label: fact.exactLabel ?? fact.label,
+        cells: columns.map((column) => cell(inParty ? "party" : (knowers.includes(column) ? "own" : ""))),
+      }];
+    });
+    for (const record of (entry.falseInformation ?? []).filter((item) => item.category === category.id && item.revealed === true)) {
+      const believers = Array.isArray(record.knownBy) && record.knownBy.length ? record.knownBy : columns.map((column) => column.id);
+      rows.push({
+        label: record.label || record.text,
+        isFalse: true,
+        cells: columns.map((column) => cell(believers.includes(column.id) ? "false" : "")),
+      });
+    }
+    if (rows.length) groups.push({ label: category.label, rows });
+  }
+  const rowCount = groups.reduce((total, group) => total + group.rows.length, 0);
+  return {
+    title: t("Intel.GridTitle", "Who knows what"),
+    countLabel: t("Intel.GridCount", "{count} known facts", { count: rowCount }),
+    emptyLabel: t("Intel.GridEmpty", "Nobody knows anything about this creature yet."),
+    falseTag: t("Intel.GridFalseTag", "false"),
+    columns,
+    colspan: columns.length + 1,
+    groups,
+    hasRows: rowCount > 0,
   };
 }
 
@@ -346,6 +494,7 @@ function entryModel(entry, categories, index, { canResetAttempts = false } = {})
     })),
     categories: categoryModels,
     details: detailsModel(entry, index, { editable }),
+    knowledgeGrid: editable ? knowledgeGridModel(entry, categories, entry.audienceOptions) : null,
     categoryColumns: [
       categoryModels.filter((_category, categoryIndex) => categoryIndex % 2 === 0),
       categoryModels.filter((_category, categoryIndex) => categoryIndex % 2 === 1),
@@ -371,8 +520,9 @@ function entryModel(entry, categories, index, { canResetAttempts = false } = {})
 function windowContext(view, mode, { canResetAttempts = false } = {}) {
   const editable = mode === "edit" && view?.editable === true;
   const categories = view?.categories ?? [];
+  const audiences = intelAudienceIds(view);
   const entries = (view?.entries ?? []).map((entry, index) => entryModel(
-    { ...entry, editable },
+    { ...entry, editable, audiences, audienceOptions: view?.audienceOptions ?? [] },
     categories,
     index,
     { canResetAttempts: editable && canResetAttempts },
@@ -381,6 +531,7 @@ function windowContext(view, mode, { canResetAttempts = false } = {}) {
     editable,
     entries,
     request: editable ? requestModel(view?.request) : null,
+    audience: audienceModel(view, editable),
     hasEntries: entries.length > 0,
     // One NPC: its Reveal all / Reset attempts sit in the window footer.
     singleEntry: entries.length === 1 ? entries[0] : null,
@@ -494,8 +645,44 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     return super.close(options);
   }
 
+  // Picking who learns the ticks redraws the facts for that audience (unsaved ticks are dropped,
+  // a Recall Knowledge pre-tick is kept).
+  _changeAudience(clicked) {
+    const audiences = nextIntelAudience(intelAudienceIds(this._view), clicked);
+    this._view = {
+      ...this._view,
+      intelAudiences: audiences,
+      entries: (this._view.entries ?? []).map((entry) => ({ ...entry, audience: audiences[0], values: entry.preselect ?? {} })),
+    };
+    this.render({ force: true }).catch((error) => console.warn(`${MODULE_ID} | Intel refresh failed`, error));
+  }
+
+  // Tick every fact some character knows, so saving hands it to the selected audience.
+  _shareKnownFacts() {
+    for (const input of this.element.querySelectorAll(".combater-intel-fact.is-partial input[type='checkbox']:not(:disabled)")) input.checked = true;
+    this._syncIntelEditorState();
+  }
+
+  // Fact ticks that differ from what the audience knew: { added, removed } by category.
+  _factChanges(index) {
+    const added = {};
+    const removed = {};
+    const entry = this.element.querySelector(`[data-intel-entry-index="${index}"]`);
+    for (const input of entry?.querySelectorAll("[data-intel-fact] input[type='checkbox']:not(:disabled)") ?? []) {
+      const category = input.closest("[data-intel-category]")?.dataset.intelCategory;
+      if (!category) continue;
+      const known = input.dataset.intelKnown === "true";
+      if (input.checked && !known) (added[category] ??= []).push(input.value);
+      if (!input.checked && known) (removed[category] ??= []).push(input.value);
+    }
+    return { added, removed };
+  }
+
   _readForm() {
     const form = this.element.querySelector("[data-intel-form]");
+    const audiences = intelAudienceIds(this._view);
+    const forParty = audiences.includes(PARTY_INTEL_AUDIENCE);
+    const audienceNames = Object.fromEntries(audiences.map((id) => [id, (this._view.audienceOptions ?? []).find((option) => option.id === id)?.label ?? ""]));
     return (this._view.entries ?? []).map((entry, index) => {
       const falseInformation = normalizeIntelFalseInformation(Array.from(
         this.element.querySelectorAll(`[data-intel-false-record-entry="${index}"]`),
@@ -513,6 +700,8 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
           factLabel: chip.intelFalseFactLabel ?? select?.selectedOptions?.[0]?.textContent?.trim() ?? existing.factLabel ?? "",
           value: chip.intelFalseAmount ?? valueInput?.value ?? existing.value ?? null,
           revealed: recordElement.dataset.intelFalseRevealed === "true",
+          // A falsehood added now is believed by the audience it's added for.
+          knownBy: existing.knownBy ?? (forParty ? [] : audiences),
         };
       }));
       const detailsRow = this.element.querySelector(`[data-intel-entry-index="${index}"] [data-intel-details]`);
@@ -524,6 +713,9 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         : undefined;
       return {
         actor: entry.actor,
+        audiences,
+        audienceNames,
+        ...(forParty ? {} : this._factChanges(index)),
         ...(details ? { details } : {}),
         falseInformation,
         revealMode: normalizeIntelRevealMode(Array.from(form?.elements ?? [])
@@ -652,7 +844,15 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  // The share button only means something while a "Known by" fact is still unticked.
+  _syncShareButton() {
+    const button = this.element?.querySelector("[data-intel-share-known]");
+    if (!button) return;
+    button.disabled = !this.element.querySelector(".combater-intel-fact.is-partial input[type='checkbox']:not(:disabled):not(:checked)");
+  }
+
   _syncIntelEditorState() {
+    this._syncShareButton();
     for (const entry of this.element.querySelectorAll("[data-intel-entry]")) this._syncRevealModeLabels(entry);
     for (const fact of this.element.querySelectorAll("[data-intel-fact]")) this._syncFactState(fact);
     for (const category of this.element.querySelectorAll("[data-intel-category]")) this._syncCategoryState(category);
@@ -661,7 +861,7 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _revealAll(entry) {
     if (!entry) return;
-    for (const input of entry.querySelectorAll("[data-intel-category] input[type='checkbox']")) {
+    for (const input of entry.querySelectorAll("[data-intel-category] input[type='checkbox']:not(:disabled)")) {
       input.checked = true;
     }
     for (const fact of entry.querySelectorAll("[data-intel-fact]")) this._syncFactState(fact);
@@ -671,7 +871,8 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _toggleCategory(category) {
     if (!category) return;
-    const inputs = Array.from(category.querySelectorAll("input[type='checkbox']"));
+    // Facts the whole party knows stay ticked for a character audience.
+    const inputs = Array.from(category.querySelectorAll("input[type='checkbox']:not(:disabled)"));
     const checked = !(inputs.length > 0 && inputs.every((input) => input.checked === true));
     for (const input of inputs) input.checked = checked;
     for (const fact of category.querySelectorAll("[data-intel-fact]")) this._syncFactState(fact);
@@ -790,6 +991,10 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
     this.element.querySelector("[data-intel-close]")?.addEventListener("click", () => this.close());
+    for (const card of this.element.querySelectorAll("[data-intel-audience-card]")) {
+      card.addEventListener("click", () => this._changeAudience(card.dataset.intelAudienceCard));
+    }
+    this.element.querySelector("[data-intel-share-known]")?.addEventListener("click", () => this._shareKnownFacts());
     this.element.querySelector("[data-intel-save]")?.addEventListener("click", (event) => this._save(event.currentTarget));
     for (const button of this.element.querySelectorAll("[data-intel-reset-attempts]")) {
       button.addEventListener("click", () => this._resetAttempts(Number(button.dataset.intelResetAttempts), button));
@@ -831,6 +1036,7 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     this._syncIntelEditorState();
     for (const input of this.element.querySelectorAll("[data-intel-fact] input[type='checkbox']")) {
       input.addEventListener("change", () => {
+        this._syncShareButton();
         this._syncFactState(input.closest("[data-intel-fact]"));
         this._syncCategoryState(input.closest("[data-intel-category]"));
         this._syncEntryState(input.closest("[data-intel-entry]"));

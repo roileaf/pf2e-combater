@@ -2,9 +2,12 @@ import { MODULE_ID } from "../constants.js";
 import { collectionValues } from "../foundry-data.js";
 import { t } from "../i18n.js";
 import {
+  PARTY_INTEL_AUDIENCE,
+  intelAudienceOptions,
   intelCategoryLabel,
+  intelKnowerId,
   intelLedgerView,
-  readIntelLedger,
+  readKnownIntelLedger,
   saveIntelDecision,
 } from "../rules/intel-ledger.js";
 import {
@@ -61,8 +64,10 @@ export async function buttonChoice({ title, content, choices, contentIsHtml = fa
 
 // Each question as a card: what it reveals, and whether the party already knows all of it (from
 // the party's own ledger only, so nothing hidden leaks).
-export function promptRecallKnowledgeQuestion({ targetName = "", targetActor = null, attempt = 1 } = {}) {
-  const ledger = targetActor ? readIntelLedger(targetActor) : {};
+export function promptRecallKnowledgeQuestion({ targetName = "", targetActor = null, attempt = 1, rollerActor = null } = {}) {
+  // What this roller already knows: the party's intel plus their own.
+  const rollerId = intelKnowerId(rollerActor);
+  const ledger = targetActor ? readKnownIntelLedger(targetActor, rollerId ? [rollerId] : []) : {};
   const known = (question) => question.categories.every((category) => ledger[category] === true
     || (Array.isArray(ledger[category]) && ledger[category].length > 0));
   const reveals = (question) => question.categories.map((category) => intelCategoryLabel(category)).join(" · ");
@@ -198,6 +203,8 @@ export function recallKnowledgeIntelRequest({ actor = null, payload = {}, outcom
   if (!question) return null;
   return {
     actorName: String(actor?.name ?? payload.actorName ?? ""),
+    // The roller: what they learn is theirs unless the GM shares it with the party.
+    actorId: intelKnowerId(actor),
     question: question.id,
     questionLabel: question.label,
     categories: [...question.categories],
@@ -211,14 +218,23 @@ export async function openRecallKnowledgeIntelWindow(target, {
   preselectIdentity = true,
   falseInformationContext = null,
   request = null,
+  audience = null,
 } = {}) {
   if (globalThis.game?.user?.isGM !== true || !target) return false;
+  // A Recall Knowledge result is the roller's to know; the GM can switch it to the whole party.
+  const intelAudience = String(audience ?? request?.actorId ?? PARTY_INTEL_AUDIENCE) || PARTY_INTEL_AUDIENCE;
   const baseView = intelLedgerView({
     isGM: true,
+    intelAudience,
     intelTargets: [{ actor: target, name: target?.name, id: target?.id, uuid: target?.uuid }],
   });
   const view = {
     ...baseView,
+    intelAudience,
+    intelAudiences: [intelAudience],
+    audienceOptions: intelAudienceOptions(target, {
+      extra: request?.actorId ? [{ id: request.actorId, label: request.actorName }] : [],
+    }),
     ...(request ? { request } : {}),
     entries: (baseView.entries ?? []).map((entry) => {
       const existingFalseInformation = entry.falseInformation ?? [];
@@ -238,6 +254,8 @@ export async function openRecallKnowledgeIntelWindow(target, {
           attempt: falseInformationContext.attempt ?? 1,
           createdAt: new Date().toISOString(),
           revealed: true,
+          // Only the character who critically failed believes it.
+          knownBy: falseInformationContext.actorId ? [falseInformationContext.actorId] : [],
         },
       ] : existingFalseInformation;
       const identityId = entry.availableFacts?.identity?.[0]?.id;
@@ -256,6 +274,8 @@ export async function openRecallKnowledgeIntelWindow(target, {
         falseInformationRevealCategory,
         requestedCategories,
         values: { ...entry.values, identity },
+        // Kept when the GM picks a different audience in the window.
+        preselect: { identity },
       };
     }),
   };
@@ -645,6 +665,7 @@ export async function adjudicateRecallKnowledgeRequest(payload = {}, {
       preselectIdentity: false,
       falseInformationContext: {
         actorUuid: actor.uuid,
+        actorId: intelKnowerId(actor),
         actorName: actor.name ?? payload.actorName,
         category: recallKnowledgeQuestion(payload.question)?.categories?.[0] ?? "traits",
         question: payload.question,

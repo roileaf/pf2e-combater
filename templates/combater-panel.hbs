@@ -588,6 +588,9 @@
           </div>
         </span>
         {{/if}}
+        {{#if intelLedger.visible}}
+        <button type="button" class="combater-minimal-tool is-intel" data-configure-intel data-tooltip="{{intelLedger.tooltip}}" aria-label="{{localize "PF2E_COMBATER.Panel.IntelAria"}}"><i class="fa-solid fa-brain"></i></button>
+        {{/if}}
         {{#if showAutoFill}}
         {{#if autoFillCycle.inBar}}
         <span class="combater-minimal-cycle" role="group" aria-label="{{autoFillCycle.ariaLabel}}" data-tooltip="{{autoFillCycle.tooltip}}">

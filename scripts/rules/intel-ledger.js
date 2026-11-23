@@ -7,6 +7,10 @@ export const INTEL_REVEAL_MODE_FLAG = "intelRevealMode";
 export const INTEL_FALSE_INFORMATION_FLAG = "intelFalseInformation";
 // GM-written notes about the creature; players read them once the GM reveals them.
 export const INTEL_DETAILS_FLAG = "intelDetails";
+// What single characters learned and didn't share: { [characterActorId]: { name, ledger } }. The
+// ledger above is what the whole party knows; a character knows that plus its own entry.
+export const INTEL_CHARACTER_LEDGERS_FLAG = "intelCharacterLedgers";
+export const PARTY_INTEL_AUDIENCE = "party";
 const INTEL_DETAILS_MAX_LENGTH = 4000;
 export const INTEL_REVEAL_MODES = {
   exact: "exact",
@@ -195,6 +199,7 @@ export async function writeIntelFlags(actor, values = {}) {
     revealMode: INTEL_REVEAL_MODE_FLAG,
     falseInformation: INTEL_FALSE_INFORMATION_FLAG,
     details: INTEL_DETAILS_FLAG,
+    characterLedgers: INTEL_CHARACTER_LEDGERS_FLAG,
   };
   for (const [name, key] of Object.entries(keys)) {
     if (values[name] !== undefined) await base.setFlag(MODULE_ID, key, values[name]);
@@ -238,12 +243,115 @@ export function normalizeIntelFalseInformation(value) {
       attempt: Math.max(1, Number(entry?.attempt) || 1),
       createdAt: String(entry?.createdAt ?? ""),
       revealed: entry?.revealed !== false,
+      // Who believes it: empty is the whole party; a critical failure's falsehood is the roller's alone.
+      knownBy: normalizeKnowerIds(entry?.knownBy),
     }];
   });
 }
 
 export function readIntelFalseInformation(actorOrTarget) {
   return normalizeIntelFalseInformation(readFalseInformationFlag(actorOrTarget));
+}
+
+function normalizeKnowerIds(value) {
+  return [...new Set((Array.isArray(value) ? value : []).map((id) => String(id ?? "").trim()).filter(Boolean))];
+}
+
+// The id a character's knowledge is filed under: its world actor (every token of a linked PC shares it).
+export function intelKnowerId(actor) {
+  const base = intelActor(actor);
+  return base?.id ? String(base.id) : "";
+}
+
+// A false fact this audience believes: the party's are everyone's; a character's only theirs.
+// knowerIds null means everyone (the GM's view).
+export function falseInformationKnownBy(record, knowerIds) {
+  if (knowerIds === null || knowerIds === undefined) return true;
+  const knownBy = normalizeKnowerIds(record?.knownBy);
+  return !knownBy.length || knownBy.some((id) => knowerIds.includes(id));
+}
+
+export function normalizeCharacterIntelLedgers(value) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  return Object.fromEntries(Object.entries(source).flatMap(([id, entry]) => {
+    const key = String(id ?? "").trim();
+    if (!key || !entry || typeof entry !== "object") return [];
+    const ledger = normalizeIntelLedger(entry.ledger ?? entry);
+    if (!Object.values(ledger).some((category) => category === true || (Array.isArray(category) && category.length))) return [];
+    return [[key, { name: String(entry.name ?? ""), ledger }]];
+  }));
+}
+
+export function readCharacterIntelLedgers(actorOrTarget) {
+  if (actorOrTarget?.intelCharacterLedgers !== undefined) return normalizeCharacterIntelLedgers(actorOrTarget.intelCharacterLedgers);
+  const actor = targetActor(actorOrTarget) ?? actorOrTarget;
+  if (actor?.intelCharacterLedgers !== undefined) return normalizeCharacterIntelLedgers(actor.intelCharacterLedgers);
+  return normalizeCharacterIntelLedgers(readFlag(actor, INTEL_CHARACTER_LEDGERS_FLAG));
+}
+
+export function mergeIntelLedgers(...ledgers) {
+  const normalized = ledgers.map((ledger) => normalizeIntelLedger(ledger));
+  return Object.fromEntries(INTEL_LEDGER_CATEGORIES.map(({ id }) => [
+    id,
+    normalized.reduce((value, ledger) => mergeCategoryValues(value, ledger[id]), false),
+  ]));
+}
+
+// What these characters know about the creature: the party's ledger plus each one's own. With no
+// characters (null), everything anyone learned (the GM's view).
+export function readKnownIntelLedger(actorOrTarget, knowerIds = null) {
+  const actor = targetActor(actorOrTarget) ?? actorOrTarget;
+  const party = readIntelLedger(actor);
+  const characters = readCharacterIntelLedgers(actorOrTarget);
+  const ids = knowerIds === null || knowerIds === undefined ? Object.keys(characters) : knowerIds;
+  return mergeIntelLedgers(party, ...ids.map((id) => characters[id]?.ledger).filter(Boolean));
+}
+
+// The facts in `ledger` that `base` doesn't already hold (a character's own share above the party's).
+export function subtractIntelLedger(ledger, base) {
+  const next = normalizeIntelLedger(ledger);
+  const known = normalizeIntelLedger(base);
+  return Object.fromEntries(INTEL_LEDGER_CATEGORIES.map(({ id }) => {
+    if (known[id] === true) return [id, false];
+    if (next[id] === true) return [id, true];
+    const have = Array.isArray(known[id]) ? known[id] : [];
+    const rest = (Array.isArray(next[id]) ? next[id] : []).filter((fact) => !have.includes(fact));
+    return [id, rest.length ? rest : false];
+  }));
+}
+
+function userOwnsActor(user, actor) {
+  const owner = globalThis.CONST?.DOCUMENT_OWNERSHIP_LEVELS?.OWNER ?? 3;
+  if (typeof actor?.testUserPermission === "function") return actor.testUserPermission(user, owner) === true;
+  return Number(actor?.ownership?.[user?.id] ?? actor?.ownership?.default ?? 0) >= Number(owner);
+}
+
+// Whose knowledge this user sees: the characters they own (their assigned character first). Null
+// for a GM, who sees everything.
+export function viewerIntelKnowerIds(user = globalThis.game?.user) {
+  if (!user || user.isGM === true) return null;
+  const characters = (globalThis.game?.actors?.contents ?? Array.from(globalThis.game?.actors ?? []))
+    .filter((actor) => actor?.type === "character" && userOwnsActor(user, actor));
+  return normalizeKnowerIds([user.character?.id, ...characters.map((actor) => actor.id)]);
+}
+
+// The characters a GM can file intel under: each player's assigned character (the party), plus
+// anyone already holding some and the roller. Without assigned characters, every player-owned one.
+export function intelAudienceOptions(actorOrTarget, { extra = [] } = {}) {
+  const characters = readCharacterIntelLedgers(actorOrTarget);
+  const users = globalThis.game?.users?.contents ?? Array.from(globalThis.game?.users ?? []);
+  const assigned = users.filter((user) => user?.isGM !== true).map((user) => user?.character).filter((actor) => actor?.type === "character");
+  const allActors = globalThis.game?.actors?.contents ?? Array.from(globalThis.game?.actors ?? []);
+  const actors = assigned.length
+    ? [...new Set([...assigned, ...allActors.filter((actor) => characters[actor?.id])])]
+    : allActors.filter((actor) => actor?.type === "character" && (actor.hasPlayerOwner === true || characters[actor.id]));
+  const options = new Map([[PARTY_INTEL_AUDIENCE, { id: PARTY_INTEL_AUDIENCE, label: t("Intel.AudienceParty", "Whole party"), isParty: true }]]);
+  for (const actor of actors) options.set(String(actor.id), { id: String(actor.id), label: actor.name, img: actor.img ?? "" });
+  for (const [id, entry] of Object.entries(characters)) if (!options.has(id)) options.set(id, { id, label: entry.name || id });
+  for (const entry of extra) {
+    if (entry?.id && !options.has(entry.id)) options.set(entry.id, { id: entry.id, label: entry.label || entry.id, img: globalThis.game?.actors?.get?.(entry.id)?.img ?? "" });
+  }
+  return [...options.values()];
 }
 
 export function normalizeIntelDetails(value) {
@@ -750,12 +858,12 @@ function factIdSet(facts) {
 
 // What a save changes, in words: facts newly revealed or hidden per category, and the GM's notes.
 // `next` holds the values about to be written (any of ledger, details).
-export function describeIntelChanges(actor, next = {}) {
+export function describeIntelChanges(actor, next = {}, { knowerIds = undefined } = {}) {
   const enemy = { actor };
   const availableFacts = availableIntelFacts(enemy, { revealMode: INTEL_REVEAL_MODES.exact });
   const changes = [];
   if (next.ledger !== undefined) {
-    const before = revealedIntelFacts(availableFacts, readIntelLedger(actor));
+    const before = revealedIntelFacts(availableFacts, knowerIds ? readKnownIntelLedger(actor, knowerIds) : readIntelLedger(actor));
     const after = revealedIntelFacts(availableFacts, normalizeIntelLedger(next.ledger));
     for (const { id, label } of INTEL_LEDGER_CATEGORIES) {
       const beforeIds = factIdSet(before[id]);
@@ -796,18 +904,90 @@ export function intelChangeNotice(name, changes) {
 }
 
 // Writes the intel window's decision and returns one notice per creature saying what changed.
+// A category's facts as ids: `true` (the whole category) becomes every fact the creature has.
+function expandCategoryIds(value, availableIds) {
+  if (value === true) return [...availableIds];
+  return Array.isArray(value) ? [...value] : [];
+}
+
+// Several characters at once: each gains the facts ticked and loses the ones unticked; the facts
+// the whole party knows stay the party's. `added` / `removed` are { category: [factId] }.
+async function saveForCharacters(entry, audiences) {
+  const actor = entry.actor;
+  const party = readIntelLedger(actor);
+  const characters = readCharacterIntelLedgers(actor);
+  const available = availableIntelFacts({ actor }, { revealMode: INTEL_REVEAL_MODES.exact });
+  const added = entry.added ?? {};
+  const removed = entry.removed ?? {};
+  const next = { ...characters };
+  for (const id of audiences) {
+    const known = mergeIntelLedgers(party, characters[id]?.ledger);
+    const ledger = Object.fromEntries(INTEL_LEDGER_CATEGORIES.map(({ id: category }) => {
+      const availableIds = (available[category] ?? []).map((fact) => fact.id);
+      const ids = new Set(expandCategoryIds(known[category], availableIds));
+      for (const fact of added[category] ?? []) ids.add(fact);
+      for (const fact of removed[category] ?? []) ids.delete(fact);
+      return [category, ids.size ? [...ids] : false];
+    }));
+    const names = entry.audienceNames ?? {};
+    next[id] = { name: String(names[id] ?? characters[id]?.name ?? ""), ledger: subtractIntelLedger(ledger, party) };
+  }
+  const values = {
+    revealMode: entry.revealMode,
+    falseInformation: normalizeIntelFalseInformation(entry.falseInformation),
+    ...(entry.details !== undefined ? { details: normalizeIntelDetails(entry.details) } : {}),
+    characterLedgers: Object.fromEntries(Object.entries(next).map(([id, value]) => [id, { name: value.name, ledger: value.ledger }])),
+  };
+  await writeIntelFlags(actor, values);
+  const label = (category, ids) => (available[category] ?? []).filter((fact) => ids.includes(fact.id)).map((fact) => fact.exactLabel ?? fact.label);
+  const list = (changes) => INTEL_LEDGER_CATEGORIES.flatMap(({ id, label: categoryLabel }) => {
+    const facts = label(id, changes[id] ?? []);
+    return facts.length ? [`${categoryLabel}: ${facts.join(", ")}`] : [];
+  }).join("; ");
+  const who = audiences.map((id) => next[id]?.name || id).join(", ");
+  const parts = [
+    list(added) ? t("Intel.SavedLearned", "{characters} learned {facts}", { characters: who, facts: list(added) }) : "",
+    list(removed) ? t("Intel.SavedForgot", "{characters} no longer know {facts}", { characters: who, facts: list(removed) }) : "",
+  ].filter(Boolean);
+  return parts.length
+    ? t("Intel.SavedChanges", "{name}: {changes}", { name: actor?.name ?? "", changes: parts.join(" · ") })
+    : t("Intel.SavedNoChanges", "{name}: intel saved, nothing changed.", { name: actor?.name ?? "" });
+}
+
+// A character audience files the ticked facts the party doesn't already know under that character;
+// the party audience writes the party's ledger as before.
 export async function saveIntelDecision(decision) {
   const notices = [];
   for (const entry of Array.isArray(decision) ? decision : []) {
+    const audiences = Array.isArray(entry.audiences) ? entry.audiences.map(String).filter(Boolean) : null;
+    if (audiences?.length && !audiences.includes(PARTY_INTEL_AUDIENCE)) {
+      notices.push(await saveForCharacters(entry, audiences));
+      continue;
+    }
+    const audience = String(entry.audience ?? PARTY_INTEL_AUDIENCE);
+    const forCharacter = audience !== PARTY_INTEL_AUDIENCE;
     const values = {
-      ledger: entry.value,
       revealMode: entry.revealMode,
       falseInformation: normalizeIntelFalseInformation(entry.falseInformation),
       ...(entry.details !== undefined ? { details: normalizeIntelDetails(entry.details) } : {}),
     };
-    const changes = describeIntelChanges(entry.actor, values);
+    let changes;
+    if (forCharacter) {
+      const party = readIntelLedger(entry.actor);
+      const characters = readCharacterIntelLedgers(entry.actor);
+      const own = subtractIntelLedger(entry.value, party);
+      const next = { ...characters, [audience]: { name: String(entry.audienceName ?? characters[audience]?.name ?? ""), ledger: own } };
+      values.characterLedgers = Object.fromEntries(Object.entries(next).map(([id, value]) => [id, { name: value.name, ledger: value.ledger }]));
+      changes = describeIntelChanges(entry.actor, { ...values, ledger: mergeIntelLedgers(party, own) }, { knowerIds: [audience] });
+    } else {
+      values.ledger = entry.value;
+      changes = describeIntelChanges(entry.actor, values);
+    }
     await writeIntelFlags(entry.actor, values);
-    notices.push(intelChangeNotice(entry.actor?.name, changes));
+    const name = forCharacter
+      ? t("Intel.SavedForCharacter", "{name} (known to {character})", { name: entry.actor?.name ?? "", character: entry.audienceName || audience })
+      : entry.actor?.name;
+    notices.push(intelChangeNotice(name, changes));
   }
   return notices;
 }
@@ -818,16 +998,24 @@ export function intelLedgerView(context) {
   const isGM = typeof context?.isGM === "boolean" ? context.isGM : globalThis.game?.user?.isGM === true;
   const viewerIsGM = globalThis.game?.user?.isGM === true;
   const canSeeExactIntelLabels = isGM || viewerIsGM;
+  // Players see the party's knowledge plus their own characters'; the GM edits one audience at a time.
+  const knowerIds = context?.intelKnowerIds !== undefined ? context.intelKnowerIds : (isGM ? null : viewerIntelKnowerIds());
+  const audience = isGM ? String(context?.intelAudience ?? PARTY_INTEL_AUDIENCE) : null;
   const entries = enemies.map((enemy) => {
     const actor = targetActor(enemy);
-    const values = normalizeIntelLedger(enemy?.intelLedger ?? readIntelLedger(actor));
+    const partyValues = readIntelLedger(actor);
+    const characterLedgers = isGM ? readCharacterIntelLedgers(enemy?.intelCharacterLedgers !== undefined ? enemy : actor) : {};
+    const values = normalizeIntelLedger(isGM
+      ? (audience === PARTY_INTEL_AUDIENCE ? partyValues : mergeIntelLedgers(partyValues, characterLedgers[audience]?.ledger))
+      : (enemy?.intelLedger ?? readKnownIntelLedger(actor, knowerIds)));
     const revealMode = readIntelRevealMode(enemy);
     const labelRevealMode = canSeeExactIntelLabels ? INTEL_REVEAL_MODES.exact : revealMode;
     const availableFacts = availableIntelFacts(enemy, { revealMode: labelRevealMode });
     const available = availableIntelDetails(enemy, { revealMode: labelRevealMode });
     const revealedFacts = revealedIntelFacts(availableFacts, values);
     const revealed = revealedIntelDetails(availableFacts, values);
-    const falseInformation = readIntelFalseInformation(actor);
+    const falseInformation = readIntelFalseInformation(actor)
+      .filter((record) => isGM || falseInformationKnownBy(record, knowerIds));
     const storedDetails = readIntelDetails(enemy?.intelDetails !== undefined ? enemy : actor);
     // Players never receive notes the GM hasn't revealed.
     const details = isGM || storedDetails.revealed ? storedDetails : normalizeIntelDetails(null);
@@ -849,6 +1037,7 @@ export function intelLedgerView(context) {
       actor,
       img: enemy?.token?.img ?? enemy?.actor?.img ?? actor?.img ?? "",
       values,
+      ...(isGM ? { audience, partyValues, characterLedgers } : {}),
       revealMode,
       available,
       availableFacts,
