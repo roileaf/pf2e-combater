@@ -6,7 +6,7 @@
 PF2e Combater is three tools for Pathfinder 2e combat in Foundry VTT, in one small window:
 
 - **🎯 Action tracker.** Counts the actions and reactions each creature spends, from chat cards, rolls and token movement. Handles Slowed, Stunned and Quickened, and runs **End turn**, **Delay** and **Ready**.
-- **🧭 Turn planner.** Reads the creature's real options and the battlefield, builds a turn that fits its actions, previews it on the canvas, and runs it step by step with undo.
+- **🧭 Turn planner and executioner.** Reads the creature's real options and the battlefield, builds a turn that fits its actions, previews it on the canvas, and runs it step by step with undo.
 - **🧠 Intel tracker.** Records what each character knows about each creature, runs Recall Knowledge through the GM, and keeps player suggestions limited to what their character has learned.
 
 Use any one without the others: a table that only wants the tracker can switch the planner off, and the GM decides how much planning help players get.
@@ -44,7 +44,7 @@ More in [Getting Started](https://github.com/roileaf/pf2e-combater/wiki/Getting-
 | | |
 |---|---|
 | **Action tracker** | [Action Tracker](https://github.com/roileaf/pf2e-combater/wiki/Action-Tracker) · [Turn Controls](https://github.com/roileaf/pf2e-combater/wiki/Turn-Controls) · [Minimal Bar and Tracker Only Mode](https://github.com/roileaf/pf2e-combater/wiki/Minimal-Bar-and-Tracker-Only-Mode) |
-| **Turn planner** | [Planner Panel](https://github.com/roileaf/pf2e-combater/wiki/Planner-Panel) · [Action Browser](https://github.com/roileaf/pf2e-combater/wiki/Action-Browser) · [Auto-fill](https://github.com/roileaf/pf2e-combater/wiki/Auto-fill) · [What the Planner Can Plan](https://github.com/roileaf/pf2e-combater/wiki/What-the-Planner-Can-Plan) · [How Auto-fill Decides](https://github.com/roileaf/pf2e-combater/wiki/How-Auto-fill-Decides) · [Canvas, Execution and Undo](https://github.com/roileaf/pf2e-combater/wiki/Canvas-Execution-and-Undo) |
+| **Turn planner and executioner** | [Planner Panel](https://github.com/roileaf/pf2e-combater/wiki/Planner-Panel) · [Action Browser](https://github.com/roileaf/pf2e-combater/wiki/Action-Browser) · [Auto-fill](https://github.com/roileaf/pf2e-combater/wiki/Auto-fill) · [What the Planner Can Plan](https://github.com/roileaf/pf2e-combater/wiki/What-the-Planner-Can-Plan) · [How Auto-fill Decides](https://github.com/roileaf/pf2e-combater/wiki/How-Auto-fill-Decides) · [Canvas, Execution and Undo](https://github.com/roileaf/pf2e-combater/wiki/Canvas-Execution-and-Undo) |
 | **Intel tracker** | [Intel Tracker](https://github.com/roileaf/pf2e-combater/wiki/Intel-Tracker) · [Recall Knowledge](https://github.com/roileaf/pf2e-combater/wiki/Recall-Knowledge) |
 | **By role** | [GM Guide](https://github.com/roileaf/pf2e-combater/wiki/GM-Guide) · [Player Guide](https://github.com/roileaf/pf2e-combater/wiki/Player-Guide) |
 | **Reference** | [Integrations](https://github.com/roileaf/pf2e-combater/wiki/Integrations) · [Settings](https://github.com/roileaf/pf2e-combater/wiki/Settings) · [FAQ and Troubleshooting](https://github.com/roileaf/pf2e-combater/wiki/FAQ-and-Troubleshooting) |
