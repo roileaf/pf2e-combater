@@ -22,6 +22,7 @@ const SETTINGS = {
   raisePcShieldsWhenDefending: "raisePcShieldsWhenDefending",
   enrageBarbariansAtCombatStart: "enrageBarbariansAtCombatStart",
   learnObservedIntel: "learnObservedIntel",
+  falseIntelSteersPlans: "falseIntelSteersPlans",
   reactionsBeforeFirstTurn: "reactionsBeforeFirstTurn",
   combatTrackerActions: "combatTrackerActions",
   autoFillOnTurnStart: "autoFillOnTurnStart",
@@ -41,6 +42,12 @@ export function combatTrackerActions() {
 // Off: a creature gets its reaction only once its first turn of the encounter starts.
 export function reactionsBeforeFirstTurn() {
   return settingOrDefault(SETTINGS.reactionsBeforeFirstTurn, true) !== false;
+}
+
+// On: a false fact a character believes steers that player's Auto-fill as if it were true. Off: it
+// is only shown to them, and plans use real facts alone.
+export function falseIntelSteersPlans() {
+  return settingOrDefault(SETTINGS.falseIntelSteersPlans, true) !== false;
 }
 
 // Parts of the minimal bar a user can switch off (Customize minimal bar).
@@ -293,6 +300,15 @@ export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu }
     type: Boolean,
     default: false,
   });
+  game.settings.register(MODULE_ID, SETTINGS.falseIntelSteersPlans, {
+    name: "PF2E_COMBATER.Settings.FalseIntelSteersPlans.Name",
+    hint: "PF2E_COMBATER.Settings.FalseIntelSteersPlans.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.learnObservedIntel, {
     name: "PF2E_COMBATER.Settings.LearnObservedIntel.Name",
     hint: "PF2E_COMBATER.Settings.LearnObservedIntel.Hint",

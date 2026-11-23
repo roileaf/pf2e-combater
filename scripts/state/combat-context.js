@@ -7,7 +7,7 @@ import { movementFootprintCentersForToken } from "../rules/token-geometry.js";
 import { isPlannableActor } from "../rules/actor-eligibility.js";
 import { summonIdentity } from "../rules/summoned-creatures.js";
 import { awaitingFirstTurn, reactionBlock } from "../rules/reaction-block.js";
-import { reactionsBeforeFirstTurn } from "../settings.js";
+import { falseIntelSteersPlans, reactionsBeforeFirstTurn } from "../settings.js";
 import {
   INTEL_REVEAL_MODES,
   bandedIntelDefenseEntry,
@@ -18,7 +18,9 @@ import {
   intelFactId,
   intelIdentityTrait,
   intelTraitFactId,
+  believedFalseFacts,
   falseInformationKnownBy,
+  withBelievedDefenses,
   intelKnowerId,
   readIntelFalseInformation,
   readIntelLedger,
@@ -343,21 +345,44 @@ function readKnownDefense(actor, target, category, readValue, { showValue = true
     : entries;
 }
 
-function readDefensiveMeta(actor, canSeeDefenses, intelLedger = readIntelLedger(actor)) {
+// What the acting character believes: real known facts, with any false fact they hold in place of
+// (or beside) the real one. The player's plan follows the belief, right or wrong.
+function believedDefense(target, category, known) {
+  const entries = withBelievedDefenses(target, category, known ?? []);
+  return known === null && !entries.length ? null : entries;
+}
+
+function readDefensiveMeta(actor, canSeeDefenses, intelLedger = readIntelLedger(actor), intelFalseInformation = []) {
   const intelRevealMode = readIntelRevealMode(actor);
   if (!canSeeDefenses) {
     const intelTarget = intelTargetForActor(actor, intelLedger, intelRevealMode);
-    const perception = readKnownPerception(actor, intelTarget);
+    const believer = { intelFalseInformation };
+    const falseDc = (category, id) => {
+      const value = Number(believedFalseFacts(believer, category).find((record) => record.factId === id)?.value);
+      return Number.isFinite(value) && value > 0 ? value : null;
+    };
+    const saves = readKnownSaves(actor, intelTarget);
+    const saveBands = readKnownSaveBands(actor, intelTarget);
+    for (const save of ["fortitude", "reflex", "will"]) {
+      const dc = falseDc("saves", save);
+      if (dc === null) continue;
+      saves[save] = dc;
+      delete saveBands[save];
+    }
+    const falsePerception = falseDc("perception", "perception");
+    const perception = falsePerception === null
+      ? readKnownPerception(actor, intelTarget)
+      : { dc: falsePerception, mod: falsePerception - 10 };
     return {
       ac: null,
-      saves: readKnownSaves(actor, intelTarget),
-      intelSaveBands: readKnownSaveBands(actor, intelTarget),
+      saves,
+      intelSaveBands: saveBands,
       perception,
-      intelPerceptionBand: readKnownPerceptionBand(actor, intelTarget),
+      intelPerceptionBand: falsePerception === null ? readKnownPerceptionBand(actor, intelTarget) : null,
       perceptionDC: perception.dc,
-      resistances: readKnownDefense(actor, intelTarget, "resistances", readResistances),
-      weaknesses: readKnownDefense(actor, intelTarget, "weaknesses", readWeaknesses),
-      immunities: readKnownDefense(actor, intelTarget, "immunities", readImmunities, { showValue: false }),
+      resistances: believedDefense(believer, "resistances", readKnownDefense(actor, intelTarget, "resistances", readResistances)),
+      weaknesses: believedDefense(believer, "weaknesses", readKnownDefense(actor, intelTarget, "weaknesses", readWeaknesses)),
+      immunities: believedDefense(believer, "immunities", readKnownDefense(actor, intelTarget, "immunities", readImmunities, { showValue: false })),
       intelRevealMode,
     };
   }
@@ -438,6 +463,8 @@ function tokenEntry(token, originToken, { canSeeDefenses = false, combatant = nu
   const intelLedger = readKnownIntelLedger(actor, knowerIds);
   const intelRevealMode = readIntelRevealMode(actor);
   const intelFalseInformation = readIntelFalseInformation(actor).filter((record) => falseInformationKnownBy(record, knowerIds));
+  // What the planner believes (world setting): the shown falsehoods, or none.
+  const plannedFalseInformation = falseIntelSteersPlans() ? intelFalseInformation : [];
   const intelTarget = intelTargetForActor(actor, intelLedger, intelRevealMode);
   const conditions = readConditions(actor);
   const effects = readEffects(actor, { includeHidden: canSeeDefenses });
@@ -457,13 +484,17 @@ function tokenEntry(token, originToken, { canSeeDefenses = false, combatant = nu
     meleeReach: canSeeDefenses ? actorMeleeReach(actor) : playerVisibleMeleeReach(actor, intelLedger),
     intelLedger,
     intelRevealMode,
-    intelFalseInformation,
+    intelFalseInformation: plannedFalseInformation,
     traits: canSeeDefenses
       ? actorTraitSlugs(actor)
-      : actorTraitSlugs(actor).filter((trait) =>
-        canUseIntelFact(null, intelTarget, "traits", intelTraitFactId(trait))
-        || (canUseIntelCategory(null, intelTarget, "identity")
-          && String(trait).toLowerCase() === intelIdentityTrait(actor))),
+      : [...new Set([
+        ...actorTraitSlugs(actor).filter((trait) =>
+          canUseIntelFact(null, intelTarget, "traits", intelTraitFactId(trait))
+          || (canUseIntelCategory(null, intelTarget, "identity")
+            && String(trait).toLowerCase() === intelIdentityTrait(actor))),
+        // A trait the character wrongly believes the creature has.
+        ...believedFalseFacts({ intelFalseInformation: plannedFalseInformation }, "traits").map((record) => String(record.factId).toLowerCase()),
+      ])],
     visionerDetectionState,
     attackTargetable: attackTargetableDetectionState(visionerDetectionState)
       && attackTargetableConditions(conditions),
@@ -473,7 +504,7 @@ function tokenEntry(token, originToken, { canSeeDefenses = false, combatant = nu
     // Paralyzed and the like, or (by setting) no reaction yet before its first turn.
     reactionBlocked: Boolean(reactionBlock(actor))
       || awaitingFirstTurn(combatant, globalThis.game?.combat, { reactionsBeforeFirstTurn: reactionsBeforeFirstTurn() }),
-    ...readDefensiveMeta(actor, canSeeDefenses, intelLedger),
+    ...readDefensiveMeta(actor, canSeeDefenses, intelLedger, plannedFalseInformation),
   }, readBestiaryKnowledge(token));
 }
 

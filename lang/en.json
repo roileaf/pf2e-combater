@@ -289,6 +289,10 @@
         "Always": "Always",
         "LastTwo": "Last two actions only",
         "Last": "Last action only"
+      },
+      "FalseIntelSteersPlans": {
+        "Name": "False information steers player Auto-fill",
+        "Hint": "On: a false fact a character believes (a critical Recall Knowledge failure, or one you revealed) is treated as true by that player's Auto-fill, best target and scoring, so a false fire weakness makes fire attractive. Off: players still see the false fact, but their plans only use real facts."
       }
     },
     "Preflight": {

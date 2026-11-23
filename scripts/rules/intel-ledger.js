@@ -429,9 +429,43 @@ export function readIntelRevealMode(actorOrTarget) {
   return normalizeIntelRevealMode(readRevealModeFlag(actorOrTarget));
 }
 
+// False facts the planning character believes about this creature (a critical Recall Knowledge
+// failure, or planted by the GM). They read as true to the player, so the planner treats them as
+// true as well: a believed fire weakness makes fire attractive. Only the list a combat context put
+// on the target counts: it is already filtered to what the acting character believes.
+export function believedFalseFacts(target, category = null) {
+  const list = Array.isArray(target?.intelFalseInformation) ? target.intelFalseInformation : [];
+  return list.filter((record) => record?.revealed === true && record.factId && (!category || record.category === category));
+}
+
+// A believed false weakness, resistance or immunity, shaped like the creature's real entries.
+export function believedDefenseEntry(record) {
+  const value = Number(record?.value);
+  return { type: String(record?.factId ?? ""), ...(Number.isFinite(value) && value > 0 ? { value } : {}), intelFalse: true };
+}
+
+// A category's entries as the character believes them: a false fact replaces the real entry of the
+// same type and is added otherwise.
+export function withBelievedDefenses(target, category, entries) {
+  const believed = believedFalseFacts(target, category).map(believedDefenseEntry).filter((entry) => entry.type);
+  if (!believed.length) return entries;
+  const types = new Set(believed.map((entry) => intelFactId(entry.type)));
+  const typeOf = (entry) => intelFactId(String(entry?.type?.value ?? entry?.type ?? entry?.slug ?? entry?.label ?? ""));
+  return [...(Array.isArray(entries) ? entries : []).filter((entry) => !types.has(typeOf(entry))), ...believed];
+}
+
+function believedFactIds(target, category) {
+  const records = believedFalseFacts(target, category);
+  if (["weaknesses", "resistances", "immunities"].includes(category)) {
+    return records.flatMap((record) => [true, false].map((showValue) => intelDefenseFactId(believedDefenseEntry(record), { showValue })));
+  }
+  return records.map((record) => intelFactId(record.factId));
+}
+
 export function canUseIntelCategory(context, target, category) {
   if (!CATEGORY_IDS.has(category)) return false;
   if (!isNpcIntelTarget(target)) return false;
+  if (believedFalseFacts(target, category).length) return true;
   if (target?.intelLedger !== undefined) {
     const value = normalizeIntelLedger(target.intelLedger)[category];
     return value === true || (Array.isArray(value) && value.length > 0);
@@ -450,8 +484,11 @@ export function canUseIntelFact(context, target, category, factId) {
     : readIntelLedger(targetActor(target));
   const value = ledger[category];
   if (value === true) return true;
+  const ids = normalizeFactIds(factId);
+  const believed = believedFactIds(target, category);
+  if (believed.length && ids.some((id) => believed.includes(id))) return true;
   if (!Array.isArray(value) || !value.length) return false;
-  return normalizeFactIds(factId).some((id) => value.includes(id));
+  return ids.some((id) => value.includes(id));
 }
 
 export function intelCategoryLabel(category) {
