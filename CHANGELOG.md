@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.9.1]
+
+### Added
+
+- **Known creatures journal.** A new brain button in the token controls (and Alt+Shift+K) opens everything your characters know about every creature they've learned something about, in or out of combat and on any scene, with a search box. Players see the party's intel plus their own characters'; the GM sees everything anyone knows. A creature whose identity isn't known yet is listed as "Unknown creature". For the GM, with a creature's token selected the same button opens that creature's intel editor instead.
+
 ## [2.9.0]
 
 ### Added
