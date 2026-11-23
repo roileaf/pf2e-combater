@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.9.3]
+
+### Changed
+
+- **False information now steers the player's plan.** A false fact the GM has revealed reads as true to the player, so Auto-fill, best target and scoring now believe it too, for the characters who believe it: a false fire weakness makes fire attacks attractive, a false resistance discourages that damage type, a false save DC is used for save spells and skill actions, and a false trait counts as a trait. A false fact replaces the real one of the same kind (a false Fire resistance 15 over a known Fire 5). Prepared falsehoods that are still hidden change nothing, and the GM's own planning always uses the real stats. The world setting *False information steers player Auto-fill* (on by default) turns this off: players still see the false fact, but their plans use real facts only.
+
 ## [2.9.2]
 
 ### Added
