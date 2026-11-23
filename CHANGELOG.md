@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0]
+
+### Added
+
+- **Intel per character.** What a character learns about a creature is now theirs until the GM shares it. A Recall Knowledge success opens the GM's intel window on the roller, so only that player sees the facts. At the top of the window, a card per party character (and "Whole party") picks who learns what you tick: click several characters to tell them all at once, or "Whole party" to share. Facts some characters already know are marked "Known by Ezren", and one click ("Give them everything any character knows") hands those to the selected characters, or to the party. A "Who knows what" table at the top of each creature shows every known fact against every party character: known by the whole party, by that character only, or a false fact they believe. A critical failure's false information is believed by the roller alone. Exploit Vulnerability files what it reveals under the thaumaturge the same way. Each player sees the party's intel plus their own characters', and when Combater plans a character's turn it only uses what that character knows (for example, it won't aim for a weakness only another character learned). Intel recorded before this update stays shared with the whole party.
+- **Intel button for the minimal bar.** Customize minimal bar has a new Intel part (off by default): a brain button that opens what your character knows about the enemies, or the GM's intel editor, without opening Plan setup.
+
 ## [2.8.0]
 
 ### Added
