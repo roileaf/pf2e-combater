@@ -282,6 +282,13 @@
       "LearnObservedIntel": {
         "Name": "Learn Intel from what the party sees",
         "Hint": "During combat, when an enemy uses a Strike, reaction or ability in plain view, record it in the party's Intel for that creature, as if they had learned it. Abilities posted only to the GM are not learned."
+      },
+      "PlayerAutoFillWhen": {
+        "Name": "Auto-fill for players",
+        "Hint": "When players may use Auto-fill on their turn. \"Last action only\" turns it into a third-action suggester: players plan their first two actions themselves, and Auto-fill appears once one action is left. The GM always has Auto-fill.",
+        "Always": "Always",
+        "LastTwo": "Last two actions only",
+        "Last": "Last action only"
       }
     },
     "Preflight": {

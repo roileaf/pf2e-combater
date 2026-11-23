@@ -14,6 +14,7 @@ const SETTINGS = {
   hideUntrainedSkillActions: "hideUntrainedSkillActions",
   includeUnknownCustomActions: "includeUnknownCustomActions",
   hideAutoFillFromPlayers: "hideAutoFillFromPlayers",
+  playerAutoFillWhen: "playerAutoFillWhen",
   nativeRollContextPreflight: "nativeRollContextPreflight",
   showDebugTab: "showDebugTab",
   disableForPlayers: "disableForPlayers",
@@ -204,6 +205,22 @@ export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu }
     config: true,
     type: Boolean,
     default: false,
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.playerAutoFillWhen, {
+    name: "PF2E_COMBATER.Settings.PlayerAutoFillWhen.Name",
+    hint: "PF2E_COMBATER.Settings.PlayerAutoFillWhen.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      always: "PF2E_COMBATER.Settings.PlayerAutoFillWhen.Always",
+      "last-two": "PF2E_COMBATER.Settings.PlayerAutoFillWhen.LastTwo",
+      last: "PF2E_COMBATER.Settings.PlayerAutoFillWhen.Last",
+    },
+    default: "always",
+    // Open panels redraw, so the Auto-fill button appears or goes at once.
+    onChange: () => Hooks.callAll("pf2e-combater.minimalPartsChanged"),
   });
 
   game.settings.register(MODULE_ID, SETTINGS.nativeRollContextPreflight, {

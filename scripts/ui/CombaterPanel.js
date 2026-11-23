@@ -1,3 +1,4 @@
+import { autoFillAllowed } from "./panel/auto-fill-access.js";
 import { MODULE_ID, STORAGE_KEYS } from "../constants.js";
 import { SETTINGS, playerAccessAllowed, settingOrDefault, trackerOnlyMode } from "../settings.js";
 import { projectContextForDraftDestination, SUSTAIN_A_SPELL_ACTION } from "../engine/action/builder/index.js";
@@ -1058,6 +1059,8 @@ class CombaterPanel extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _autoFillDraft({ plan = null, forceFull = false, preparedPlans = null } = {}) {
+    // The GM may hold Auto-fill back from players until their last action or two.
+    if (!autoFillAllowed(this._context)) return null;
     return autoFillPanelDraft(this, { plan, forceFull, preparedPlans });
   }
 
@@ -1070,6 +1073,7 @@ class CombaterPanel extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _cycleAutoFillDraft(direction = 1) {
+    if (!autoFillAllowed(this._context)) return null;
     return cyclePanelAutoFillDraft(this, direction);
   }
 

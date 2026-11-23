@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../../constants.js";
 import { SETTINGS, settingOrDefault } from "../../settings.js";
+import { autoFillAllowed } from "./auto-fill-access.js";
 
 // A creature a player at the table controls: its player plans its turn, not the GM.
 function hasActivePlayerOwner(actor) {
@@ -17,7 +18,7 @@ export function shouldAutoFillOnTurnStart(panel, combat = globalThis.game?.comba
   if (!context || context.combatant?.id !== combat.combatant.id) return false;
   const builder = panel._builder;
   if (!builder || builder.readonly === true || (builder.draft?.steps?.length ?? 0) > 0) return false;
-  if (!user?.isGM && settingOrDefault(SETTINGS.hideAutoFillFromPlayers, false)) return false;
+  if (!autoFillAllowed(context, user)) return false;
   const actor = combat.combatant.actor;
   if (!actor) return false;
   if (user?.isGM) return !hasActivePlayerOwner(actor);

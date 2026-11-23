@@ -1,3 +1,4 @@
+import { autoFillAllowed } from "./auto-fill-access.js";
 import { SETTINGS, minimalHiddenParts, settingOrDefault } from "../../settings.js";
 import { canUndoPanelDraftClear } from "./draft-workflow.js";
 import { collectionValues } from "../../foundry-data.js";
@@ -176,7 +177,7 @@ export function minimalIdleLabel(context, combat = globalThis.game?.combat) {
 
 export function viewPanelContext(panel, context) {
   const showDebug = Boolean(game?.user?.isGM && settingOrDefault(SETTINGS.showDebugTab, false));
-  const showAutoFill = game?.user?.isGM === true || !settingOrDefault(SETTINGS.hideAutoFillFromPlayers, false);
+  const showAutoFill = autoFillAllowed(context);
   const activePlans = panel._activeAutoFillPlans();
   const selectedAutoFill = selectDisplayPlan(activePlans, panel._activePinnedPlanId())
     ?? panel._builder?.autoFill

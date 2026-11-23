@@ -75,6 +75,7 @@ await import("./self-test/raises-shield.test.js");
 await import("./self-test/companion-occupancy.test.js");
 await import("./self-test/hazarder.test.js");
 await import("./self-test/character-intel.test.js");
+await import("./self-test/auto-fill-access.test.js");
 await import("./self-test/turn-start-auto-fill.test.js");
 await import("./self-test/runtime.test.js");
 await import("./self-test/browser-summons.test.js");
