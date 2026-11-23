@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.10.4]
+
+### Added
+
+- **Un-mystify tokens when Identity is revealed (new setting, off by default).** With PF2e Workbench's NPC mystifier: when the GM reveals a creature's Identity to the whole party in Intel, that creature's mystified tokens on the scene the GM is viewing get their real name back. Revealing Identity to a single character leaves them mystified, and a token the GM mystifies again afterwards stays mystified.
+
 ## [2.10.3]
 
 ### Added
