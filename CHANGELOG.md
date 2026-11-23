@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.9.4]
+
+### Added
+
+- **Default Intel reveal style.** A new world setting chooses how revealed numbers are shown for every creature you haven't set a style for: exact DCs, or Low / Mid / High bands. A creature whose Intel editor you've saved keeps its own choice, and you can still switch any creature in its editor.
+
 ## [2.9.3]
 
 ### Changed
