@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.8.0]
+
+### Added
+
+- **PF2e Hazarder integration: disable hazards on your turn.** For each hazard PF2e Hazarder is tracking, a character gets a "Disable <hazard>" step, using the open disable option they're best at for each part of the hazard. It rolls through Hazarder, which applies the result to the hazard. Hands-on disables (Disable a Device, Thievery) need the character next to the hazard; others work from within 30 feet. The step is scored by the odds against the DC (or even odds when players can't see the DC), how many successes are left, and whether the hazard is active or only armed, so it competes with a second or third Strike rather than replacing the first. It refreshes when the hazard's progress changes. Nothing changes without Hazarder.
+
 ## [2.7.0]
 
 ### Added
