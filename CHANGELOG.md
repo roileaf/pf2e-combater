@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.9.2]
+
+### Added
+
+- **Auto-fill for players: last action only.** A new world setting lets the GM hold Auto-fill back from players until they are down to their last action, or last two, so it works as a third-action suggester: players choose their first actions themselves, then Auto-fill appears with ideas for what's left (Recall Knowledge, Demoralize, Raise a Shield and so on, not only another Strike). Auto-fill at turn start waits the same way. The GM always has Auto-fill, and the action browser is unchanged.
+
 ## [2.9.1]
 
 ### Added
