@@ -37,6 +37,27 @@ function tokenBase(context) {
   };
 }
 
+// PF2e/SF2e cones and lines start at the edge of the creature's space, not its middle: a 20-ft cone
+// from a Medium creature reaches the fourth square out. Returns where a cone/line aimed along
+// 'radians' from the caster leaves its space (a corner when aimed diagonally). A marker that
+// doesn't start on the caster (a dragged template) keeps its own origin.
+export function casterEdgeOrigin(context, center, radians) {
+  if (!center || !Number.isFinite(radians)) return center;
+  const base = tokenBase(context);
+  const casterCenter = { x: base.x + base.width / 2, y: base.y + base.height / 2 };
+  if (Math.hypot(center.x - casterCenter.x, center.y - casterCenter.y) > 1) return center;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const halfWidth = base.width / 2;
+  const halfHeight = base.height / 2;
+  const reach = Math.min(
+    Math.abs(cos) > 1e-9 ? halfWidth / Math.abs(cos) : Infinity,
+    Math.abs(sin) > 1e-9 ? halfHeight / Math.abs(sin) : Infinity,
+  );
+  if (!Number.isFinite(reach)) return center;
+  return { x: center.x + cos * reach, y: center.y + sin * reach };
+}
+
 export function areaRegionType(action, marker) {
   return String(
     marker?.shape
@@ -102,10 +123,12 @@ export function createAreaRegionData({ context, action, marker }) {
   const baseShape = { x: center.x, y: center.y };
   let shape;
 
-  if (type === "cone") {
-    shape = { ...baseShape, type: "cone", radius: distancePx, angle: numeric(marker?.angle, 90) || 90, rotation };
-  } else if (type === "line") {
-    shape = { ...baseShape, type: "line", length: distancePx, width: widthPx, rotation };
+  if (type === "cone" || type === "line") {
+    // A template the user placed keeps its origin; a planned one starts at the caster's edge.
+    const start = marker?.userPlaced ? center : casterEdgeOrigin(context, center, (rotation * Math.PI) / 180);
+    shape = type === "cone"
+      ? { x: start.x, y: start.y, type: "cone", radius: distancePx, angle: numeric(marker?.angle, 90) || 90, rotation }
+      : { x: start.x, y: start.y, type: "line", length: distancePx, width: widthPx, rotation };
   } else if (type === "cube" || type === "square") {
     // A cube sits on the grid and never turns: its corner on a grid vertex, as PF2e places it.
     // The marker holds its center; the rectangle is anchored at its top-left corner.

@@ -2,7 +2,7 @@ import { clearMovementPreview, showMovementPreview } from "../movement-preview.j
 import { previewLayer } from "../preview-layer.js";
 import { clearRangeOverlay, showRangeOverlay, spellRangeFeet } from "../range-overlay.js";
 import { computeAreaMarker } from "../../engine/action/builder/projection.js";
-import { areaRegionDistance, areaRegionType, areaRegionWidth } from "../../engine/area/region.js";
+import { areaRegionDistance, areaRegionType, areaRegionWidth, casterEdgeOrigin } from "../../engine/area/region.js";
 import { canvasDistancePixels as distancePixels, canvasGridSize as gridSize, canvasPoint as point, canvasTokenById, numeric } from "../../rules/canvas-geometry.js";
 
 let actionPreviewGraphics = null;
@@ -234,10 +234,12 @@ function drawAreaPreview(graphics, context, step) {
   const rotation = numeric(marker?.rotation, 0);
 
   // Outline only (alpha 0) — the dim area fill read as a heavy overlay; the shape ring is enough.
+  // Cones and lines start at the caster's edge, as the placed region does.
+  const start = marker?.userPlaced ? center : casterEdgeOrigin(context, center, (rotation * Math.PI) / 180);
   if (shape === "line") {
-    drawLineShape(graphics, center, distance, width, rotation, 0xf0b34a, 0);
+    drawLineShape(graphics, start, distance, width, rotation, 0xf0b34a, 0);
   } else if (shape === "cone") {
-    drawConeShape(graphics, center, distance, numeric(marker?.angle, 90) || 90, rotation, 0xf0b34a, 0);
+    drawConeShape(graphics, start, distance, numeric(marker?.angle, 90) || 90, rotation, 0xf0b34a, 0);
   } else if (shape === "square" || shape === "cube") {
     drawRectShape(graphics, center.x - distance / 2, center.y - distance / 2, distance, distance, 0xf0b34a, 0);
   } else {

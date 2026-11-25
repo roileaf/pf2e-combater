@@ -4,7 +4,7 @@ import {
   canvasLinePathBlocked,
 } from "../../rules/canvas-geometry.js";
 import { movementFootprintCentersForToken } from "../../rules/token-geometry.js";
-import { areaRegionDistance, areaRegionWidth } from "../area/region.js";
+import { areaRegionDistance, areaRegionWidth, casterEdgeOrigin } from "../area/region.js";
 import { canUseTargetDefenses, damageAdjustment, saveScoreDelta } from "./facts.js";
 
 const BASE_ENEMY_VALUE = 100;
@@ -208,8 +208,10 @@ function directionalAreaPlacements(type, action, context, origin, enemyValues, a
   const evaluate = placementEvaluator(action, context, enemyValues);
   const placements = directionalCandidates(origin, enemyValues, distance, maxCastRange)
     .map(({ aimPoint, centerTarget, direction }) => {
-      const enemies = enemyValues.filter((enemy) => directionalAreaContains(type, action, origin, direction, distance, enemy));
-      const allies = allyValues.filter((ally) => directionalAreaContains(type, action, origin, direction, distance, ally));
+      // The cone/line leaves the caster's space at its edge (see casterEdgeOrigin).
+      const start = casterEdgeOrigin(context, origin, Math.atan2(direction.y, direction.x));
+      const enemies = enemyValues.filter((enemy) => directionalAreaContains(type, action, start, direction, distance, enemy));
+      const allies = allyValues.filter((ally) => directionalAreaContains(type, action, start, direction, distance, ally));
       return {
         aimPoint,
         centerTarget,

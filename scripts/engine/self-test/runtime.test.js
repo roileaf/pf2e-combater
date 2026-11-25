@@ -11095,6 +11095,7 @@ try {
     rotation: 25,
     originTokenId: "caster-token",
     label: "Cone 15 ft",
+    userPlaced: true,
   }]);
   assert.equal(nativePlacementCancelled, false);
   assert.deepEqual(
@@ -11246,6 +11247,7 @@ try {
     rotation: 54,
     originTokenId: "caster-token",
     label: "Cone 15 ft",
+    userPlaced: true,
   }]);
   assert.equal(areaPointerRemoved, true);
   assert.equal(areaPointerHandler, null);
@@ -11291,6 +11293,7 @@ try {
     rotation: 51,
     originTokenId: "caster-token",
     label: "Cone 15 ft",
+    userPlaced: true,
   }]);
   assert.equal(v14PointerRemoved, true);
   assert.equal(v14PointerHandler, null);
@@ -12370,7 +12373,8 @@ try {
   assert.equal(computedAreaPreview.marker.shape, "cone");
   assert.equal(computedAreaPreview.marker.rotation, 0);
   assert.ok(actionPreviewCalls.some((call) =>
-    call.type === "arc" && call.x === 100 && call.y === 100 && call.radius === 300),
+    // The cone starts at the caster's edge (half a 50-px square right of its center), as PF2e places it.
+    call.type === "arc" && call.x === 125 && call.y === 100 && call.radius === 300),
     "area hover preview should compute a planned NPC cone marker even before the draft stores areaMarker");
 
   // An executed step's movement is already spent: with skipMovement the stride overlay is

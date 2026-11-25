@@ -213,6 +213,8 @@ function markerFromRegionShape({ context, action, shape, fallback }) {
     rotation: cube ? 0 : numeric(data.rotation ?? fallback?.rotation, rotationFromOrigin(context, center)) ?? 0,
     originTokenId: context?.token?.id ?? context?.token?.uuid ?? null,
     label: areaMarkerLabel(type, distance),
+    // Placed by hand: keep this origin exactly (no caster-edge shift for cones/lines).
+    userPlaced: true,
   };
 }
 
@@ -507,6 +509,7 @@ export function chooseAreaMarker({ context, action, onChoose, onCancel, onMove }
         rotation: rotationFromOrigin(context, center),
         originTokenId: context?.token?.id ?? context?.token?.uuid ?? null,
         label: areaMarkerLabel(shape, distance),
+        userPlaced: true,
       });
     } finally {
       if (handled) stopAreaPicker({ notifyCancel: false });
