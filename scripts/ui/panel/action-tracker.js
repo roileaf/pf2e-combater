@@ -1,3 +1,4 @@
+import { systemAsset } from "../../system.js";
 import { adjustTrackedActions, setQuickenedAllowance } from "../../state/action-tracker.js";
 import { reactionUsed, turnIdentity } from "../../state/turn-controls.js";
 import { awaitingFirstTurn, reactionBlock } from "../../rules/reaction-block.js";
@@ -127,7 +128,7 @@ export function actionTrackerView(context) {
         slug === "slowed" ? "Slowed {value}" : "Stunned {value}", { value });
     return {
       slug, value: value || "", pending,
-      img: `systems/pf2e/icons/conditions/${slug}.webp`,
+      img: systemAsset(`icons/conditions/${slug}.webp`),
       tooltip: pending
         ? `${t("ActionTracker.PendingConditions", "{conditions} · next turn", { conditions: name })}. ${t("ActionTracker.PendingConditionsHint", "Gained during this turn: it reduces the actions this creature regains at the start of its next turn.")}`
         : name,

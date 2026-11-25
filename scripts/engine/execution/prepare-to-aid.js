@@ -1,3 +1,4 @@
+import { compendiumUuid } from "../../system.js";
 import { t } from "../../i18n.js";
 import { attachRevertOp, executionPatch } from "./results.js";
 import { sendTurnControlRequest, turnIdentity } from "../../state/turn-controls.js";
@@ -59,7 +60,7 @@ export async function revertPreparedAid(op) {
 // PF2e: the Aid check is usually DC 15; the GM may set another one.
 export const AID_DC = 15;
 // PF2e's own Effect: Aid. Its ChoiceSet holds the bonus; its modifier applies to the next attack roll or skill check.
-export const AID_EFFECT_UUID = "Compendium.pf2e.other-effects.Item.AHMUpMbaVkZ5A1KX";
+export const aidEffectUuid = () => compendiumUuid("other-effects", "AHMUpMbaVkZ5A1KX");
 
 function strikeRank(actor, strike) {
   const category = strike?.item?.category ?? strike?.item?.system?.category;
@@ -174,7 +175,7 @@ export function aidEffectSource(effect, bonus, originUuid = null, aided = null) 
 export async function applyAidEffect({ allyUuid, bonus, originUuid = null, aided = null }) {
   if (!bonus) return false;
   const ally = await globalThis.fromUuid?.(allyUuid);
-  const effect = await globalThis.fromUuid?.(AID_EFFECT_UUID);
+  const effect = await globalThis.fromUuid?.(aidEffectUuid());
   if (typeof ally?.createEmbeddedDocuments !== "function" || !effect) return false;
   const created = await ally.createEmbeddedDocuments("Item", [aidEffectSource(effect, bonus, originUuid, aided)]);
   return created.length > 0;

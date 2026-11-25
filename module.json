@@ -1,7 +1,7 @@
 {
   "id": "pf2e-combater",
   "title": "PF2e Combater",
-  "description": "Floating tactical combat advisor for PF2e. Helps plan and execute turns from actor actions, battlefield state, generic actions, strikes, and curated spells.",
+  "description": "Floating tactical combat advisor for PF2e and Starfinder 2e. Helps plan and execute turns from actor actions, battlefield state, generic actions, strikes, and curated spells.",
   "version": "2.10.4",
   "url": "#{URL}#",
   "manifest": "#{MANIFEST}#",
@@ -19,6 +19,14 @@
         "compatibility": {
           "minimum": "8.3.0",
           "verified": "8.3.0"
+        }
+      },
+      {
+        "id": "sf2e",
+        "type": "system",
+        "compatibility": {
+          "minimum": "1.7.1",
+          "verified": "1.7.1"
         }
       }
     ],

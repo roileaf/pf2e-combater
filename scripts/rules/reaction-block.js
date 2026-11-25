@@ -17,7 +17,7 @@ const itemSlug = (item) => slugify(item?.slug ?? item?.system?.slug);
 const expired = (item) => item?.isExpired === true || item?.system?.expired === true;
 
 // With "Reactions before first turn" off, a creature has no reaction until its first turn of the
-// encounter starts: round 1, before the order reaches it. PF2e's flags.pf2e.roundOfLastTurn is not
+// encounter starts: round 1, before the order reaches it. The system's roundOfLastTurn flag is not
 // used, since it survives resetting or re-running an encounter. A creature that started its turn
 // and Delayed (it now sits later in the order) has had its turn.
 export function awaitingFirstTurn(combatant, combat = globalThis.game?.combat, { reactionsBeforeFirstTurn = true } = {}) {

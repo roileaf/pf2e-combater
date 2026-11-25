@@ -1,4 +1,4 @@
-// pf2e.actionspf2e compendium item ids, so opening a generic action shows its system entry
+// Action compendium item ids (pf2e.actionspf2e; SF2e's sf2e.actions reuses them), so opening a generic action shows its system entry
 // instead of a chat-guidance message. (stabilize/retch have no standalone entry.)
 const ACTION_COMPENDIUM_IDS = {
   seek: "BlAOM2X92SI6HMtJ",
@@ -459,20 +459,26 @@ const GENERIC_ACTION_DEFS = [
 
 // Some actions are more useful explained by the condition they apply/remove/reduce than by their
 // own (often one-line) action text — Stand/Crawl/Drop Prone are all about the Prone condition,
-// Retch is entirely about reducing Sickened. Point those at the conditionitems compendium instead.
-const ACTION_CONDITION_UUID_OVERRIDES = {
-  stand: "Compendium.pf2e.conditionitems.Item.j91X7x0XSomq8d60", // Prone
-  crawl: "Compendium.pf2e.conditionitems.Item.j91X7x0XSomq8d60", // Prone
-  retch: "Compendium.pf2e.conditionitems.Item.fesd1n5eVhpCSS18", // Sickened
-  "assisted-recovery": "Compendium.pf2e.conditionitems.Item.lDVqvLKA6eF3Df60", // Persistent Damage
+// Retch is entirely about reducing Sickened. Point those at the conditions compendium instead.
+const ACTION_CONDITION_IDS = {
+  stand: "j91X7x0XSomq8d60", // Prone
+  crawl: "j91X7x0XSomq8d60", // Prone
+  retch: "fesd1n5eVhpCSS18", // Sickened
+  "assisted-recovery": "lDVqvLKA6eF3Df60", // Persistent Damage
 };
 
-// Point each generic action at its pf2e.actionspf2e compendium entry so opening it shows the
+// The UUID is read when used, so it names the active system's pack (pf2e.actionspf2e / sf2e.actions).
+function withCompendiumUuid(action, pack, id) {
+  return Object.defineProperty({ ...action }, "uuid", { get: () => compendiumUuid(pack, id), enumerable: true, configurable: true });
+}
+
+// Point each generic action at its system action compendium entry so opening it shows the
 // system details instead of a chat-guidance message.
 export const GENERIC_ACTIONS = GENERIC_ACTION_DEFS.map((action) => {
-  const conditionUuid = ACTION_CONDITION_UUID_OVERRIDES[action.slug];
-  if (conditionUuid) return { ...action, uuid: conditionUuid };
+  const conditionId = ACTION_CONDITION_IDS[action.slug];
+  if (conditionId) return withCompendiumUuid(action, "conditionitems", conditionId);
   if (action.uuid) return action;
   const id = ACTION_COMPENDIUM_IDS[action.slug];
-  return id ? { ...action, uuid: `Compendium.pf2e.actionspf2e.Item.${id}` } : action;
-});
+  return id ? withCompendiumUuid(action, "actionspf2e", id) : action;
+});import { compendiumUuid } from "../system.js";
+

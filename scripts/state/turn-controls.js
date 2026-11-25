@@ -1,3 +1,4 @@
+import { systemId } from "../system.js";
 import { MODULE_ID } from "../constants.js";
 import { collectionValues } from "../foundry-data.js";
 import { t } from "../i18n.js";
@@ -439,7 +440,8 @@ export function registerTurnControlHooks(refresh) {
       let update = updates.find((entry) => entry._id === next.id);
       if (!update) updates.push(update = { _id: next.id });
       update.flags ??= {};
-      update.flags.pf2e = { ...update.flags.pf2e, roundOfLastTurn: round, roundOfLastTurnEnd: round };
+      const scope = systemId();
+      update.flags[scope] = { ...update.flags[scope], roundOfLastTurn: round, roundOfLastTurnEnd: round };
     }
   });
   Hooks.on("updateCombat", (combat, changed, options = {}) => {

@@ -1,3 +1,4 @@
+import { systemFlags } from "../../system.js";
 import { systemValue } from "../../foundry-data.js";
 import { t } from "../../i18n.js";
 import { buildSustainedSpellEffectData, parseSpellDuration } from "../area/duration.js";
@@ -222,7 +223,7 @@ function messageMatchesCast(message, actor, item) {
     item?._id,
     item?.uuid,
   ].filter(Boolean).map(String));
-  const origin = message?.flags?.pf2e?.origin ?? {};
+  const origin = systemFlags(message)?.origin ?? {};
   const originIds = [
     origin.uuid,
     origin.item,
@@ -343,10 +344,9 @@ function sustainReminderHandlesCast(actor, action, message) {
   if (globalThis.game?.modules?.get?.("pf2e-sustain-reminder")?.active !== true) return false;
   // Sustain Reminder creates its effect in an async chat hook. Checking existing
   // effects here races that creation, so delegate only casts its hook can handle.
-  const systemId = globalThis.game?.system?.id ?? "pf2e";
   const tokenActor = message?.token?.actor;
   return action?.item?.system?.duration?.sustained === true
-    && message?.flags?.[systemId]?.origin?.type === "spell"
+    && systemFlags(message).origin?.type === "spell"
     && Boolean(tokenActor && (tokenActor === actor || (actor?.uuid && tokenActor.uuid === actor.uuid)));
 }
 
@@ -473,7 +473,7 @@ async function rollSpellAttack({ action, nativeResult, event, attackNumber = 1 }
   let attackMessageId = null;
   const hooks = globalThis.Hooks;
   const hookId = hooks?.on?.("createChatMessage", (message) => {
-    const type = message?.flags?.pf2e?.context?.type;
+    const type = systemFlags(message)?.context?.type;
     if (!attackMessageId && message?.id !== card?.id && ["spell-attack-roll", "attack-roll"].includes(type)) {
       attackMessageId = message.id;
     }
@@ -508,7 +508,7 @@ async function rollSpellDamage({ action, nativeResult, event }) {
   let damageMessageId = null;
   const hooks = globalThis.Hooks;
   const hookId = hooks?.on?.("createChatMessage", (message) => {
-    if (!damageMessageId && message?.id !== card?.id && message?.flags?.pf2e?.context?.type === "damage-roll") {
+    if (!damageMessageId && message?.id !== card?.id && systemFlags(message)?.context?.type === "damage-roll") {
       damageMessageId = message.id;
     }
   }) ?? null;

@@ -1,3 +1,4 @@
+import { systemSettingKey } from "../../system.js";
 import { t } from "../../i18n.js";
 import { SETTINGS, componentEnabled, settingOrDefault } from "../../settings.js";
 import { turnCombatantName } from "../../state/turn-controls.js";
@@ -150,7 +151,7 @@ export function registerUpcomingTurnHooks(refresh) {
     Hooks.on(event, (combatant) => { if (relevantCombat(combatant.parent)) refresh("upcoming-turns"); });
   }
   Hooks.on("updateSetting", (setting) => {
-    if (["core.combatTrackerConfig", "pf2e.metagame_tokenSetsNameVisibility"].includes(setting.key)) refresh("upcoming-turns");
+    if (["core.combatTrackerConfig", systemSettingKey("metagame_tokenSetsNameVisibility")].includes(setting.key)) refresh("upcoming-turns");
   });
   for (const [event, kind] of [["updateActor", "actor"], ["updateToken", "token"]]) {
     Hooks.on(event, (document, changed) => {

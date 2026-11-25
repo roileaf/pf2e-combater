@@ -2,7 +2,7 @@
 // every basic action, so compact views swap it for something recognizable.
 export const GENERIC_ACTION_ART = /default-icons|icons\/actions\//;
 
-// Core Foundry icons for basic actions the system gives no art of its own.
+// Core Foundry icons for basic actions the system gives no art of its own ("system:" = the game system's assets).
 const FALLBACK_ART = {
   stride: "icons/skills/movement/feet-winged-boots-brown.webp",
   step: "icons/skills/movement/feet-spurred-boots-brown.webp",
@@ -14,7 +14,7 @@ const FALLBACK_ART = {
   interact: "icons/skills/melee/hand-grip-staff-yellow-brown.webp",
   delay: "icons/magic/time/hourglass-tilted-gray.webp",
   // PF2e's Aid action only has the Reaction glyph; its Effect: Aid icon is the one players know.
-  "prepare-to-aid": "systems/pf2e/icons/spells/efficient-apport.webp",
+  "prepare-to-aid": "system:icons/spells/efficient-apport.webp",
 };
 
 function baseSlug(slug) {
@@ -48,5 +48,7 @@ export function actionArt(slug, img, { item = null } = {}) {
   if (!key) return "";
   const system = globalThis.game?.pf2e?.actions?.get?.(key)?.img;
   if (system && !GENERIC_ACTION_ART.test(String(system))) return system;
-  return FALLBACK_ART[key] ?? "";
-}
+  const art = FALLBACK_ART[key] ?? "";
+  return art.startsWith("system:") ? systemAsset(art.slice(7)) : art;
+}import { systemAsset } from "../system.js";
+

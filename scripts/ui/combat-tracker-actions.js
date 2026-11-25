@@ -1,3 +1,4 @@
+import { systemId } from "../system.js";
 import { MODULE_ID } from "../constants.js";
 import { collectionValues } from "../foundry-data.js";
 import { t } from "../i18n.js";
@@ -222,7 +223,7 @@ export function registerCombatTrackerActions() {
   Hooks.on("updateActor", (_actor, changed) => { if (changed?.flags?.[MODULE_ID] || changed?.[`flags.${MODULE_ID}`]) refreshSoon(); });
   Hooks.on("updateCombatant", refreshSoon);
   for (const event of ["createChatMessage", "deleteChatMessage"]) {
-    Hooks.on(event, (message) => { if (message?.flags?.[MODULE_ID]?.actionSpend || message?.flags?.pf2e) refreshSoon(); });
+    Hooks.on(event, (message) => { if (message?.flags?.[MODULE_ID]?.actionSpend || message?.flags?.[systemId()]) refreshSoon(); });
   }
   for (const event of ["createItem", "deleteItem", "updateItem"]) {
     Hooks.on(event, (item) => { if (["condition", "effect"].includes(item?.type)) refreshSoon(); });

@@ -1,3 +1,4 @@
+import { systemId } from "../system.js";
 import { actorItems } from "../foundry-data.js";
 import { spellstrikeExpended } from "./spellstrike-state.js";
 import { slugify as normalize } from "../engine/action/text.js";
@@ -211,7 +212,7 @@ export function readCombatState(actor) {
     "channel-elements",
     "kinetic-aura",
     "elemental-aura",
-  ]) || hasFlagPath(actor, ["flags", "pf2e", "kineticist", "auraActive"]);
+  ]) || hasFlagPath(actor, ["flags", systemId(), "kineticist", "auraActive"]);
 
   // Combater tracks it (PF2e doesn't); the effect/flag names are kept for other modules that do.
   const spellstrikeNeedsRecharge = spellstrikeExpended(actor) || hasEntry(actor, [
@@ -220,13 +221,13 @@ export function readCombatState(actor) {
     "spellstrike-unavailable",
     "spellstrike-needs-recharge",
   ]) || flagBoolean(actor, [
-    ["flags", "pf2e", "magus", "spellstrikeCharged"],
+    ["flags", systemId(), "magus", "spellstrikeCharged"],
     ["system", "resources", "spellstrike", "charged"],
     ["system", "resources", "spellstrike", "value"],
   ]) === false;
 
   const spellstrikeChargedFlag = flagBoolean(actor, [
-    ["flags", "pf2e", "magus", "spellstrikeCharged"],
+    ["flags", systemId(), "magus", "spellstrikeCharged"],
     ["system", "resources", "spellstrike", "charged"],
     ["system", "resources", "spellstrike", "value"],
   ]);
@@ -246,7 +247,7 @@ export function readCombatState(actor) {
   const huntedPreyTokenUuids = tokenMarkUuids(actor, ["hunt-prey", "hunted-prey"]);
   const huntedPreyActive = huntedPreyTokenUuids.length > 0
     || hasEntry(actor, ["hunt-prey", "hunted-prey"])
-    || hasFlagPath(actor, ["flags", "pf2e", "ranger", "huntPrey"], undefined);
+    || hasFlagPath(actor, ["flags", systemId(), "ranger", "huntPrey"], undefined);
 
   return {
     activeStances: [...new Set(activeStances(actor))],

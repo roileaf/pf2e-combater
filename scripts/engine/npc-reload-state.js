@@ -1,3 +1,4 @@
+import { systemFlags } from "../system.js";
 import { MODULE_ID } from "../constants.js";
 import { canRestoreSnapshot } from "./revert/transaction.js";
 
@@ -67,9 +68,9 @@ export function actionReloadCost(action) {
 
 export function npcReloadWeaponKey(action) {
   const item = actionItem(action);
-  const linkedWeaponId = item?.flags?.pf2e?.linkedWeapon
-    ?? item?.flags?.pf2e?.linkedWeaponId
-    ?? action?.strike?.item?.flags?.pf2e?.linkedWeapon;
+  const linkedWeaponId = systemFlags(item)?.linkedWeapon
+    ?? systemFlags(item)?.linkedWeaponId
+    ?? systemFlags(action?.strike?.item)?.linkedWeapon;
   const key = linkedWeaponId
     ?? action?.activityProfile?.reloadWeaponKey
     ?? action?.activityProfile?.weaponId

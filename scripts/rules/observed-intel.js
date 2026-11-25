@@ -1,3 +1,4 @@
+import { systemFlags } from "../system.js";
 import { MODULE_ID } from "../constants.js";
 import { SETTINGS, componentEnabled, settingOrDefault } from "../settings.js";
 import { INTEL_LEDGER_FLAG, intelAbilityFactId, intelActor, intelDefenseFactId, intelFactId, readIntelLedger, writeIntelFlags } from "./intel-ledger.js";
@@ -11,7 +12,7 @@ export function observedIntelFact(message) {
   const item = message?.item;
   const actor = message?.actor ?? item?.actor;
   if (!item || actor?.type !== "npc") return null;
-  const contextType = String(message?.flags?.pf2e?.context?.type ?? "");
+  const contextType = String(systemFlags(message)?.context?.type ?? "");
   if (item.type === "melee" || contextType === "attack-roll") {
     return { actor, category: "strikes", factId: intelFactId(item.name) };
   }
@@ -60,7 +61,7 @@ function appliedDefenseEntry(entries, appliedType) {
 
 // The weaknesses, resistances and immunities a damage-taken card shows applying to an NPC.
 export function observedDefenseFacts(message) {
-  if (message?.flags?.pf2e?.context?.type !== "damage-taken") return [];
+  if (systemFlags(message)?.context?.type !== "damage-taken") return [];
   const actor = message?.actor;
   if (actor?.type !== "npc") return [];
   const seen = new Set();

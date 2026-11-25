@@ -1,3 +1,4 @@
+import { systemFlags } from "../../system.js";
 import { hasDemoralizeImmunity } from "../../rules/demoralize-immunity.js";
 import { battlefieldPressure } from "../../rules/battlefield-analysis.js";
 import { aggroProfile, aggroTargetValue } from "../../rules/aggro.js";
@@ -59,8 +60,8 @@ function elementalBlastItem(actor) {
 function kineticistElementProfiles(context, action) {
   const actor = contextActorDocument(context);
   const item = elementalBlastItem(actor);
-  const selections = item?.flags?.pf2e?.damageSelections ?? {};
-  const flag = actor?.flags?.pf2e?.kineticist?.elementalBlast;
+  const selections = systemFlags(item)?.damageSelections ?? {};
+  const flag = systemFlags(actor)?.kineticist?.elementalBlast;
   const profiles = new Map();
 
   const addProfile = (rawElement, rawTypes = []) => {

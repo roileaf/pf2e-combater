@@ -1,7 +1,8 @@
+import { compendiumUuid } from './system.js';
 import { MODULE_ID } from './constants.js';
 import { setting, SETTINGS } from './settings.js';
 
-const RAISED_SHIELD_EFFECT_UUID = 'Compendium.pf2e.equipment-effects.Item.2YgXoHvJfrDHucMr';
+const raisedShieldEffectUuid = () => compendiumUuid('equipment-effects', '2YgXoHvJfrDHucMr');
 
 function combatantToken(combatant) {
   return combatant?.token?.object ?? canvas?.tokens?.get?.(combatant?.tokenId) ?? null;
@@ -26,7 +27,7 @@ function heldUsableShield(actor) {
 
 function hasRaisedShield(actor) {
   return actor?.itemTypes?.effect?.some((effect) =>
-    effect.sourceId === RAISED_SHIELD_EFFECT_UUID ||
+    effect.sourceId === raisedShieldEffectUuid() ||
     ['raise-a-shield', 'effect-raise-a-shield'].includes(effect.slug));
 }
 
@@ -48,7 +49,7 @@ async function raiseDefendingShields(characters) {
     try {
       await raiseAShield({ actors: [actor] });
       const effect = actor.itemTypes.effect.find((item) =>
-        item.sourceId === RAISED_SHIELD_EFFECT_UUID ||
+        item.sourceId === raisedShieldEffectUuid() ||
         ['raise-a-shield', 'effect-raise-a-shield'].includes(item.slug));
       if (effect && effect.system?.duration?.value !== 0) {
         await effect.update({ 'system.duration.value': 0 });

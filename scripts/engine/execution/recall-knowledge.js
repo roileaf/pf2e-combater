@@ -1,3 +1,4 @@
+import { systemFlags } from "../../system.js";
 import { MODULE_ID } from "../../constants.js";
 import { t } from "../../i18n.js";
 import { recallKnowledgeQuestion, recallKnowledgeSkillOptions } from "../../rules/recall-knowledge.js";
@@ -106,8 +107,8 @@ export function recallKnowledgeHasDubiousKnowledge(message) {
 }
 
 export function recallKnowledgeOutcomeFromMessage(message, options = {}) {
-  const structured = message?.flags?.pf2e?.context?.outcome
-    ?? message?.flags?.pf2e?.outcome
+  const structured = systemFlags(message)?.context?.outcome
+    ?? systemFlags(message)?.outcome
     ?? message?.rolls?.[0]?.options?.degreeOfSuccess;
   const outcome = normalizedOutcome(structured);
   if (outcome) return outcome;

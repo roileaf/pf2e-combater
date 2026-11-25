@@ -1,3 +1,4 @@
+import { compendiumUuid } from "../../system.js";
 import { componentEnabled } from "../../settings.js";
 import { readHazardDisableActions } from "../../integrations/hazarder.js";
 import { findCustomAction } from "../../catalog/custom-actions.js";
@@ -589,7 +590,7 @@ function readDropProneAction(actor, context) {
     available: !prone,
     unavailableReason: prone ? t("Reason.AlreadyProne", "Already prone.") : "",
     item: null,
-    uuid: "Compendium.pf2e.conditionitems.Item.j91X7x0XSomq8d60", // Prone — this action has no standalone entry.
+    uuid: compendiumUuid("conditionitems", "j91X7x0XSomq8d60"), // Prone — this action has no standalone entry.
     role: "defense",
     activityProfile: { appliesConditions: ["prone"] },
     targetingProfile: { self: true },

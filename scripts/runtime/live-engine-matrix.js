@@ -1,3 +1,4 @@
+import { isSupportedSystem } from "../system.js";
 import { MODULE_ID } from "../constants.js";
 import { isSocketReady, requestLiveEngineMatrixPing } from "../socket.js";
 
@@ -233,7 +234,7 @@ export function createLiveEngineMatrix(adapter) {
   async function run(options = {}) {
     const session = adapter.session();
     const results = [];
-    const sessionReady = session.ready === true && session.systemId === "pf2e";
+    const sessionReady = session.ready === true && isSupportedSystem(session.systemId);
     results.push(result(
       "authenticated-session",
       sessionReady ? "passed" : "failed",

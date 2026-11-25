@@ -17,6 +17,7 @@
 // Personal Antithesis picker. Combater then takes that degree as settled and records the intel
 // without a second dialog.
 
+import { systemFlags } from "../system.js";
 import { MODULE_ID } from "../constants.js";
 import { collectionValues } from "../foundry-data.js";
 import { t } from "../i18n.js";
@@ -60,7 +61,7 @@ export function thaumVulnActive() {
 
 // PF2e Exploit Vulnerability's own action rolls against its "exploit-vulnerability" DC.
 export function isThaumVulnCheckMessage(message) {
-  return message?.flags?.pf2e?.context?.dc?.slug === "exploit-vulnerability";
+  return systemFlags(message)?.context?.dc?.slug === "exploit-vulnerability";
 }
 
 export function pf2eHudActive() {
@@ -77,7 +78,7 @@ function numeric(value) {
 }
 
 function messageRollOptions(message) {
-  const pf2e = message?.flags?.pf2e ?? {};
+  const pf2e = systemFlags(message) ?? {};
   return [
     ...collectionValues(pf2e.context?.options),
     ...collectionValues(pf2e.origin?.rollOptions),
@@ -87,7 +88,7 @@ function messageRollOptions(message) {
 // The inline check from the Exploit Vulnerability action card adds `target:action:slug:...` (and the
 // action's own options); a check rolled from the item keeps it as its origin.
 export function isExploitVulnerabilityCheckMessage(message) {
-  const context = message?.flags?.pf2e?.context;
+  const context = systemFlags(message)?.context;
   if (!context || !String(context.type ?? "").includes("check")) return false;
   return messageRollOptions(message).some((option) => option === "action:exploit-vulnerability"
     || option.endsWith(":action:slug:exploit-vulnerability")
@@ -120,7 +121,7 @@ export function knowledgeTargetFromTargets(targets) {
 export function knowledgeTargetFromMessage(message) {
   const stamped = message?.flags?.[MODULE_ID]?.[KNOWLEDGE_TARGET_FLAG];
   if (stamped?.actorUuid) return stamped;
-  const target = message?.flags?.pf2e?.context?.target;
+  const target = systemFlags(message)?.context?.target;
   return target?.actor ? { actorUuid: target.actor, tokenUuid: target.token ?? null, name: "" } : null;
 }
 
@@ -266,7 +267,7 @@ export function exploitVulnerabilityLedgerUpdate(ledger, outcome, target) {
 }
 
 function structuredOutcome(message) {
-  const value = message?.flags?.pf2e?.context?.outcome ?? message?.rolls?.[0]?.options?.degreeOfSuccess;
+  const value = systemFlags(message)?.context?.outcome ?? message?.rolls?.[0]?.options?.degreeOfSuccess;
   if (Number.isInteger(Number(value)) && value !== null && value !== "") return OUTCOMES[Number(value)] ?? null;
   const normalized = lower(value).replace(/[\s_-]+/g, "");
   return OUTCOMES.includes(normalized) ? normalized : null;
@@ -510,7 +511,7 @@ export async function adjudicateExploitVulnerability(message, {
     return { completed: true, revealed: 0 };
   }
   const settled = thaumVuln && isThaumVulnCheckMessage(message) ? structuredOutcome(message) : null;
-  const dc = numeric(message?.flags?.pf2e?.context?.dc?.value) ?? standardDcForLevel(actorLevel(target));
+  const dc = numeric(systemFlags(message)?.context?.dc?.value) ?? standardDcForLevel(actorLevel(target));
   const suggested = exploitVulnerabilitySuggestedOutcome(message, dc);
   const choice = settled ? { id: settled } : await promptOutcome({
     actor: speakerActor(message),

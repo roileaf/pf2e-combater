@@ -1,3 +1,4 @@
+import { systemAsset } from "../../system.js";
 import { ACTION_BUILDER_TABS } from "../../engine/action/builder/index.js";
 import {
   isSelfCenteredAreaAction,
@@ -69,18 +70,18 @@ function actionGlyph(cost) {
 
 // PF2e's own action-cost icon images, used in place of the action-glyph webfont.
 const ACTION_GLYPH_ICONS = {
-  1: "systems/pf2e/icons/actions/OneAction.webp",
-  2: "systems/pf2e/icons/actions/TwoActions.webp",
-  3: "systems/pf2e/icons/actions/ThreeActions.webp",
-  R: "systems/pf2e/icons/actions/Reaction.webp",
-  F: "systems/pf2e/icons/actions/FreeAction.webp",
+  1: "icons/actions/OneAction.webp",
+  2: "icons/actions/TwoActions.webp",
+  3: "icons/actions/ThreeActions.webp",
+  R: "icons/actions/Reaction.webp",
+  F: "icons/actions/FreeAction.webp",
 };
 
 function actionGlyphIcon(cost) {
-  return ACTION_GLYPH_ICONS[actionGlyph(cost)] ?? ACTION_GLYPH_ICONS[1];
+  return systemAsset(ACTION_GLYPH_ICONS[actionGlyph(cost)] ?? ACTION_GLYPH_ICONS[1]);
 }
 
-const GENERIC_ACTION_IMG = "systems/pf2e/icons/actions/Passive.webp";
+const GENERIC_ACTION_IMG = "icons/actions/Passive.webp";
 const MAX_WHY_REASONS = 5;
 
 function actionImage(source) {
@@ -89,7 +90,7 @@ function actionImage(source) {
     ?? source?.item?.texture?.src
     ?? source?.strike?.imageUrl
     ?? source?.action?.img
-    ?? GENERIC_ACTION_IMG;
+    ?? systemAsset(GENERIC_ACTION_IMG);
 }
 
 function finiteScore(...sources) {

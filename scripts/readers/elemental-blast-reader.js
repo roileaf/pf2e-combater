@@ -1,3 +1,4 @@
+import { systemFlags } from "../system.js";
 import { collectionValues } from "../foundry-data.js";
 import { slugify } from "../engine/action/text.js";
 import { t } from "../i18n.js";
@@ -33,7 +34,7 @@ function elementalBlastItem(actor) {
 }
 
 function kineticistBlastFlag(actor) {
-  const flag = actor?.flags?.pf2e?.kineticist?.elementalBlast;
+  const flag = systemFlags(actor)?.kineticist?.elementalBlast;
   return flag && typeof flag === "object" ? flag : null;
 }
 
@@ -67,7 +68,7 @@ export function actorHasElementalBlastConfigs(actor) {
 }
 
 function selectedElementalDamageType(item, config, infusion) {
-  const configured = item?.flags?.pf2e?.damageSelections?.[config.element];
+  const configured = systemFlags(item)?.damageSelections?.[config.element];
   const values = [
     configured,
     ...(Array.isArray(infusion?.damageTypes) ? infusion.damageTypes : []),
@@ -77,7 +78,7 @@ function selectedElementalDamageType(item, config, infusion) {
 }
 
 function selectedElementalBlastActionCost(item) {
-  const selected = Number(item?.flags?.pf2e?.rulesSelections?.actionCost);
+  const selected = Number(systemFlags(item)?.rulesSelections?.actionCost);
   if (selected === 1 || selected === 2) return selected;
 
   const parsed = readActionCost(item);

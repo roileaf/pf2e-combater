@@ -1,3 +1,4 @@
+import { systemFlags } from "../system.js";
 import { slugify } from "../engine/action/text.js";
 
 function numericCost(value) {
@@ -18,7 +19,7 @@ function headingData(message) {
 }
 
 export function readChatAction(message) {
-  const flags = message?.flags?.pf2e ?? {};
+  const flags = systemFlags(message) ?? {};
   const context = flags.context ?? {};
   const type = context.type ?? message?.rolls?.[0]?.options?.type ?? "";
   if (message?.isDamageRoll || message?.isReroll || context.isReroll

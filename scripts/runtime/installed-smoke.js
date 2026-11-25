@@ -1,3 +1,5 @@
+import { isSupportedSystem } from "../system.js";
+
 function versionParts(value) {
   return String(value ?? "")
     .split(/[.+-]/, 3)
@@ -36,7 +38,7 @@ export function inspectInstalledRuntimeContract({
   const foundryVersion = String(foundryManifest?.version ?? "");
   const pf2eVersion = String(pf2eManifest?.version ?? "");
   const pf2eRelationship = (moduleManifest?.relationships?.systems ?? [])
-    .find((relationship) => relationship?.id === "pf2e");
+    .find((relationship) => relationship?.id === pf2eManifest?.id);
   const contracts = Object.freeze({
     nativeMovement: includes(foundryTokenSource, "async move(waypoints"),
     recordedMovementUndo: includes(foundryTokenSource, "async revertRecordedMovement(movementId)"),
@@ -50,7 +52,7 @@ export function inspectInstalledRuntimeContract({
   });
   const foundrySupported = Boolean(foundryVersion)
     && supports(foundryVersion, moduleManifest?.compatibility);
-  const pf2eSupported = pf2eManifest?.id === "pf2e"
+  const pf2eSupported = isSupportedSystem(pf2eManifest?.id)
     && Boolean(pf2eVersion)
     && supports(pf2eVersion, pf2eRelationship?.compatibility);
   const failures = [];
