@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.11.0]
+
+### Added
+
+- **Starfinder 2e support.** Combater now runs on the Starfinder 2e system (sf2e 1.7.1) as well as Pathfinder 2e: the panel, action tracker, planner and Intel read SF2e's own flags, icons, settings and compendiums.
+- **SF2e Area Fire and Auto-Fire.** Area and automatic weapons are planned as area attacks: a basic Reflex save against the attack's DC in the weapon's burst, cone or line (Auto-Fire: a cone of half the range increment). Auto-fill picks the placement that catches the most enemies and fewest allies, counts it toward your multiple attack penalty, skips it when the loaded ammunition can't cover the expend, and fires an unwieldy weapon only once per turn. Running it targets everyone in the area (never the shooter) and posts the system's own attack card.
+- **SF2e operative Aim.** Aim is planned before a ranged Strike on the same creature, and running it applies Effect: Aim to that creature so the precision damage lands. Undo removes it.
+- **SF2e soldier Suppressing Fire and Primary Target.** A soldier's area attacks score higher with Suppressing Fire, and enemies who fail their save against them become Suppressed until the soldier's next turn (applied when they roll). Primary Target fires a free Strike with the same weapon at the creature the rule picks before the area attack; on a hit, that creature's success counts as a failure for Suppressing Fire.
+- **SF2e envoy Get 'Em!.** Get 'Em! is planned to set up your and your allies' attacks on one enemy, and Lead by Example (2 actions) adds a Strike with your Charisma on the damage. Running it applies Effect: Get 'Em! to you and to the allies you can edit, with no prompt; the Charisma bonus ends after that Strike's damage roll. One directive per round.
+- **SF2e solarian attunement.** Auto-fill plans Attune to photon or graviton (once per round) and the Solar Flare of that aspect after it: Attune first when unattuned, and switch aspect when the other flare reaches or hits better. Undo restores the previous aspect.
+
+### Fixed
+
+- **Cones and lines reached one square short.** Planned cones and lines now start at the edge of the creature's space, as the rules place them, instead of its middle: a 20-ft cone reaches four squares out. Templates you place yourself keep the origin you chose.
+- **Two tokens of the same creature counted as one target.** A Feint or other setup on one goblin is no longer treated as paid off by a Strike on its identical twin.
+- **SF2e Reload filled one round.** Reloading a weapon with a capacity now refills it, as SF2e's own Reload does (magazines still load one).
+
 ## [2.10.4]
 
 ### Added

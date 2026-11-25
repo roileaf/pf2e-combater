@@ -28,7 +28,7 @@ Use any one without the others: a table that only wants the tracker can switch t
    `https://github.com/roileaf/pf2e-combater/releases/latest/download/module.json`
 3. Enable **PF2e Combater** and **socketlib** in your world.
 
-**Requires** Foundry VTT v14, the Pathfinder 2e system and socketlib. See [Installation and Requirements](https://github.com/roileaf/pf2e-combater/wiki/Installation-and-Requirements).
+**Requires** Foundry VTT v14, the Pathfinder 2e or Starfinder 2e system and socketlib. See [Installation and Requirements](https://github.com/roileaf/pf2e-combater/wiki/Installation-and-Requirements).
 
 ## Quick start
 
