@@ -231,6 +231,24 @@ function areaDamageTactic(acc, { context, action, profile }) {
   const bestSave = saveDeltas.toSorted((left, right) => right.scoreDelta - left.scoreDelta)[0];
   if (bestSave) acc.reasons.push(t("ScoreReason.AreaTargetsSave", "Area targets {save} saves ({label})", { save: pf2eSave(action.saveProfile?.stat), label: bestSave.label }));
   for (const entry of damageDeltas.slice(0, 2)) acc.reasons.push(...entry.reasons);
+  soldierAreaTactics(acc, action, enemiesInArea);
+}
+
+// SF2e soldier: Suppressing Fire leaves enemies who fail the save Suppressed (-1 to attack, -10 ft
+// Speed) until the soldier's next turn; Primary Target adds a free Strike with the same weapon on one
+// creature in the area first (its success on the save becomes a failure on a hit).
+function soldierAreaTactics(acc, action, enemiesInArea) {
+  const profile = action?.activityProfile ?? {};
+  if (!enemiesInArea.length) return;
+  if (profile.suppressingFire === true) {
+    acc.score += 6 * enemiesInArea.length;
+    acc.reasons.push(t("ScoreReason.SuppressingFire", "Suppressing Fire: enemies who fail are Suppressed (-1 attack, -10 ft Speed)."));
+  }
+  if (profile.primaryTarget === true) {
+    const average = damageAverage(action);
+    acc.score += 10 + (Number.isFinite(average) && average > 0 ? Math.round(Math.min(30, average) * 0.8) : 6);
+    acc.reasons.push(t("ScoreReason.PrimaryTarget", "Primary Target: a free Strike on one creature in the area first."));
+  }
 }
 
 function saveDamageTactic(acc, { action, target, targetSaveScore, targetDamageAdjustment }) {

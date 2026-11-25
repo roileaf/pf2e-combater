@@ -932,7 +932,11 @@
       "HazardDisableRolled": "Disable roll sent to Hazarder.",
       "HazardDisableFailed": "The disable roll didn't happen (cancelled, or Hazarder is unavailable).",
       "NoAreaFireApi": "The system's Area Fire roll is not available.",
-      "AreaFirePosted": "{name} posted: targets roll basic Reflex saves from the card."
+      "AreaFirePosted": "{name} posted: targets roll basic Reflex saves from the card.",
+      "PrimaryTargetHit": "Primary Target {name} was hit: its success on the save counts as a failure.",
+      "PrimaryTargetMiss": "Primary Target {name} was missed.",
+      "PrimaryTargetRolled": "Primary Target Strike rolled against {name}.",
+      "SuppressingFireReminder": "Suppressing Fire: enemies who fail the save become Suppressed until your next turn (applied when they roll)."
     },
     "ActReason": {
       "ReactionCanPunishA": "Reaction can punish a provoking enemy.",
@@ -1322,7 +1326,9 @@
       "HazardDcUnknown": "Disable DC unknown; odds assumed even.",
       "HazardDisableChance": "About {percent}% to succeed.",
       "HazardOneMore": "One more success disables it.",
-      "HazardSuccessesLeft": "{count} successes still needed."
+      "HazardSuccessesLeft": "{count} successes still needed.",
+      "SuppressingFire": "Suppressing Fire: enemies who fail are Suppressed (-1 attack, -10 ft Speed).",
+      "PrimaryTarget": "Primary Target: a free Strike on one creature in the area first."
     },
     "Reject": {
       "Duplicate": "Duplicate detected action replaced by preferred source.",

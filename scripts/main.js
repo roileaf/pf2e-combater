@@ -56,6 +56,7 @@ import { promptAidDc } from "./ui/aid.js";
 import { endPersistentDamageRequest, promptRecoveryDc } from "./ui/assisted-recovery.js";
 import { applyAidEffect } from "./engine/execution/prepare-to-aid.js";
 import { registerObservedIntelHooks } from "./rules/observed-intel.js";
+import { registerSuppressingFireHooks } from "./rules/suppressing-fire.js";
 import { registerSpellstrikeHooks } from "./rules/spellstrike-state.js";
 import { initCommandererIntegration } from "./integrations/commanderer.js";
 import { tokenUpdateChangesHazarderState } from "./integrations/hazarder.js";
@@ -391,6 +392,7 @@ Hooks.once("init", () => {
   registerRecallKnowledgeChatHooks();
   registerPf2eHudKnowledgeHooks();
   registerObservedIntelHooks();
+  registerSuppressingFireHooks();
   registerWorkbenchMystifierHooks();
   registerSpellstrikeHooks();
 

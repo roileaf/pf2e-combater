@@ -131,7 +131,7 @@ export function readActionSources(context, spells = []) {
     ...readStandStrideActivities(context),
     ...generatedStrikes,
     ...readElementalBlastActions(actor, context),
-    ...readAreaFireActions(pf2eRuntime.readActor(actor).actions, { damageProfile: readStrikeDamageProfile }),
+    ...readAreaFireActions(pf2eRuntime.readActor(actor).actions, { damageProfile: readStrikeDamageProfile, actor }),
     // Unready Strikes too: a Draw -> Strike is priced with the stowed weapon's own damage.
     ...readWeaponActions(actor, context, generatedStrikes, actorStrikeOptions(actor, context, { includeUnready: true })),
     ...readSwapItemActions(actor),

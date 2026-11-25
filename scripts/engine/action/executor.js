@@ -173,7 +173,7 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
   } else if (resolvedAction?.executable === "reload-weapon") {
     result = await executeReloadWeapon({ actor, action: resolvedAction });
   } else if (resolvedAction?.executable === "area-fire") {
-    result = await executeAreaFire({ action: resolvedAction, event, patch });
+    result = await executeAreaFire({ context, action: resolvedAction, step, choices, event, patch });
   } else if (resolvedAction?.executable === "strike" || resolvedAction?.source === "strike") {
     result = await executeStrike({ actor, step, action: resolvedAction, event, choices });
   } else if (resolvedAction?.activityProfile?.npcFamily === "grab-rider" && resolvedAction?.activityProfile?.noAttackRoll === true) {

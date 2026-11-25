@@ -50,20 +50,13 @@ export function areaFireShape(item, type) {
   return null;
 }
 
-// The rounds left in the loaded magazine, when the system reports it.
+// The rounds loaded in the weapon, when the system tracks it: SF2e's getAttackAmmo lists what is
+// loaded (a magazine's uses, or loose rounds' quantity); its "remaining" is the free capacity, not
+// rounds left. Null when the weapon tracks no ammunition.
 function loadedRounds(action) {
   const ammo = action?.ammunition;
-  const selected = ammo?.selected ?? null;
-  const candidates = [
-    selected?.remaining, selected?.uses?.value, selected?.quantity,
-    ammo?.remaining, ammo?.loaded?.[0]?.remaining, ammo?.loaded?.[0]?.uses?.value,
-    action?.item?.system?.ammo?.remaining,
-  ];
-  for (const value of candidates) {
-    const number = numeric(value);
-    if (number !== null) return number;
-  }
-  return null;
+  if (!ammo || !Array.isArray(ammo.loaded)) return null;
+  return ammo.loaded.reduce((total, entry) => total + (numeric(entry?.quantity) ?? 0), 0);
 }
 
 export function areaFireExpend(item, type) {
@@ -79,6 +72,21 @@ function actionCostFor(action, item) {
   return item?.baseType === "grenade" ? 1 : 2;
 }
 
+// SF2e soldier class features that change area attacks (feat-type items on the actor).
+function hasFeature(actor, slug) {
+  const items = [...(actor?.itemTypes?.feat ?? []), ...(actor?.items ?? [])];
+  return items.some((item) => (item?.slug ?? item?.system?.slug) === slug);
+}
+
+// The weapon's own ranged Strike, for Primary Target: an area weapon lists it as Area Fire's
+// alternate usage; an automatic weapon's Strike is the entry Auto-Fire hangs off.
+function weaponStrike(actions, entry) {
+  const itemId = entry?.item?.id;
+  const alt = (entry?.altUsages ?? []).find((usage) => usage?.type === "strike");
+  if (alt) return alt;
+  return (Array.isArray(actions) ? actions : []).find((action) => action?.type === "strike" && itemId && action?.item?.id === itemId) ?? null;
+}
+
 function areaFireEntries(actions) {
   return (Array.isArray(actions) ? actions : []).flatMap((action) => [
     action,
@@ -86,7 +94,9 @@ function areaFireEntries(actions) {
   ]).filter((entry) => AREA_FIRE_TYPES.has(entry?.type));
 }
 
-export function readAreaFireActions(actions, { damageProfile = () => null } = {}) {
+export function readAreaFireActions(actions, { damageProfile = () => null, actor = null } = {}) {
+  const suppressingFire = hasFeature(actor, "suppressing-fire");
+  const primaryTarget = hasFeature(actor, "primary-target");
   return areaFireEntries(actions)
     .filter((entry) => entry?.visible !== false && entry?.ready !== false && entry?.canAttack !== false)
     .flatMap((entry) => {
@@ -102,6 +112,7 @@ export function readAreaFireActions(actions, { damageProfile = () => null } = {}
       const enoughAmmo = rounds === null || rounds >= expend;
       const damage = damageProfile(entry);
       const range = weaponRange(item);
+      const primaryStrike = primaryTarget ? weaponStrike(actions, entry) : null;
       const name = type === "auto-fire"
         ? t("Action.AutoFire", "Auto-Fire ({weapon})", { weapon: weaponName })
         : t("Action.AreaFire", "Area Fire ({weapon})", { weapon: weaponName });
@@ -133,11 +144,14 @@ export function readAreaFireActions(actions, { damageProfile = () => null } = {}
         critical: entry.critical ?? null,
         expend,
         unwieldy: traits.includes("unwieldy"),
+        primaryStrike,
         activityProfile: {
           includes: ["damage", "area"],
           areaFire: true,
           // Attack trait: it raises the MAP for later attacks but rolls no attack itself.
           noAttackRoll: true,
+          ...(suppressingFire ? { suppressingFire: true } : {}),
+          ...(primaryStrike ? { primaryTarget: true } : {}),
         },
         targetingProfile: {
           area: true,

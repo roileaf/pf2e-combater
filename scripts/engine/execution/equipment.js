@@ -11,6 +11,7 @@ import {
 import { createGuidance } from "./guidance.js";
 import { executionPatch, revertEnvelope } from "./results.js";
 import { setNpcWeaponLoaded } from "../npc-reload-state.js";
+import { systemId } from "../../system.js";
 
 async function changeItemCarry(actor, item, target) {
   if (typeof actor?.changeCarryType === "function") {
@@ -191,6 +192,19 @@ function findCompatibleAmmo(actor, weapon) {
 
 // weapon.subitems is a Foundry Collection (extends Map), not a plain array, so iterate with
 // .forEach -- supported by both a real Collection and a plain-array test double.
+// How many rounds one Reload loads. PF2e: one. SF2e: a weapon with a capacity is refilled (its own
+// Reload dialog's "full" option); a magazine is still one magazine.
+export function reloadQuantity(weapon, ammo) {
+  if (systemId() !== "sf2e") return 1;
+  if (Number(ammo?.system?.uses?.max) > 1) return 1;
+  const capacity = Number(weapon?.system?.ammo?.capacity) || 0;
+  if (capacity <= 1) return 1;
+  let loaded = 0;
+  weapon?.subitems?.forEach?.((item) => { loaded += Number(item.quantity ?? item.system?.quantity ?? 0) || 0; });
+  const available = Number(ammo?.quantity ?? ammo?.system?.quantity) || 1;
+  return Math.max(1, Math.min(capacity - loaded, available));
+}
+
 function weaponSubitemQuantities(weapon) {
   const quantities = new Map();
   const subitems = weapon?.subitems;
@@ -240,7 +254,7 @@ export async function executeReloadWeapon({ actor, action }) {
   const ammo = findCompatibleAmmo(actor, weapon);
   if (weapon?.uuid && ammo && typeof weapon.attach === "function") {
     const before = weaponSubitemQuantities(weapon);
-    await weapon.attach(ammo, { quantity: 1, stack: true });
+    await weapon.attach(ammo, { quantity: reloadQuantity(weapon, ammo), stack: true });
     const reloadRevertOp = await reloadRevertOpAfterAttach(weapon.uuid, before);
     return {
       status: "done",

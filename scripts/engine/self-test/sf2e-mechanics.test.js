@@ -38,7 +38,7 @@ const cannonArea = areaEntry(cannon, "area-fire", 19);
 cannonArea.altUsages.push(strikeEntry(cannon));
 const mgStrike = strikeEntry(machineGun);
 mgStrike.altUsages.push(areaEntry(machineGun, "auto-fire", 18));
-const actions = [cannonArea, mgStrike, strikeEntry(pistol), areaEntry(flamethrower, "area-fire", 17, { ammunition: { selected: { remaining: 1 } } })];
+const actions = [cannonArea, mgStrike, strikeEntry(pistol), areaEntry(flamethrower, "area-fire", 17, { ammunition: { loaded: [{ quantity: 1 }], capacity: 1, remaining: 0 } })];
 
 const areaActions = readAreaFireActions(actions);
 assert.deepEqual(areaActions.map((action) => action.name), ["Area Fire (Stellar Cannon)", "Auto-Fire (Machine Gun)", "Area Fire (Flamethrower)"]);
