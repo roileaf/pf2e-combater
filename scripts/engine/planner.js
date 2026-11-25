@@ -266,9 +266,20 @@ function selectPlanningCandidates(allCandidates) {
     selected.push(followUp);
     selectedKeys.add(actionKey(followUp));
   }
+  // SF2e: a Solar Flare in another aspect needs its Attune in the pool too.
+  for (const flare of selected.filter((candidate) => candidate?.requiresAttunement)) {
+    const attune = allCandidates.find((candidate) => candidate?.activityProfile?.attune === true && candidate.activityProfile.attuneAspect === flare.requiresAttunement);
+    if (attune && !selectedKeys.has(actionKey(attune))) {
+      selected.push(attune);
+      selectedKeys.add(actionKey(attune));
+    }
+  }
   return selected.toSorted((left, right) => {
     const targetConditionDelta = Number(requiresTargetCondition(left)) - Number(requiresTargetCondition(right));
     if (targetConditionDelta !== 0) return targetConditionDelta;
+    // Searched after the Attune they need (the search only adds a step whose prerequisite is in).
+    const attunementDelta = Number(Boolean(left?.requiresAttunement)) - Number(Boolean(right?.requiresAttunement));
+    if (attunementDelta !== 0) return attunementDelta;
     const previousDelta = Number(requiresPreviousAction(left)) - Number(requiresPreviousAction(right));
     if (previousDelta !== 0) return previousDelta;
     const criticalFailureRiskDelta = Number(isMajorCriticalFailureAttackSkill(right))
@@ -924,6 +935,12 @@ export function orphanSetupSteps(steps, candidates = []) {
       return !later.some((next) => String(next?.source ?? "").startsWith("spell")
         && Number(next?.castRank ?? next?.rank) > 0
         && !candidateTraitSlugs(next).some((trait) => trait === "cantrip" || trait === "focus"));
+    }
+    // SF2e Attune: switching aspect only pays off with a Strike in the new aspect (from unattuned it
+    // brings the manifestations back, which is worth it on its own).
+    if (step?.activityProfile?.attune === true) {
+      if (step.activityProfile.fromUnattuned === true) return false;
+      return !later.some((next) => next?.requiresAttunement === step.activityProfile.attuneAspect);
     }
     // SF2e Get 'Em! pays off on your own later attack on its target, or on your allies' attacks.
     if (step?.activityProfile?.getEm === true && step?.activityProfile?.leadByExample !== true) {

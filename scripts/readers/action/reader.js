@@ -19,6 +19,7 @@ import {
 import { readWeaponActions } from "../weapon-action-reader.js";
 import { AREA_FIRE_TYPES, readAreaFireActions } from "../area-fire-reader.js";
 import { readLeadByExampleActions } from "../envoy-reader.js";
+import { readSolarianActions } from "../solarian-reader.js";
 import { readSwapItemActions } from "../swap-action-reader.js";
 import { readPositionalMovementActions } from "../positional/tactic-reader.js";
 import {
@@ -147,6 +148,7 @@ export function readActionSources(context, spells = []) {
     ...itemActions,
     ...readHazardDisableActions(actor, context),
     ...readLeadByExampleActions(actor, generatedStrikes),
+    ...readSolarianActions(actor, generatedStrikes),
   ].map(withDirectiveAllies);
 }
 

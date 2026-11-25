@@ -18,6 +18,12 @@ export function resolveBuilderAction(key, lookup) {
   // still execute the original Strike. Older drafts saved these decorated IDs,
   // including the trailing strike atom from a repeated Reload -> Strike.
   const baseKey = String(key ?? "").replace(/-map-[1-9]\d*(?:-strike)?$/u, "");
+  // SF2e: a Solar Flare planned for an aspect (strike-solar-flare-photon) is the plain Solar Flare
+  // once the earlier Attune has switched to that aspect.
+  if (/^strike-solar-flare-(?:photon|graviton)$/u.test(baseKey)) {
+    const flare = (baseKey !== key ? lookup(baseKey) : null) ?? lookup("strike-solar-flare");
+    if (flare?.source === "strike") return flare;
+  }
   if (baseKey === key) return null;
   const strike = lookup(baseKey);
   return strike?.source === "strike" && !strike.activityProfile?.requiresDistinctTargets ? strike : null;

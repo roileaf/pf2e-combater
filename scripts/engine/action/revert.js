@@ -5,6 +5,7 @@ import { resetDraftExecution } from "../execution/state.js";
 import { revertChat, revertEffect, revertRegion } from "../revert/documents.js";
 import { revertCarryType, revertConsumable, revertFrequency, revertReload } from "../revert/item-resources.js";
 import { revertMovement } from "../revert/movement.js";
+import { revertAttunement } from "../execution/attune.js";
 import { revertSlot } from "../revert/spell-slot.js";
 import { t } from "../../i18n.js";
 import { revertNpcReloadState } from "../npc-reload-state.js";
@@ -36,6 +37,8 @@ async function applyRevertOp(op, scope) {
       return revertPreparedAid(op);
     case "slot":
       return revertSlot(op, scope);
+    case "attunement":
+      return revertAttunement(op);
     default:
       return undefined;
   }

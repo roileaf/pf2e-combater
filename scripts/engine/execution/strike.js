@@ -26,7 +26,15 @@ export async function executeStrike({ actor, step, action, event, choices = {} }
   if (!target) return { status: "needs-choice", choices: ["target"], patch: {} };
   setTarget(target.token);
 
-  const variant = strikeVariant(action, strikeVariantIndex(step, action, choices));
+  // A Strike that changes shape mid-plan (SF2e solar flare after Attune) is read fresh from the sheet.
+  const fresh = action?.refreshStrikeSlug
+    ? (actor?.system?.actions ?? []).find((entry) => entry?.type === "strike" && entry?.slug === action.refreshStrikeSlug && entry?.ready !== false)
+    : null;
+  if (action?.refreshStrikeSlug && !fresh) {
+    const error = t("Exec.StrikeNotAvailableYet", "{name} isn't available on the sheet yet.", { name: action.name ?? "" });
+    return { status: "failed", patch: executionPatch({ targetTokenIds: [target.id], targetLabel: target.label }, "failed", { error }), error };
+  }
+  const variant = strikeVariant(fresh ? { variants: fresh.variants } : action, strikeVariantIndex(step, action, choices));
   const roller = variant?.roll ?? action?.strike?.roll ?? action?.attack ?? action?.roll;
   if (typeof roller !== "function") {
     return {

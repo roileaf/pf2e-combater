@@ -719,7 +719,9 @@
       "AssistedRecovery": "Assisted Recovery",
       "AutoFire": "Auto-Fire ({weapon})",
       "AreaFire": "Area Fire ({weapon})",
-      "GetEmLead": "Get 'Em! (Lead by Example: {weapon})"
+      "GetEmLead": "Get 'Em! (Lead by Example: {weapon})",
+      "AttuneAspect": "Attune ({aspect})",
+      "SolarFlareAspect": "Solar Flare ({aspect})"
     },
     "Reason": {
       "StandThenStride": "Stand, then Stride toward {name}.",
@@ -758,7 +760,10 @@
       "StrideMultiattack": "Stride into reach and use {action} on {target}.",
       "AutoFire": "Sprays a {distance}-ft cone; basic Reflex DC {dc}.",
       "AreaFire": "Hits a {distance}-ft {shape}; basic Reflex DC {dc}.",
-      "LeadByExample": "Get 'Em! and Strike: +{cha} damage, then +1 to attacks and damage for you and your allies against the target."
+      "LeadByExample": "Get 'Em! and Strike: +{cha} damage, then +1 to attacks and damage for you and your allies against the target.",
+      "AttuneRestores": "Attune to {aspect}: your solar manifestations return.",
+      "AttuneSwitch": "Switch to {aspect}: its solar flare and weapon benefits.",
+      "SolarFlareAspect": "Solar Flare after Attuning to {aspect}: {faces}-sided {type}, {range}-ft range increment."
     },
     "Label": {
       "Target": "Target: {name}",
@@ -942,7 +947,10 @@
       "GetEmApplied": "Get 'Em! on {name}: +1 to attacks against it until your next turn.",
       "GetEmSkipped": "Drag Effect: Get 'Em! onto {names} (no permission to add it).",
       "LeadByExampleStruck": "Lead by Example: Strike rolled with your Charisma on its damage.",
-      "LeadByExampleNoStrike": "Lead by Example: the Strike didn't roll (check the weapon's ammunition)."
+      "LeadByExampleNoStrike": "Lead by Example: the Strike didn't roll (check the weapon's ammunition).",
+      "NoAttuneApi": "Stellar Attunement could not be changed on this actor.",
+      "Attuned": "Attuned to {aspect}.",
+      "StrikeNotAvailableYet": "{name} isn't available on the sheet yet."
     },
     "ActReason": {
       "ReactionCanPunishA": "Reaction can punish a provoking enemy.",
@@ -1078,7 +1086,8 @@
       "Mindless": "Mindless creatures don't use this action.",
       "NotDying": "Actor is not dying.",
       "SpellstrikeCharged": "Spellstrike is already charged.",
-      "NotEnoughAmmo": "Not enough ammunition loaded ({rounds} of {expend})."
+      "NotEnoughAmmo": "Not enough ammunition loaded ({rounds} of {expend}).",
+      "AttuneUsed": "Already Attuned this round."
     },
     "SpellRes": {
       "Prepared": "Prepared {available}/{total}",
@@ -1336,7 +1345,9 @@
       "SuppressingFire": "Suppressing Fire: enemies who fail are Suppressed (-1 attack, -10 ft Speed).",
       "PrimaryTarget": "Primary Target: a free Strike on one creature in the area first.",
       "GetEmAllies": "Get 'Em!: {count} allies also get +1 to attack {target}.",
-      "LeadByExample": "Lead by Example: Get 'Em! and a Strike in one directive."
+      "LeadByExample": "Lead by Example: Get 'Em! and a Strike in one directive.",
+      "AttuneRestores": "Attune brings back your solar manifestations.",
+      "AttuneSwitch": "Attune switches your aspect for the Strikes after it."
     },
     "Reject": {
       "Duplicate": "Duplicate detected action replaced by preferred source.",
@@ -2010,6 +2021,11 @@
     "Hazard": {
       "DisableName": "Disable {hazard}: {option}",
       "OutOfReach": "{hazard} is {distance} ft away; move within {reach} ft to disable it."
+    },
+    "Solarian": {
+      "Photon": "Photon",
+      "Graviton": "Graviton",
+      "Unattuned": "Unattuned"
     }
   }
 }

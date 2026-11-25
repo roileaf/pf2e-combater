@@ -701,6 +701,15 @@ export function scoreRoleTactics(context, action, { role, profile, target, criti
     }
   }
 
+  // SF2e Attune: from unattuned it restores the solar flare, weapon and nimbus; a switch is priced by
+  // the new aspect's Strikes that follow it (the orphan rule drops a switch nothing uses).
+  if (action.activityProfile?.attune === true) {
+    score += action.activityProfile.fromUnattuned === true ? 45 : 8;
+    reasons.push(action.activityProfile.fromUnattuned === true
+      ? t("ScoreReason.AttuneRestores", "Attune brings back your solar manifestations.")
+      : t("ScoreReason.AttuneSwitch", "Attune switches your aspect for the Strikes after it."));
+  }
+
   // SF2e Get 'Em!: every ally who can attack the target gets +1 too (until the envoy's next turn).
   if (action.activityProfile?.getEm === true && target) {
     // Lead by Example is scored as its Strike; add what Get 'Em! itself is worth (the mark, +1 to

@@ -353,6 +353,14 @@ export function hasPlanConflict(context, candidate, steps, attackPathAvailable =
   if (isFlourish(candidate) && steps.some(isFlourish)) return true;
   if (isCompositionExtensionEligible(candidate) && steps.some(isCompositionExtensionEligible)) return true;
 
+  // SF2e solarian: Attune once per round; a Solar Flare in another aspect needs that Attune earlier in
+  // the plan; and once the plan switches aspect, the current aspect's attuned Strikes are gone.
+  const attuneAspect = (step) => (step?.activityProfile?.attune === true ? step.activityProfile.attuneAspect : null);
+  if (attuneAspect(candidate) && steps.some(attuneAspect)) return true;
+  if (candidate?.requiresAttunement && !steps.some((step) => attuneAspect(step) === candidate.requiresAttunement)) return true;
+  const currentAttunedStrike = (step) => !step?.requiresAttunement && candidateTraitSlugs(step).includes("attuned");
+  if ((attuneAspect(candidate) && steps.some(currentAttunedStrike)) || (currentAttunedStrike(candidate) && steps.some((step) => attuneAspect(step) && !step.activityProfile?.fromUnattuned))) return true;
+
   // SF2e envoy: one directive per round (Get 'Em!, plain or Lead by Example).
   const isDirective = (step) => step?.activityProfile?.getEm === true || candidateTraitSlugs(step).includes("directive");
   if (isDirective(candidate) && steps.some(isDirective)) return true;
