@@ -1,3 +1,4 @@
+import { systemId } from "../../system.js";
 import { actionSlug } from "../action/requirements.js";
 import { slugify } from "../action/text.js";
 import { targetActor, targetTokenUuid } from "./targets.js";
@@ -69,7 +70,7 @@ function damageMessageFlags({ actor, action, target }) {
       ? action.item.system.traits.value
       : [];
   return {
-    pf2e: {
+    [systemId()]: {
       context: {
         type: "damage-roll",
         sourceType: action?.attackTrait ? "attack" : "save",

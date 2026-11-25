@@ -1,3 +1,4 @@
+import { systemId } from "../../system.js";
 import { isSelfCenteredAreaAction } from "../action/requirements.js";
 import { canvasDistancePixels as distancePixels, canvasGridSize as gridSize, canvasPoint as point, canvasTokenById, contextTokenId, numeric } from "../../rules/canvas-geometry.js";
 import { movementFootprintForToken } from "../../rules/token-geometry.js";
@@ -127,7 +128,7 @@ export function createAreaRegionData({ context, action, marker }) {
   }
 
   const originUuid = action?.item?.uuid ?? action?.uuid ?? null;
-  const flags = { pf2e: { areaShape: type } };
+  const flags = { [systemId()]: { areaShape: type } };
   if (originUuid) flags["pf2e-combater"] = { originUuid };
 
   return {

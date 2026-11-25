@@ -256,7 +256,7 @@ export function orderAfter(combat, moverId, afterId) {
   const tied = ordered.filter((entry) => movingIds.has(entry.id) || entry.initiative === anchor.initiative);
   const updates = tied.map((entry, priority) => ({
     _id: entry.id, initiative: anchor.initiative,
-    flags: { pf2e: { overridePriority: { [anchor.initiative]: priority } } },
+    flags: { [systemId()]: { overridePriority: { [anchor.initiative]: priority } } },
   }));
   return { ordered, updates, movingIds };
 }
