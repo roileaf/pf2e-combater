@@ -1,4 +1,5 @@
 import { attachRevertOp } from "./results.js";
+import { setTarget } from "./targets.js";
 
 // An action whose self-effect marks a creature (SF2e Aim: Effect: Aim carries a TokenMark and the
 // precision dice). Posting the action only shows an "apply effect" button; apply it here with the
@@ -9,6 +10,8 @@ export async function applyTargetMarkSelfEffect({ actor, action, target, result 
   const uuid = item?.system?.selfEffect?.uuid;
   const targetToken = target?.token?.document ?? target?.token ?? null;
   if (!uuid || !targetToken?.uuid || typeof actor?.createEmbeddedDocuments !== "function") return result;
+  // SF2e's TokenMark marks the user's current target on creation (and waits for a pick without one).
+  setTarget(target?.token);
   const source = await globalThis.fromUuid?.(uuid);
   if (typeof source?.toObject !== "function") return result;
   // Aim again moves the mark: drop the previous copy of this effect first.

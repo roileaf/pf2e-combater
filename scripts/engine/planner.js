@@ -925,6 +925,11 @@ export function orphanSetupSteps(steps, candidates = []) {
         && Number(next?.castRank ?? next?.rank) > 0
         && !candidateTraitSlugs(next).some((trait) => trait === "cantrip" || trait === "focus"));
     }
+    // SF2e Get 'Em! pays off on your own later attack on its target, or on your allies' attacks.
+    if (step?.activityProfile?.getEm === true && step?.activityProfile?.leadByExample !== true) {
+      if ((Number(step.directiveAllies) || 0) > 0) return false;
+      return !later.some((next) => isAttackPayoff(next) && (!targetOf(step) || !targetOf(next) || targetOf(next) === targetOf(step)));
+    }
     // SF2e Aim only pays off with a ranged Strike on the creature it marked.
     if (step?.activityProfile?.aimMark === true) {
       return !later.some((next) => next?.source === "strike" && next?.isRanged === true
@@ -980,12 +985,16 @@ export function planScore(context, steps, sortedCandidates, budget) {
 // target before Aim joined the plan (it visits candidates by score, not in execution order).
 export function aimTargetsFollowMark(context, steps) {
   let mark = null;
+  let rangedOnly = true;
   return steps.map((step) => {
-    if (step?.activityProfile?.aimMark === true) {
+    // Aim marks for ranged Strikes; Get 'Em! (1 action) for any Strike.
+    const getEm = step?.activityProfile?.getEm === true && step?.activityProfile?.leadByExample !== true;
+    if (step?.activityProfile?.aimMark === true || getEm) {
       mark = targetForCandidate(context, step);
+      rangedOnly = !getEm;
       return step;
     }
-    if (!mark || step?.source !== "strike" || step?.isRanged !== true) return step;
+    if (!mark || step?.source !== "strike" || (rangedOnly && step?.isRanged !== true)) return step;
     if (sameTargetReference(targetForCandidate(context, step), mark)) return step;
     const distance = Number(mark?.distance);
     if (Number.isFinite(distance) && distance > maxRange(step)) return step;

@@ -353,6 +353,10 @@ export function hasPlanConflict(context, candidate, steps, attackPathAvailable =
   if (isFlourish(candidate) && steps.some(isFlourish)) return true;
   if (isCompositionExtensionEligible(candidate) && steps.some(isCompositionExtensionEligible)) return true;
 
+  // SF2e envoy: one directive per round (Get 'Em!, plain or Lead by Example).
+  const isDirective = (step) => step?.activityProfile?.getEm === true || candidateTraitSlugs(step).includes("directive");
+  if (isDirective(candidate) && steps.some(isDirective)) return true;
+
   // SF2e unwieldy: the weapon attacks once per round (one Strike, Area Fire or Auto-Fire).
   const unwieldyWeaponId = (step) => {
     const item = step?.weaponItem ?? step?.item ?? step?.strike?.item ?? null;

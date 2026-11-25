@@ -718,7 +718,8 @@
       "StepArrow": "Step -> ",
       "AssistedRecovery": "Assisted Recovery",
       "AutoFire": "Auto-Fire ({weapon})",
-      "AreaFire": "Area Fire ({weapon})"
+      "AreaFire": "Area Fire ({weapon})",
+      "GetEmLead": "Get 'Em! (Lead by Example: {weapon})"
     },
     "Reason": {
       "StandThenStride": "Stand, then Stride toward {name}.",
@@ -756,7 +757,8 @@
       "StrideTwiceMultiattack": "Stride twice into reach and use {action} on {target}.",
       "StrideMultiattack": "Stride into reach and use {action} on {target}.",
       "AutoFire": "Sprays a {distance}-ft cone; basic Reflex DC {dc}.",
-      "AreaFire": "Hits a {distance}-ft {shape}; basic Reflex DC {dc}."
+      "AreaFire": "Hits a {distance}-ft {shape}; basic Reflex DC {dc}.",
+      "LeadByExample": "Get 'Em! and Strike: +{cha} damage, then +1 to attacks and damage for you and your allies against the target."
     },
     "Label": {
       "Target": "Target: {name}",
@@ -936,7 +938,11 @@
       "PrimaryTargetHit": "Primary Target {name} was hit: its success on the save counts as a failure.",
       "PrimaryTargetMiss": "Primary Target {name} was missed.",
       "PrimaryTargetRolled": "Primary Target Strike rolled against {name}.",
-      "SuppressingFireReminder": "Suppressing Fire: enemies who fail the save become Suppressed until your next turn (applied when they roll)."
+      "SuppressingFireReminder": "Suppressing Fire: enemies who fail the save become Suppressed until your next turn (applied when they roll).",
+      "GetEmApplied": "Get 'Em! on {name}: +1 to attacks against it until your next turn.",
+      "GetEmSkipped": "Drag Effect: Get 'Em! onto {names} (no permission to add it).",
+      "LeadByExampleStruck": "Lead by Example: Strike rolled with your Charisma on its damage.",
+      "LeadByExampleNoStrike": "Lead by Example: the Strike didn't roll (check the weapon's ammunition)."
     },
     "ActReason": {
       "ReactionCanPunishA": "Reaction can punish a provoking enemy.",
@@ -1328,7 +1334,9 @@
       "HazardOneMore": "One more success disables it.",
       "HazardSuccessesLeft": "{count} successes still needed.",
       "SuppressingFire": "Suppressing Fire: enemies who fail are Suppressed (-1 attack, -10 ft Speed).",
-      "PrimaryTarget": "Primary Target: a free Strike on one creature in the area first."
+      "PrimaryTarget": "Primary Target: a free Strike on one creature in the area first.",
+      "GetEmAllies": "Get 'Em!: {count} allies also get +1 to attack {target}.",
+      "LeadByExample": "Lead by Example: Get 'Em! and a Strike in one directive."
     },
     "Reject": {
       "Duplicate": "Duplicate detected action replaced by preferred source.",

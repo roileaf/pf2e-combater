@@ -12,6 +12,7 @@ await import("./self-test/system-scope.test.js");
 await import("./self-test/sf2e-mechanics.test.js");
 await import("./self-test/cone-origin.test.js");
 await import("./self-test/sf2e-soldier.test.js");
+await import("./self-test/sf2e-envoy.test.js");
 await import("./self-test/bestiary.test.js");
 await import("./self-test/pf2e-runtime.test.js");
 await import("./self-test/live-engine-matrix.test.js");

@@ -701,6 +701,21 @@ export function scoreRoleTactics(context, action, { role, profile, target, criti
     }
   }
 
+  // SF2e Get 'Em!: every ally who can attack the target gets +1 too (until the envoy's next turn).
+  if (action.activityProfile?.getEm === true && target) {
+    // Lead by Example is scored as its Strike; add what Get 'Em! itself is worth (the mark, +1 to
+    // attacks for you and +1 damage for everyone), so it beats Get 'Em! then the same Strike.
+    if (action.activityProfile?.leadByExample === true) {
+      score += 55;
+      reasons.push(t("ScoreReason.LeadByExample", "Lead by Example: Get 'Em! and a Strike in one directive."));
+    }
+    const allies = Math.min(3, Number(action.directiveAllies) || 0);
+    if (allies > 0) {
+      score += 6 * allies;
+      reasons.push(t("ScoreReason.GetEmAllies", "Get 'Em!: {count} allies also get +1 to attack {target}.", { count: allies, target: target.name }));
+    }
+  }
+
   const slugAcc = { score, reasons, minionPlan };
   SLUG_TACTICS[action.slug]?.(slugAcc, { context, action, profile, target, pressure });
   score = slugAcc.score;

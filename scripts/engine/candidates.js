@@ -28,7 +28,9 @@ function itemKey(item) {
 
 function dedupeKey(action) {
   if (action.source === "strike") {
-    return `strike:${itemKey(action.item) ?? action.id ?? action.name}:${action.altUsage ?? ""}`;
+    // A Strike folded into another action (SF2e Lead by Example) is its own option, not a duplicate.
+    const folded = action.tacticSlug && action.tacticSlug !== "strike" ? `:${action.tacticSlug}` : "";
+    return `strike:${itemKey(action.item) ?? action.id ?? action.name}:${action.altUsage ?? ""}${folded}`;
   }
   // Keyed by the physical wand/scroll, not slug+cost -- otherwise a carried scroll of a spell the
   // actor also knows would collide with (and lose to) the known-spell candidate, hiding the backup

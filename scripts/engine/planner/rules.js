@@ -393,7 +393,11 @@ export function targetConditionSourceStep(context, candidate, steps) {
 
 // SF2e operative: a ranged Strike after Aim shoots the creature Aim marked.
 export function aimTargetSourceStep(candidate, steps) {
-  if (candidate?.source !== "strike" || candidate?.isRanged !== true) return null;
+  if (candidate?.source !== "strike") return null;
+  // SF2e envoy Get 'Em! (1 action): any later Strike goes at the creature it singled out.
+  const getEm = steps.findLast((step) => step?.activityProfile?.getEm === true && step?.activityProfile?.leadByExample !== true);
+  if (getEm) return getEm;
+  if (candidate?.isRanged !== true) return null;
   return steps.findLast((step) => step?.activityProfile?.aimMark === true) ?? null;
 }
 

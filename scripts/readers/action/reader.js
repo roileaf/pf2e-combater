@@ -7,7 +7,7 @@ import { parseActionText as parseActionTextValue, slugify as slugifyText } from 
 import { contextActorDocument } from "../../engine/actor-context.js";
 import { pf2eRuntime } from "../../runtime/pf2e-runtime.js";
 import { classifySystemAction } from "../../engine/action/classifier.js";
-import { canAttackTarget, contextEnemies, contextTargets } from "../../engine/target-pool.js";
+import { canAttackTarget, contextAllies, contextEnemies, contextTargets } from "../../engine/target-pool.js";
 import {
   addConsumableInteractProfile,
   addItemTraitProfile,
@@ -18,6 +18,7 @@ import {
 } from "../item-action-reader.js";
 import { readWeaponActions } from "../weapon-action-reader.js";
 import { AREA_FIRE_TYPES, readAreaFireActions } from "../area-fire-reader.js";
+import { readLeadByExampleActions } from "../envoy-reader.js";
 import { readSwapItemActions } from "../swap-action-reader.js";
 import { readPositionalMovementActions } from "../positional/tactic-reader.js";
 import {
@@ -126,6 +127,10 @@ export function readActionSources(context, spells = []) {
   const genericActions = componentEnabled("intel")
     ? readGenericActions(context)
     : readGenericActions(context).filter((action) => action?.slug !== "recall-knowledge");
+  // SF2e Get 'Em!: it also pays off for every ally who can attack the target until the envoy's next turn.
+  const directiveAllies = contextAllies(context).filter((ally) => ally?.id !== context?.token?.id).length;
+  const withDirectiveAllies = (action) => (action?.activityProfile?.getEm === true || action?.tacticSlug === "get-em" || action?.slug === "get-em"
+    ? { ...action, directiveAllies } : action);
   return [
     ...genericActions,
     ...readStandStrideActivities(context),
@@ -141,7 +146,8 @@ export function readActionSources(context, spells = []) {
     ...readShieldSpellBlockActions(actor, context),
     ...itemActions,
     ...readHazardDisableActions(actor, context),
-  ];
+    ...readLeadByExampleActions(actor, generatedStrikes),
+  ].map(withDirectiveAllies);
 }
 
 function readStandStrideActivities(context) {

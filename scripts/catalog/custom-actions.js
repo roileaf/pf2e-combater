@@ -7,6 +7,7 @@ import { CHAMPION_ACTIONS } from './class-actions/champion.js';
 import { CLERIC_ACTIONS } from './class-actions/cleric.js';
 import { COMMANDER_ACTIONS } from './class-actions/commander.js';
 import { DRUID_ACTIONS } from './class-actions/druid.js';
+import { ENVOY_ACTIONS } from './class-actions/envoy.js';
 import { EXEMPLAR_ACTIONS } from './class-actions/exemplar.js';
 import { FIGHTER_ACTIONS } from './class-actions/fighter.js';
 import { GUARDIAN_ACTIONS } from './class-actions/guardian.js';
@@ -39,6 +40,7 @@ export const CUSTOM_ACTION_TACTICS = [
   ...CLERIC_ACTIONS,
   ...COMMANDER_ACTIONS,
   ...DRUID_ACTIONS,
+  ...ENVOY_ACTIONS,
   ...EXEMPLAR_ACTIONS,
   ...FIGHTER_ACTIONS,
   ...GUARDIAN_ACTIONS,

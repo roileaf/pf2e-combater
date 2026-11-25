@@ -23,6 +23,7 @@ import { executeSystemAction } from "../execution/system-action.js";
 import { executeStrike, strikeVariantIndex } from "../execution/strike.js";
 import { executeAreaFire } from "../execution/area-fire.js";
 import { applyTargetMarkSelfEffect } from "../execution/mark-effect.js";
+import { executeGetEm } from "../execution/get-em.js";
 import { setSpellstrikeExpended } from "../../rules/spellstrike-state.js";
 import { executeSustainSpell } from "../execution/sustain.js";
 import { executeTeleport } from "../execution/teleport.js";
@@ -172,6 +173,8 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
     result = await executeSwapItems({ actor, choices });
   } else if (resolvedAction?.executable === "reload-weapon") {
     result = await executeReloadWeapon({ actor, action: resolvedAction });
+  } else if (resolvedAction?.executable === "get-em") {
+    result = await executeGetEm({ actor, context, step, action: resolvedAction, target, event, choices, patch });
   } else if (resolvedAction?.executable === "area-fire") {
     result = await executeAreaFire({ context, action: resolvedAction, step, choices, event, patch });
   } else if (resolvedAction?.executable === "strike" || resolvedAction?.source === "strike") {
