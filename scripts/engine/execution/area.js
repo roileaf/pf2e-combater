@@ -153,6 +153,8 @@ export async function createAreaTimer({ context, action, region }) {
 
 export function areaTemplatePersists(action) {
   const profile = action?.activityProfile ?? {};
+  // SF2e Area Fire is instantaneous; its card has its own template button.
+  if (profile.areaFire === true) return false;
   const isSpell = profile.spell === true
     || /spell/.test(String(action?.source ?? "").toLowerCase());
   if (!isSpell) return true;
@@ -186,8 +188,11 @@ export async function prepareAreaExecution({ context, action, step, choices = {}
   // Target what the placed area visibly covers; the marker geometry is only a fallback.
   // A creature's own emanation surrounds it but doesn't hit it ("all creatures adjacent to the
   // skink"), unless the area is meant for it or its allies.
-  const ownToken = isSelfCenteredAreaAction(action)
-    && action?.targetingProfile?.self !== true && action?.targetingProfile?.ally !== true
+  // SF2e Area Fire / Auto-Fire cones and lines start at the shooter and never hit it.
+  const shooterArea = action?.activityProfile?.areaFire === true
+    && ["cone", "line"].includes(String(action?.targetingProfile?.type ?? "").toLowerCase());
+  const ownToken = shooterArea || (isSelfCenteredAreaAction(action)
+    && action?.targetingProfile?.self !== true && action?.targetingProfile?.ally !== true)
     ? tokenId(context)
     : null;
   const insideTokens = (tokensInAreaRegion({ context, action, region: regionDocument })

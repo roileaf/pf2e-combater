@@ -90,6 +90,9 @@ const TARGET_MARK_PATTERNS = {
     "mortal-weakness",
   ],
   "hunted-prey": ["hunted-prey", "hunt-prey"],
+  // SF2e Aim marks the target only through the operative's TokenMark (aimTokenUuids); nothing on
+  // the target itself, and a bare "aim" substring would match unrelated effects ("maimed").
+  aim: ["operative-aim-mark"],
   "traced-rune": ["traced-rune", "trace-rune", "etched-rune", "rune"],
 };
 
@@ -265,6 +268,8 @@ export function readCombatState(actor) {
     exploitVulnerabilityActive,
     huntedPreyActive,
     huntedPreyTokenUuids,
+    // SF2e operative Aim: Effect: Aim puts a TokenMark "aim" on the operative.
+    aimTokenUuids: tokenMarkUuids(actor, ["aim"]),
     lingeringCompositionActive: hasEntry(actor, ["lingering-composition"]),
     kineticistAuraActive,
     channelElementsActive: kineticistAuraActive,

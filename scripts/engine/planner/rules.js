@@ -295,6 +295,8 @@ export function samePlannedTarget(context, candidate, step) {
   const candidateTarget = targetForCandidate(context, candidate);
   const stepTarget = targetForCandidate(context, step);
   if (!candidateTarget || !stepTarget) return true;
+  const byToken = sameTokenTarget(candidateTarget, stepTarget);
+  if (byToken !== null) return byToken;
 
   const candidateIds = new Set(targetIdentity(candidateTarget));
   const stepIds = targetIdentity(stepTarget);
@@ -303,8 +305,20 @@ export function samePlannedTarget(context, candidate, step) {
 }
 
 
+// Two tokens of one unlinked actor (Goon A, Goon B) share the actor id and name: when both sides
+// name their token, the token decides. null when either side has no token to compare.
+function sameTokenTarget(left, right) {
+  const tokenIds = (value) => [value?.token?.id, value?.token?.uuid].filter(Boolean).map(String);
+  const leftIds = tokenIds(left);
+  const rightIds = tokenIds(right);
+  if (!leftIds.length || !rightIds.length) return null;
+  return rightIds.some((id) => leftIds.includes(id));
+}
+
 export function sameTargetReference(left, right) {
   if (!left || !right) return false;
+  const byToken = sameTokenTarget(left, right);
+  if (byToken !== null) return byToken;
   const leftIds = new Set(targetIdentity(left));
   const rightIds = targetIdentity(right);
   if (!leftIds.size || !rightIds.length) return false;
@@ -339,7 +353,7 @@ export function grabbedSetupTargetSourceStep(candidate, steps) {
 
 
 // Class marks (Hunt Prey) live on the actor's state or the target's effects, not its conditions.
-const TOKEN_MARK_STATE_KEYS = { "hunted-prey": "huntedPreyTokenUuids" };
+const TOKEN_MARK_STATE_KEYS = { "hunted-prey": "huntedPreyTokenUuids", aim: "aimTokenUuids" };
 
 function targetHasRequiredState(context, target, requirement, candidate = null) {
   if (targetHasCondition(target, requirement)) {
@@ -377,10 +391,17 @@ export function targetConditionSourceStep(context, candidate, steps) {
 }
 
 
+// SF2e operative: a ranged Strike after Aim shoots the creature Aim marked.
+export function aimTargetSourceStep(candidate, steps) {
+  if (candidate?.source !== "strike" || candidate?.isRanged !== true) return null;
+  return steps.findLast((step) => step?.activityProfile?.aimMark === true) ?? null;
+}
+
 export function inheritPlannedTarget(context, candidate, steps) {
   const sourceStep = targetConditionSourceStep(context, candidate, steps)
     ?? grabbedSetupTargetSourceStep(candidate, steps)
-    ?? previousActionTargetSourceStep(candidate, steps);
+    ?? previousActionTargetSourceStep(candidate, steps)
+    ?? aimTargetSourceStep(candidate, steps);
   if (!sourceStep) return candidate;
 
   const inheritedTarget = targetForCandidate(context, sourceStep);

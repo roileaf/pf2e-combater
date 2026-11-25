@@ -16,6 +16,7 @@ import { INVESTIGATOR_ACTIONS } from './class-actions/investigator.js';
 import { KINETICIST_ACTIONS } from './class-actions/kineticist.js';
 import { MAGUS_ACTIONS } from './class-actions/magus.js';
 import { MONK_ACTIONS } from './class-actions/monk.js';
+import { OPERATIVE_ACTIONS } from './class-actions/operative.js';
 import { ORACLE_ACTIONS } from './class-actions/oracle.js';
 import { PSYCHIC_ACTIONS } from './class-actions/psychic.js';
 import { RANGER_ACTIONS } from './class-actions/ranger.js';
@@ -47,6 +48,7 @@ export const CUSTOM_ACTION_TACTICS = [
   ...KINETICIST_ACTIONS,
   ...MAGUS_ACTIONS,
   ...MONK_ACTIONS,
+  ...OPERATIVE_ACTIONS,
   ...ORACLE_ACTIONS,
   ...PSYCHIC_ACTIONS,
   ...RANGER_ACTIONS,

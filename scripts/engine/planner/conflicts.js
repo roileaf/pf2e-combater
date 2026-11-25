@@ -353,6 +353,15 @@ export function hasPlanConflict(context, candidate, steps, attackPathAvailable =
   if (isFlourish(candidate) && steps.some(isFlourish)) return true;
   if (isCompositionExtensionEligible(candidate) && steps.some(isCompositionExtensionEligible)) return true;
 
+  // SF2e unwieldy: the weapon attacks once per round (one Strike, Area Fire or Auto-Fire).
+  const unwieldyWeaponId = (step) => {
+    const item = step?.weaponItem ?? step?.item ?? step?.strike?.item ?? null;
+    const traits = item?.system?.traits?.value;
+    return Array.isArray(traits) && traits.includes("unwieldy") && step?.attackTrait ? (item.id ?? item.uuid ?? null) : null;
+  };
+  const unwieldyId = unwieldyWeaponId(candidate);
+  if (unwieldyId && steps.some((step) => unwieldyWeaponId(step) === unwieldyId)) return true;
+
   if (includesStand(candidate) && steps.some(includesStand)) {
     return true;
   }

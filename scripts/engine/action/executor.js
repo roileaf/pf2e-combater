@@ -21,6 +21,8 @@ import { executePrepareToAid } from "../execution/prepare-to-aid.js";
 import { executeAssistedRecovery } from "../execution/assisted-recovery.js";
 import { executeSystemAction } from "../execution/system-action.js";
 import { executeStrike, strikeVariantIndex } from "../execution/strike.js";
+import { executeAreaFire } from "../execution/area-fire.js";
+import { applyTargetMarkSelfEffect } from "../execution/mark-effect.js";
 import { setSpellstrikeExpended } from "../../rules/spellstrike-state.js";
 import { executeSustainSpell } from "../execution/sustain.js";
 import { executeTeleport } from "../execution/teleport.js";
@@ -170,6 +172,8 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
     result = await executeSwapItems({ actor, choices });
   } else if (resolvedAction?.executable === "reload-weapon") {
     result = await executeReloadWeapon({ actor, action: resolvedAction });
+  } else if (resolvedAction?.executable === "area-fire") {
+    result = await executeAreaFire({ action: resolvedAction, event, patch });
   } else if (resolvedAction?.executable === "strike" || resolvedAction?.source === "strike") {
     result = await executeStrike({ actor, step, action: resolvedAction, event, choices });
   } else if (resolvedAction?.activityProfile?.npcFamily === "grab-rider" && resolvedAction?.activityProfile?.noAttackRoll === true) {
@@ -206,6 +210,9 @@ async function executeDraftStepImpl({ context, step, action = step?.action ?? st
     } catch (error) {
       plannedSummon?.dispose();
       throw error;
+    }
+    if (resolvedAction?.activityProfile?.aimMark === true) {
+      result = await applyTargetMarkSelfEffect({ actor, action: resolvedAction, target, result });
     }
   }
 

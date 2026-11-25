@@ -23,6 +23,7 @@ import {
   pressStepsAfterAttack,
   requiresPreviousAction,
   requiresTargetCondition,
+  sameTargetReference,
   stepSatisfiesPreviousRequirements,
   stepSatisfiesTargetConditionRequirement,
   targetConditionChainBonus,
@@ -924,6 +925,11 @@ export function orphanSetupSteps(steps, candidates = []) {
         && Number(next?.castRank ?? next?.rank) > 0
         && !candidateTraitSlugs(next).some((trait) => trait === "cantrip" || trait === "focus"));
     }
+    // SF2e Aim only pays off with a ranged Strike on the creature it marked.
+    if (step?.activityProfile?.aimMark === true) {
+      return !later.some((next) => next?.source === "strike" && next?.isRanged === true
+        && (!targetOf(step) || !targetOf(next) || targetOf(next) === targetOf(step)));
+    }
     const plainDraw = step?.activityProfile?.drawsWeapon === true && step?.activityProfile?.includesStrike !== true;
     if (!plainDraw && later.some(isAttackPayoff)) return false;
     if (isAttackSetup(step)) return true;
@@ -970,8 +976,25 @@ export function planScore(context, steps, sortedCandidates, budget) {
     - (budget.totalActions - totalCost) * UNUSED_ACTION_PENALTY;
 }
 
+// SF2e Aim: ranged Strikes after it shoot the creature it marked. The search may have picked their
+// target before Aim joined the plan (it visits candidates by score, not in execution order).
+export function aimTargetsFollowMark(context, steps) {
+  let mark = null;
+  return steps.map((step) => {
+    if (step?.activityProfile?.aimMark === true) {
+      mark = targetForCandidate(context, step);
+      return step;
+    }
+    if (!mark || step?.source !== "strike" || step?.isRanged !== true) return step;
+    if (sameTargetReference(targetForCandidate(context, step), mark)) return step;
+    const distance = Number(mark?.distance);
+    if (Number.isFinite(distance) && distance > maxRange(step)) return step;
+    return { ...step, suggestedTarget: mark, preferredTarget: mark };
+  });
+}
+
 function toPlan(context, steps, sortedCandidates, budget, resolvedTactic = null, simulation = null) {
-  const executionOrder = pressStepsAfterAttack(applyTurnIntentToPlan(context?.turnIntent, orderPlanSteps(steps)));
+  const executionOrder = aimTargetsFollowMark(context, pressStepsAfterAttack(applyTurnIntentToPlan(context?.turnIntent, orderPlanSteps(steps))));
   const simulated = simulation ? simulation.rescorer.simulate(context, simulation.initialState, executionOrder) : executionOrder;
   const drawnBacking = withDrawnWeaponBacking(rebalancePlanMap(simulated));
   const orderedSteps = drawnBacking.steps;

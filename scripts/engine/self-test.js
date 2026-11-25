@@ -9,6 +9,7 @@ import "./self-test/refresh-token-hot-path.test.js";
 
 await import("./self-test/recall-knowledge.test.js");
 await import("./self-test/system-scope.test.js");
+await import("./self-test/sf2e-mechanics.test.js");
 await import("./self-test/bestiary.test.js");
 await import("./self-test/pf2e-runtime.test.js");
 await import("./self-test/live-engine-matrix.test.js");

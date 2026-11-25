@@ -17,6 +17,7 @@ import {
   readItemAvailability,
 } from "../item-action-reader.js";
 import { readWeaponActions } from "../weapon-action-reader.js";
+import { AREA_FIRE_TYPES, readAreaFireActions } from "../area-fire-reader.js";
 import { readSwapItemActions } from "../swap-action-reader.js";
 import { readPositionalMovementActions } from "../positional/tactic-reader.js";
 import {
@@ -130,6 +131,7 @@ export function readActionSources(context, spells = []) {
     ...readStandStrideActivities(context),
     ...generatedStrikes,
     ...readElementalBlastActions(actor, context),
+    ...readAreaFireActions(pf2eRuntime.readActor(actor).actions, { damageProfile: readStrikeDamageProfile }),
     // Unready Strikes too: a Draw -> Strike is priced with the stowed weapon's own damage.
     ...readWeaponActions(actor, context, generatedStrikes, actorStrikeOptions(actor, context, { includeUnready: true })),
     ...readSwapItemActions(actor),
@@ -269,7 +271,9 @@ function withAltUsages(strikes) {
     strike,
     ...(Array.isArray(strike?.altUsages) ? strike.altUsages : [])
       .filter((alt) => alt?.type === "strike")
-      .map((alt) => Object.assign(Object.create(alt), { combaterAltUsage: alt.item?.isRanged ? "thrown" : "melee" })),
+      // SF2e lists an area weapon as Area Fire with its plain Strike as the alternate usage.
+      .map((alt) => (AREA_FIRE_TYPES.has(strike?.type) ? alt
+        : Object.assign(Object.create(alt), { combaterAltUsage: alt.item?.isRanged ? "thrown" : "melee" }))),
   ]);
 }
 
@@ -362,6 +366,8 @@ function readGeneratedActivities(actor, context) {
     .filter((action, index) => {
       const slug = slugify(action?.slug ?? action?.item?.slug ?? action?.label ?? action?.name ?? `action-${index}`);
       const parsedCost = readGeneratedActionCost(action);
+      // SF2e Area Fire / Auto-Fire have their own reader (area-fire-reader.js).
+      if (AREA_FIRE_TYPES.has(action?.type)) return false;
       return action?.type !== "strike" && (action?.type !== undefined || findCustomAction(slug) || classifySystemAction(action, parsedCost));
     })
     .filter((action) => action?.visible !== false)
