@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.11.1]
+
+### Added
+
+- **Recall Knowledge reveals to the whole party (new setting, off by default).** The GM's Intel window after a Recall Knowledge check starts on Whole party instead of the character who rolled, saving a click each time. A single character can still be picked there, and false information from a critical failure stays with the character who rolled.
+- **Forget failed Recall Knowledge after in-game time (new setting, 0 = never).** A failed check stops blocking that character once the set number of world-time hours has passed, and their next attempt starts from the first-attempt DC. The GM's "Reset RK attempts" button in a creature's Intel window still clears them at once.
+- **Resolve Recall Knowledge without the GM (new setting, off by default).** When a roll is settled by an allowed check, the GM's outcome and Intel windows are skipped: a success reveals everything in the asked question's categories plus the creature's identity ("None" when the creature has nothing there), and a failure blocks further attempts. Choose between the creature's listed skills only, or those plus any Lore at the broad Lore DC. Critical failures and rolls no allowed check applies to still go to the GM.
+- **Unavailable actions in the action browser.** A new Unavailable toggle lists the actions you can't use right now with the reason for each, such as "No target in range."
+- **Known creatures: search more, filter by trait.** The search box now also matches revealed traits, abilities and Strikes, not just names, and the most common revealed traits appear as filter buttons.
+
+### Fixed
+
+- **Players are told when a Recall Knowledge check teaches them something.** The notice about what was revealed only showed for the GM. The party, or the owner of the character it was revealed to, now gets a notice to open the creature's Intel. It names no creature or fact, so it gives nothing away about a mystified token.
+
 ## [2.11.0]
 
 ### Added
