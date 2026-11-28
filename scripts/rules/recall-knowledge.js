@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../constants.js";
 import { collectionValues } from "../foundry-data.js";
+import { SETTINGS, settingOrDefault } from "../settings.js";
 
 export const RECALL_KNOWLEDGE_ATTEMPTS_FLAG = "recallKnowledgeAttempts";
 
@@ -47,13 +48,45 @@ function normalizeAttemptEntry(value) {
   const data = plainObject(value);
   if (!["attempts", "blocked", "lastOutcome", "lastSkill", "lastQuestion"]
     .some((key) => Object.hasOwn(data, key))) return null;
+  const time = timeValue(data.time);
   return {
     attempts: Math.max(0, Math.floor(Number(data.attempts) || 0)),
     blocked: data.blocked === true,
     lastOutcome: normalizedOutcome(data.lastOutcome),
     lastSkill: String(data.lastSkill ?? "").trim(),
     lastQuestion: String(data.lastQuestion ?? "").trim(),
+    // In-game time of the last attempt (world seconds); older attempts have none.
+    ...(time !== null ? { time } : {}),
   };
+}
+
+// World time is 0 in a fresh world, so 0 counts (numeric() is for DCs and drops it).
+function timeValue(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function worldTime() {
+  return timeValue(globalThis.game?.time?.worldTime);
+}
+
+// In-game hours after which a failed attempt stops blocking (0: never).
+function forgetAfterHours() {
+  const hours = Number(settingOrDefault(SETTINGS.recallKnowledgeForgetHours, 0));
+  return Number.isFinite(hours) && hours > 0 ? hours : 0;
+}
+
+// A failure the character has had long enough to get past: they start over, first-attempt DC and
+// all. Attempts with no recorded time never expire on their own.
+export function recallKnowledgeAttemptExpired(entry, { now = worldTime(), hours = forgetAfterHours() } = {}) {
+  if (!entry?.blocked || !hours || now === null) return false;
+  const time = timeValue(entry.time);
+  return time !== null && now - time >= hours * 3600;
+}
+
+function unexpired(entry) {
+  return entry && !recallKnowledgeAttemptExpired(entry) ? entry : null;
 }
 
 export function normalizeRecallKnowledgeAttempts(value) {
@@ -89,9 +122,9 @@ export function readRecallKnowledgeAttempts(actor) {
 export function recallKnowledgeAttemptState(actor, target) {
   const raw = rawRecallKnowledgeAttempts(actor);
   const attempts = normalizeRecallKnowledgeAttempts(raw);
-  return attempts[recallKnowledgeTargetKey(target)]
+  return unexpired(attempts[recallKnowledgeTargetKey(target)]
     ?? attempts[recallKnowledgeLegacyTargetKey(target)]
-    ?? legacyAttemptEntry(raw, target)
+    ?? legacyAttemptEntry(raw, target))
     ?? {
     attempts: 0,
     blocked: false,
@@ -107,10 +140,11 @@ export function nextRecallKnowledgeAttempts(value, target, { outcome, skill = ""
   const legacyKey = recallKnowledgeLegacyTargetKey(target);
   const result = normalizedOutcome(outcome);
   if (!key || !result) return attempts;
-  const previous = attempts[key]
+  const previous = unexpired(attempts[key]
     ?? attempts[legacyKey]
-    ?? legacyAttemptEntry(value, target)
+    ?? legacyAttemptEntry(value, target))
     ?? { attempts: 0, blocked: false };
+  const time = worldTime();
   if (legacyKey !== key) delete attempts[legacyKey];
   return {
     ...attempts,
@@ -120,6 +154,7 @@ export function nextRecallKnowledgeAttempts(value, target, { outcome, skill = ""
       lastOutcome: result,
       lastSkill: String(skill ?? "").trim(),
       lastQuestion: String(question ?? "").trim(),
+      ...(time !== null ? { time } : {}),
     },
   };
 }

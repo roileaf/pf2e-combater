@@ -287,6 +287,21 @@
         "Name": "Learn weaknesses, resistances and immunities when they apply",
         "Hint": "During combat, when damage applied to an enemy is changed by one of its weaknesses, resistances or immunities, record that one in the party's Intel for the creature. A resistance the attack ignored is not learned."
       },
+      "RecallKnowledgeToParty": {
+        "Name": "Recall Knowledge reveals to the whole party",
+        "Hint": "After a Recall Knowledge check, the GM's Intel window starts on Whole party instead of the character who rolled. The GM can still pick a single character there. False information from a critical failure stays with the character who rolled."
+      },
+      "RecallKnowledgeAuto": {
+        "Name": "Resolve Recall Knowledge without the GM",
+        "Hint": "When a roll is settled by an allowed check, skip the GM's outcome and Intel windows: a success reveals everything in the asked question's categories (and the creature's identity), a failure blocks further attempts. Critical failures, and rolls no allowed check applies to, still go to the GM.",
+        "Off": "Off: the GM decides every roll",
+        "Standard": "The creature's listed skills, standard DC",
+        "Broad": "Listed skills, plus any Lore at the broad Lore DC"
+      },
+      "RecallKnowledgeForgetHours": {
+        "Name": "Forget failed Recall Knowledge after (in-game hours)",
+        "Hint": "A failed Recall Knowledge check stops blocking that character once this many hours of world time have passed, and their next attempt starts from the first-attempt DC. 0 keeps failures until the GM resets them from the creature's Intel window. Failures recorded before this setting existed have no time and need a manual reset."
+      },
       "UnmystifyOnIdentity": {
         "Name": "Un-mystify tokens when Identity is revealed",
         "Hint": "Needs PF2e Workbench's NPC mystifier. When the GM reveals a creature's Identity to the whole party in Intel, un-mystify that creature's tokens on the scene the GM is viewing. Revealing it to a single character leaves them mystified."
@@ -562,7 +577,11 @@
       "ExpandRow": "Show details",
       "ActionLeft": "{count} action left",
       "ActionsLeft": "{count} actions left",
-      "RechargeTooltip": "Usable again on round {round}."
+      "RechargeTooltip": "Usable again on round {round}.",
+      "UnavailableToggle": "Unavailable",
+      "UnavailableTooltip": "Also list actions you can't use right now, with the reason.",
+      "UnavailableTitle": "Unavailable right now",
+      "UnavailableEmpty": "Nothing is ruled out right now."
     },
     "Section": {
       "Favorites": "Favorites",
@@ -1741,11 +1760,15 @@
       "GridEmpty": "Nobody knows anything about this creature yet.",
       "GridFalseTag": "false",
       "UnknownCreature": "Unknown creature",
-      "JournalSearch": "Search known creatures",
+      "JournalSearch": "Search names, traits, abilities, Strikes",
       "JournalCount": "{count} creatures",
       "JournalEmpty": "Nothing is known about any creature yet.",
       "JournalTitle": "Known creatures",
-      "JournalToolGm": "Intel: the selected creature, or all known creatures"
+      "JournalToolGm": "Intel: the selected creature, or all known creatures",
+      "PlayerLearnedCharacter": "{character} learned something new about a creature. Open its Intel to see it.",
+      "PlayerLearnedParty": "The party learned something new about a creature. Open its Intel to see it.",
+      "JournalTraitFilters": "Filter by trait",
+      "JournalCountOne": "1 creature"
     },
     "MinionPlan": {
       "Minion": "Companion",
@@ -1936,7 +1959,9 @@
       "NativeUnavailable": "Foundry Recall Knowledge roll is unavailable.",
       "DieUnavailable": "Recall Knowledge d20 result is unavailable.",
       "ManualUndo": "Recall Knowledge attempt state and revealed Intel must be undone manually by the GM.",
-      "Resolved": "Recall Knowledge rolled; GM adjudication completed."
+      "Resolved": "Recall Knowledge rolled; GM adjudication completed.",
+      "AutoNothingNew": "Recall Knowledge ({outcome}): {actor} already knows that about {target}.",
+      "AutoCriticalSuccess": "Critical success on Recall Knowledge: {actor} may be owed extra context about {target}."
     },
     "RecordTurn": {
       "TopIsRight": "Auto-fill got it right",

@@ -100,7 +100,33 @@ export function tileInfoAt(tile, event, root = globalThis.document) {
   return hits.map((node) => node?.closest?.("[data-tile-info]")).find((node) => node && tile.contains(node)) ?? null;
 }
 
-export function browserViewContext(base, { expanded = null, sort = "best", compact = false } = {}) {
+// Rejections that say nothing about the situation on the map: bookkeeping, or the user's own choice.
+function internalRejection(reason) {
+  return [
+    t("Reject.Duplicate", "Duplicate detected action replaced by preferred source."),
+    t("Reject.UserExcluded", "Hidden from Browse and Auto-fill for this actor."),
+    t("Reject.SpellNotCurated", "Spell is not in curated catalog."),
+    t("Reject.UnknownHidden", "Unknown custom action hidden by setting."),
+  ].includes(reason);
+}
+
+// What the planner left out and why ("No target in range."), for the browser's Unavailable list.
+export function unavailableActionRows(rejected, { query = "" } = {}) {
+  const needle = String(query ?? "").trim().toLowerCase();
+  const seen = new Set();
+  return (Array.isArray(rejected) ? rejected : []).flatMap((entry) => {
+    const name = String(entry?.action?.name ?? "").trim();
+    const reason = String(entry?.reason ?? "").trim();
+    if (!name || !reason || internalRejection(reason)) return [];
+    if (needle && !name.toLowerCase().includes(needle)) return [];
+    const key = `${name}|${reason}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [{ name, reason, costLabel: entry.action.costLabel ?? "" }];
+  }).sort(byName);
+}
+
+export function browserViewContext(base, { expanded = null, sort = "best", compact = false, showUnavailable = false } = {}) {
   const builder = base?.builder;
   if (!builder) return base;
   const tabs = builder.tabsList ?? [];
@@ -141,6 +167,12 @@ export function browserViewContext(base, { expanded = null, sort = "best", compa
         : sharedTarget ? t("Browser.SharedTargetPrefix", "Best target") : "",
       sharedTarget,
     },
+    showUnavailable,
+    unavailable: showUnavailable ? unavailableActionRows(base?.debug?.rejected, { query: builder.searchQuery }) : [],
+    unavailableLabel: t("Browser.UnavailableToggle", "Unavailable"),
+    unavailableTooltip: t("Browser.UnavailableTooltip", "Also list actions you can't use right now, with the reason."),
+    unavailableTitle: t("Browser.UnavailableTitle", "Unavailable right now"),
+    unavailableEmpty: t("Browser.UnavailableEmpty", "Nothing is ruled out right now."),
     compact,
     compactTooltip: compact
       ? t("Browser.CompactOff", "Show the full list")

@@ -96,6 +96,7 @@
         {{#unless readonly}}
         <button type="button" class="combater-browser-toggle" data-show-excluded aria-pressed="{{showExcluded}}" data-tooltip="{{localize "PF2E_COMBATER.Browser.ShowHidden"}}"><i class="fa-solid fa-eye-slash"></i><span class="combater-browser-toggle-label"> {{hiddenLabel}}</span></button>
         {{/unless}}
+        <button type="button" class="combater-browser-toggle" data-browser-unavailable aria-pressed="{{#if showUnavailable}}true{{else}}false{{/if}}" data-tooltip="{{unavailableTooltip}}" aria-label="{{unavailableTooltip}}"><i class="fa-solid fa-ban"></i><span class="combater-browser-toggle-label"> {{unavailableLabel}}</span></button>
         <button type="button" class="combater-browser-toggle" data-browser-sort data-tooltip="{{sortTooltip}}{{#if compact}}: {{sortLabel}}{{/if}}"><i class="fa-solid fa-arrow-down-wide-short"></i><span class="combater-browser-toggle-label"> {{sortLabel}}</span></button>
         <button type="button" class="combater-browser-toggle is-compact-toggle" data-browser-compact aria-pressed="{{#if compact}}true{{else}}false{{/if}}" data-tooltip="{{compactTooltip}}" aria-label="{{compactTooltip}}"><i class="fa-solid {{#if compact}}fa-list{{else}}fa-table-cells{{/if}}"></i></button>
       </div>
@@ -145,6 +146,28 @@
               {{/each}}
             {{/if}}
           {{/each}}
+        {{/if}}
+
+        {{#if showUnavailable}}
+          <article class="combater-alt combater-builder-card combater-action-section combater-unavailable-section">
+            <div class="combater-alt-head">
+              <span class="combater-alt-title">
+                <strong>{{unavailableTitle}}</strong>
+                <span class="combater-section-count">{{unavailable.length}}</span>
+              </span>
+            </div>
+            <div class="combater-alt-details">
+              {{#each unavailable}}
+                <div class="combater-unavailable-row">
+                  <span class="combater-unavailable-name">{{name}}</span>
+                  {{#if costLabel}}<span class="combater-unavailable-cost">{{costLabel}}</span>{{/if}}
+                  <span class="combater-unavailable-reason">{{reason}}</span>
+                </div>
+              {{else}}
+                <p class="combater-empty">{{@root.unavailableEmpty}}</p>
+              {{/each}}
+            </div>
+          </article>
         {{/if}}
 
         {{#if showDebug}}

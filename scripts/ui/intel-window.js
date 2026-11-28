@@ -518,16 +518,56 @@ function entryModel(entry, categories, index, { canResetAttempts = false } = {})
   };
 }
 
+// What the journal's search and trait buttons match on: only what this viewer has revealed.
+const JOURNAL_TRAIT_LIMIT = 14;
+
+export function journalSearchFields(entry) {
+  const revealed = entry?.revealed ?? {};
+  const labels = Object.values(revealed).flatMap((values) => (Array.isArray(values) ? values : [])).map((value) => String(value ?? ""));
+  return {
+    searchText: [entry?.name, ...labels].map((value) => String(value ?? "").toLowerCase()).filter(Boolean).join(" \n "),
+    traitKeys: (Array.isArray(revealed.traits) ? revealed.traits : []).map((value) => String(value ?? "").trim().toLowerCase()).filter(Boolean).join("|"),
+  };
+}
+
+// The most common revealed traits across the journal, as filter buttons.
+export function journalTraitFilters(entries, { limit = JOURNAL_TRAIT_LIMIT } = {}) {
+  const counts = new Map();
+  for (const entry of Array.isArray(entries) ? entries : []) {
+    const traits = Array.isArray(entry?.revealed?.traits) ? entry.revealed.traits : [];
+    for (const label of new Set(traits.map((value) => String(value ?? "").trim()).filter(Boolean))) {
+      const key = label.toLowerCase();
+      const current = counts.get(key) ?? { id: key, label, count: 0 };
+      current.count += 1;
+      counts.set(key, current);
+    }
+  }
+  return [...counts.values()]
+    .toSorted((left, right) => right.count - left.count || left.label.localeCompare(right.label))
+    .slice(0, Math.max(0, limit));
+}
+
+export function journalEntryMatches({ searchText = "", traitKeys = "" } = {}, { query = "", traits = [] } = {}) {
+  const needle = String(query ?? "").trim().toLowerCase();
+  if (needle && !String(searchText).includes(needle)) return false;
+  const own = new Set(String(traitKeys).split("|").filter(Boolean));
+  return [...traits].every((trait) => own.has(String(trait).toLowerCase()));
+}
+
 function windowContext(view, mode, { canResetAttempts = false } = {}) {
   const editable = mode === "edit" && view?.editable === true;
   const categories = view?.categories ?? [];
   const audiences = intelAudienceIds(view);
-  const entries = (view?.entries ?? []).map((entry, index) => entryModel(
-    { ...entry, editable, audiences, audienceOptions: view?.audienceOptions ?? [] },
-    categories,
-    index,
-    { canResetAttempts: editable && canResetAttempts },
-  ));
+  const journal = view?.journal === true;
+  const entries = (view?.entries ?? []).map((entry, index) => ({
+    ...entryModel(
+      { ...entry, editable, audiences, audienceOptions: view?.audienceOptions ?? [] },
+      categories,
+      index,
+      { canResetAttempts: editable && canResetAttempts },
+    ),
+    ...(journal ? journalSearchFields(entry) : {}),
+  }));
   return {
     editable,
     entries,
@@ -535,7 +575,12 @@ function windowContext(view, mode, { canResetAttempts = false } = {}) {
     audience: audienceModel(view, editable),
     // The Known creatures journal: many creatures, so a name filter.
     search: view?.journal === true && entries.length > 1
-      ? { placeholder: t("Intel.JournalSearch", "Search known creatures"), countLabel: t("Intel.JournalCount", "{count} creatures", { count: entries.length }) }
+      ? {
+        placeholder: t("Intel.JournalSearch", "Search names, traits, abilities, Strikes"),
+        countLabel: t("Intel.JournalCount", "{count} creatures", { count: entries.length }),
+        traits: journalTraitFilters(view?.entries),
+        traitsLabel: t("Intel.JournalTraitFilters", "Filter by trait"),
+      }
       : null,
     journal: view?.journal === true,
     hasEntries: entries.length > 0,
@@ -598,6 +643,7 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     super({ id: randomId(`${MODULE_ID}-intel`), ...appOptions });
     this._title = typeof title === "string" && title ? title : null;
     this._search = "";
+    this._traitFilters = new Set();
     this._view = view ?? {};
     this._mode = mode ?? (view?.editable === true ? "edit" : "view");
     this._onSave = typeof onSave === "function" ? onSave : null;
@@ -855,13 +901,26 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  // Journal filter by creature name; kept across live refreshes.
+  // Journal filter: the text matches a creature's name or anything revealed about it (traits,
+  // abilities, Strikes...), and every picked trait must be one it is known to have. Kept across
+  // live refreshes.
   _applySearch() {
-    const query = this._search.trim().toLowerCase();
+    const filter = { query: this._search, traits: this._traitFilters };
+    let shown = 0;
     for (const entry of this.element.querySelectorAll("[data-intel-entry]")) {
-      const name = String(entry.querySelector("h3")?.textContent ?? "").toLowerCase();
-      entry.hidden = Boolean(query) && !name.includes(query);
+      const fields = "intelSearchText" in entry.dataset
+        ? { searchText: entry.dataset.intelSearchText, traitKeys: entry.dataset.intelTraits ?? "" }
+        : { searchText: String(entry.querySelector("h3")?.textContent ?? "").toLowerCase() };
+      entry.hidden = !journalEntryMatches(fields, filter);
+      if (!entry.hidden) shown += 1;
     }
+    for (const button of this.element.querySelectorAll("[data-intel-trait-filter]")) {
+      const active = this._traitFilters.has(button.dataset.intelTraitFilter);
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    }
+    const count = this.element.querySelector("[data-intel-search-count]");
+    if (count) count.textContent = shown === 1 ? t("Intel.JournalCountOne", "1 creature") : t("Intel.JournalCount", "{count} creatures", { count: shown });
   }
 
   // The share button only means something while a "Known by" fact is still unticked.
@@ -1018,6 +1077,14 @@ export class IntelWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._search = search.value;
         this._applySearch();
       });
+      for (const button of this.element.querySelectorAll("[data-intel-trait-filter]")) {
+        button.addEventListener("click", () => {
+          const id = button.dataset.intelTraitFilter;
+          if (this._traitFilters.has(id)) this._traitFilters.delete(id);
+          else this._traitFilters.add(id);
+          this._applySearch();
+        });
+      }
       this._applySearch();
     }
     for (const card of this.element.querySelectorAll("[data-intel-audience-card]")) {

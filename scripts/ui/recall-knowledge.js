@@ -1,8 +1,12 @@
 import { MODULE_ID } from "../constants.js";
 import { collectionValues } from "../foundry-data.js";
 import { t } from "../i18n.js";
+import { SETTINGS, settingOrDefault } from "../settings.js";
+import { requestShowKnowledgeReveal } from "../socket.js";
 import {
+  NONE_FACT_ID,
   PARTY_INTEL_AUDIENCE,
+  describeIntelChanges,
   intelAudienceOptions,
   intelCategoryLabel,
   intelKnowerId,
@@ -124,10 +128,61 @@ function requesterCanUseActor(actor, requesterId) {
   return Number(actor?.ownership?.[requester.id] ?? actor?.ownership?.default ?? 0) >= Number(owner);
 }
 
+// Who to tell that a save taught them something: every player for the party, a character's owners
+// otherwise. Read before the save, while "what they knew" is still the old state.
+export function intelRevealRecipients(decision, {
+  users = collectionValues(globalThis.game?.users),
+  actors = globalThis.game?.actors,
+  describe = describeIntelChanges,
+} = {}) {
+  const players = users.filter((user) => user?.isGM !== true && user?.active !== false && user?.id);
+  const owner = globalThis.CONST?.DOCUMENT_OWNERSHIP_LEVELS?.OWNER ?? 3;
+  const owns = (user, actor) => (typeof actor?.testUserPermission === "function"
+    ? actor.testUserPermission(user, owner)
+    : Number(actor?.ownership?.[user.id] ?? actor?.ownership?.default ?? 0) >= owner);
+  const recipients = new Map();
+  for (const entry of Array.isArray(decision) ? decision : []) {
+    const audiences = Array.isArray(entry?.audiences) && entry.audiences.length
+      ? entry.audiences.map(String)
+      : [String(entry?.audience ?? PARTY_INTEL_AUDIENCE)];
+    if (audiences.includes(PARTY_INTEL_AUDIENCE)) {
+      const learned = describe(entry.actor, { ledger: entry.value, ...(entry.details !== undefined ? { details: entry.details } : {}) })
+        .some((change) => change.kind === "revealed");
+      if (learned) for (const user of players) recipients.set(user.id, null);
+      continue;
+    }
+    const learned = entry.added
+      ? Object.values(entry.added).some((ids) => Array.isArray(ids) && ids.length)
+      : describe(entry.actor, { ledger: entry.value }, { knowerIds: audiences }).some((change) => change.kind === "revealed");
+    if (!learned) continue;
+    for (const id of audiences) {
+      const character = actors?.get?.(id);
+      const name = String(entry.audienceNames?.[id] ?? (entry.audience === id ? entry.audienceName : "") ?? character?.name ?? "") || character?.name || "";
+      for (const user of players) {
+        if (character && owns(user, character) && !recipients.has(user.id)) recipients.set(user.id, name);
+      }
+    }
+  }
+  return [...recipients].map(([userId, character]) => ({ userId, character }));
+}
+
+// The player's notice names no creature and no fact: the token may be mystified, and what they now
+// know is in their Intel, in the form they are allowed to see it.
+function tellPlayersAboutReveal(recipients) {
+  for (const { userId, character } of recipients) {
+    const notice = character
+      ? t("Intel.PlayerLearnedCharacter", "{character} learned something new about a creature. Open its Intel to see it.", { character })
+      : t("Intel.PlayerLearnedParty", "The party learned something new about a creature. Open its Intel to see it.");
+    requestShowKnowledgeReveal(userId, { notice });
+  }
+}
+
 async function saveRecallKnowledgeIntel(decision) {
   if (!Array.isArray(decision)) return false;
   try {
+    const recipients = intelRevealRecipients(decision);
     for (const notice of await saveIntelDecision(decision)) globalThis.ui?.notifications?.info?.(notice);
+    tellPlayersAboutReveal(recipients);
     globalThis.ui?.combat?.render?.(true);
     return true;
   } catch (error) {
@@ -221,8 +276,10 @@ export async function openRecallKnowledgeIntelWindow(target, {
   audience = null,
 } = {}) {
   if (globalThis.game?.user?.isGM !== true || !target) return false;
-  // A Recall Knowledge result is the roller's to know; the GM can switch it to the whole party.
-  const intelAudience = String(audience ?? request?.actorId ?? PARTY_INTEL_AUDIENCE) || PARTY_INTEL_AUDIENCE;
+  // A Recall Knowledge result is the roller's to know; the GM can switch it to the whole party,
+  // or have every result start there (setting).
+  const rollerAudience = settingOrDefault(SETTINGS.recallKnowledgeToParty, false) === true ? null : request?.actorId;
+  const intelAudience = String(audience ?? rollerAudience ?? PARTY_INTEL_AUDIENCE) || PARTY_INTEL_AUDIENCE;
   const baseView = intelLedgerView({
     isGM: true,
     intelAudience,
@@ -573,6 +630,59 @@ export function bindRecallKnowledgeVerdict(_event, dialog) {
   }
 }
 
+// Which checks may settle a Recall Knowledge roll without the GM (setting): "standard" is the
+// creature's listed skills against its standard DC; "broad" also lets any Lore count at the broad
+// Lore DC. The specific Lore DC is never automatic: whether a Lore is that specific is a GM call.
+export function recallKnowledgeAutoMode() {
+  const mode = String(settingOrDefault(SETTINGS.recallKnowledgeAuto, "off"));
+  return ["standard", "broad"].includes(mode) ? mode : "off";
+}
+
+// The best degree any allowed check reached, or null when none applies (the GM is asked then).
+export function recallKnowledgeAutoOutcome(rows, matrix, dieResult, mode = recallKnowledgeAutoMode()) {
+  if (mode !== "standard" && mode !== "broad") return null;
+  const kinds = mode === "broad" ? ["standard", "broad"] : ["standard"];
+  const outcomes = (Array.isArray(rows) ? rows : [])
+    .flatMap((row) => recallKnowledgeDcResults(row, matrix, dieResult))
+    .filter((result) => kinds.includes(result.kind) && DEGREE_LABELS[result.outcome])
+    .map((result) => result.outcome);
+  return outcomes.reduce((best, outcome) => (best === null || DEGREE_ORDER.indexOf(outcome) > DEGREE_ORDER.indexOf(best) ? outcome : best), null);
+}
+
+// The Intel save a successful check makes on its own: everything in the asked question's
+// categories, plus who the creature is, for the roller or the whole party. Null when the audience
+// already knows all of it.
+export function recallKnowledgeAutoDecision(target, request, { audience = null, view = null } = {}) {
+  const categories = Array.isArray(request?.categories) ? request.categories : [];
+  const toParty = settingOrDefault(SETTINGS.recallKnowledgeToParty, false) === true;
+  const intelAudience = String(audience ?? (toParty ? null : request?.actorId) ?? PARTY_INTEL_AUDIENCE) || PARTY_INTEL_AUDIENCE;
+  const entry = (view ?? intelLedgerView({
+    isGM: true,
+    intelAudience,
+    intelTargets: [{ actor: target, name: target?.name, id: target?.id, uuid: target?.uuid }],
+  }))?.entries?.[0];
+  if (!entry || !categories.length) return null;
+  const known = (category) => new Set((entry.revealedFacts?.[category] ?? []).map((fact) => fact.id));
+  const added = Object.fromEntries(["identity", ...categories].flatMap((category) => {
+    const have = known(category);
+    const available = (entry.availableFacts?.[category] ?? []).map((fact) => fact.id);
+    // A creature with no weaknesses: "None" is the answer, and it is worth knowing.
+    const ids = (available.length ? available : [NONE_FACT_ID]).filter((id) => !have.has(id));
+    return ids.length ? [[category, ids]] : [];
+  }));
+  if (!Object.keys(added).length) return null;
+  const shared = { actor: entry.actor ?? target, revealMode: entry.revealMode, falseInformation: entry.falseInformation ?? [] };
+  if (intelAudience !== PARTY_INTEL_AUDIENCE) {
+    return [{ ...shared, audiences: [intelAudience], audienceNames: { [intelAudience]: request?.actorName ?? "" }, added, removed: {} }];
+  }
+  const value = { ...entry.values };
+  for (const [category, ids] of Object.entries(added)) {
+    const current = value[category];
+    value[category] = current === true ? true : [...new Set([...(Array.isArray(current) ? current : []), ...ids])];
+  }
+  return [{ ...shared, audience: PARTY_INTEL_AUDIENCE, audiences: [PARTY_INTEL_AUDIENCE], value }];
+}
+
 export function promptRecallKnowledgeOutcome(details) {
   const calculatedOutcomes = recallKnowledgeCalculatedOutcomes(details?.rows, details?.matrix, details?.dieResult);
   const calculatedIds = new Set(calculatedOutcomes.map((entry) => entry.outcome));
@@ -675,6 +785,27 @@ export async function adjudicateRecallKnowledgeRequest(payload = {}, {
     return { completed: true, revealed: 0 };
   }
 
+  if (payload.auto === true) {
+    const decision = recallKnowledgeAutoDecision(target, request);
+    if (!decision) {
+      globalThis.ui?.notifications?.info?.(t(
+        "RecallKnowledge.AutoNothingNew",
+        "Recall Knowledge ({outcome}): {actor} already knows that about {target}.",
+        { outcome: DEGREE_LABELS[outcome], actor: actor.name ?? "", target: target.name ?? "" },
+      ));
+      return { completed: true, revealed: 0 };
+    }
+    await saveRecallKnowledgeIntel(decision);
+    if (outcome === "criticalsuccess") {
+      globalThis.ui?.notifications?.info?.(t(
+        "RecallKnowledge.AutoCriticalSuccess",
+        "Critical success on Recall Knowledge: {actor} may be owed extra context about {target}.",
+        { actor: actor.name ?? "", target: target.name ?? "" },
+      ));
+    }
+    return { completed: true, revealed: 1 };
+  }
+
   await openIntel(target, { request });
   return { completed: true, revealed: 0 };
 }
@@ -711,7 +842,10 @@ export async function resolveRecallKnowledgeRequest(payload = {}) {
   if (!Number.isInteger(dieResult)) return { completed: false, reason: "Recall Knowledge d20 result is unavailable." };
   const rows = recallKnowledgeRollRows(actor, dieResult, { target });
   setRecallKnowledgeChatDegreeColors(message, { rows, matrix, dieResult });
-  const choice = await promptRecallKnowledgeOutcome({
+  // Setting: a roll an allowed check settles needs no GM verdict. A critical failure still does
+  // (the GM writes the false information), and so does a roll no allowed check applies to.
+  const autoOutcome = recallKnowledgeAutoOutcome(rows, matrix, dieResult);
+  const choice = autoOutcome ? { id: autoOutcome } : await promptRecallKnowledgeOutcome({
     actor,
     target,
     question: payload.question,
@@ -727,6 +861,7 @@ export async function resolveRecallKnowledgeRequest(payload = {}) {
     outcome,
     attempt: matrix.attempt,
     requesterId,
+    auto: Boolean(autoOutcome),
   });
   if (!adjudication?.completed) {
     return { completed: false, reason: adjudication?.reason ?? "GM did not finish Recall Knowledge adjudication." };

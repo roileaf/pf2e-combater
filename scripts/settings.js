@@ -24,6 +24,9 @@ const SETTINGS = {
   learnObservedIntel: "learnObservedIntel",
   learnAppliedDefenses: "learnAppliedDefenses",
   unmystifyOnIdentity: "unmystifyOnIdentity",
+  recallKnowledgeToParty: "recallKnowledgeToParty",
+  recallKnowledgeAuto: "recallKnowledgeAuto",
+  recallKnowledgeForgetHours: "recallKnowledgeForgetHours",
   falseIntelSteersPlans: "falseIntelSteersPlans",
   defaultIntelRevealMode: "defaultIntelRevealMode",
   componentTracker: "componentTracker",
@@ -383,6 +386,35 @@ export function registerSettings({ decorateFlankingFormGroup, minimalPartsMenu }
     config: true,
     type: Boolean,
     default: false,
+  });
+  game.settings.register(MODULE_ID, SETTINGS.recallKnowledgeToParty, {
+    name: "PF2E_COMBATER.Settings.RecallKnowledgeToParty.Name",
+    hint: "PF2E_COMBATER.Settings.RecallKnowledgeToParty.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+  game.settings.register(MODULE_ID, SETTINGS.recallKnowledgeAuto, {
+    name: "PF2E_COMBATER.Settings.RecallKnowledgeAuto.Name",
+    hint: "PF2E_COMBATER.Settings.RecallKnowledgeAuto.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      off: "PF2E_COMBATER.Settings.RecallKnowledgeAuto.Off",
+      standard: "PF2E_COMBATER.Settings.RecallKnowledgeAuto.Standard",
+      broad: "PF2E_COMBATER.Settings.RecallKnowledgeAuto.Broad",
+    },
+    default: "off",
+  });
+  game.settings.register(MODULE_ID, SETTINGS.recallKnowledgeForgetHours, {
+    name: "PF2E_COMBATER.Settings.RecallKnowledgeForgetHours.Name",
+    hint: "PF2E_COMBATER.Settings.RecallKnowledgeForgetHours.Hint",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: 0,
   });
   game.settings.register(MODULE_ID, SETTINGS.unmystifyOnIdentity, {
     name: "PF2E_COMBATER.Settings.UnmystifyOnIdentity.Name",

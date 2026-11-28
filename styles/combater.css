@@ -6746,3 +6746,42 @@
 .form-group:has(> .form-fields [name^="pf2e-combater.component"]) > .form-fields {
   flex: 0 0 auto;
 }
+
+/* Browser: actions the planner ruled out, with the reason. */
+.pf2e-combater .combater-unavailable-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  border-top: 1px solid var(--combater-line);
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.pf2e-combater .combater-unavailable-row:first-child {
+  border-top: 0;
+}
+
+.pf2e-combater .combater-unavailable-name {
+  overflow: hidden;
+  color: var(--combater-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf2e-combater .combater-unavailable-cost {
+  color: var(--combater-muted);
+  font-size: 11px;
+}
+
+.pf2e-combater .combater-unavailable-reason {
+  grid-column: 1 / -1;
+  color: var(--combater-muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+/* Known creatures journal: trait filter buttons under the search box. */
+.pf2e-combater-intel-window .combater-intel-trait-filters { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
+.pf2e-combater-intel-window .combater-intel-trait-filter { flex: none; width: auto; height: 22px; padding: 0 8px; border: 1px solid #343a43; border-radius: 999px; background: #1f2227; color: #b8c2cf; font-size: 11px; line-height: 20px; }
+.pf2e-combater-intel-window .combater-intel-trait-filter span { color: #8d9aab; pointer-events: none; }
+.pf2e-combater-intel-window .combater-intel-trait-filter.is-active { border-color: #79aee8; background: rgb(121 174 232 / 18%); color: #e3e8ee; }

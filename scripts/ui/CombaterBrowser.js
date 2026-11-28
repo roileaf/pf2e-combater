@@ -56,6 +56,7 @@ export class CombaterBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
     this._expanded = new Set();
     this._sort = readBrowserState().sort === "name" ? "name" : "best";
     this._compact = readBrowserState().compact === true;
+    this._showUnavailable = readBrowserState().showUnavailable === true;
   }
 
   get title() {
@@ -68,7 +69,7 @@ export class CombaterBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext(options) {
     await super._prepareContext(options);
     const base = this._panel?.browserViewContext?.() ?? { builder: null, readonly: true, showDebug: false, debug: {} };
-    return browserViewContext(base, { expanded: this._expanded, sort: this._sort, compact: this._compact });
+    return browserViewContext(base, { expanded: this._expanded, sort: this._sort, compact: this._compact, showUnavailable: this._showUnavailable });
   }
 
   _restorePosition() {
@@ -149,6 +150,12 @@ export class CombaterBrowser extends HandlebarsApplicationMixin(ApplicationV2) {
     element.querySelector("[data-browser-sort]")?.addEventListener("click", () => {
       this._sort = this._sort === "name" ? "best" : "name";
       writeBrowserState({ sort: this._sort });
+      this.render();
+    });
+
+    element.querySelector("[data-browser-unavailable]")?.addEventListener("click", () => {
+      this._showUnavailable = !this._showUnavailable;
+      writeBrowserState({ showUnavailable: this._showUnavailable });
       this.render();
     });
 

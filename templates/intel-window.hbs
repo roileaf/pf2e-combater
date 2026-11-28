@@ -37,14 +37,21 @@
     <label class="combater-intel-search">
       <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
       <input type="search" data-intel-search placeholder="{{placeholder}}" aria-label="{{placeholder}}">
-      <small>{{countLabel}}</small>
+      <small data-intel-search-count>{{countLabel}}</small>
     </label>
+    {{#if traits.length}}
+      <div class="combater-intel-trait-filters" role="group" aria-label="{{traitsLabel}}">
+        {{#each traits}}
+          <button type="button" class="combater-intel-trait-filter" data-intel-trait-filter="{{id}}" aria-pressed="false">{{label}} <span>{{count}}</span></button>
+        {{/each}}
+      </div>
+    {{/if}}
   {{/with}}
   {{#if hasEntries}}
     <form class="combater-intel-body" data-intel-form>
       <div class="combater-intel-grid">
         {{#each entries}}
-          <article class="combater-intel-entry {{#if hasRevealed}}has-revealed{{/if}}" data-intel-entry data-intel-entry-index="{{index}}">
+          <article class="combater-intel-entry {{#if hasRevealed}}has-revealed{{/if}}" data-intel-entry data-intel-entry-index="{{index}}"{{#if searchText}} data-intel-search-text="{{searchText}}" data-intel-traits="{{traitKeys}}"{{/if}}>
             <header class="combater-intel-target-head">
               {{#if img}}
                 <img class="combater-intel-img" src="{{img}}" alt="">
